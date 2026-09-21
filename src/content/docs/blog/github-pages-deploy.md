@@ -1,6 +1,7 @@
 ---
 title: GitHub Actions로 GitHub Pages에 배포하기
 description: main에 푸시하면 자동으로 빌드해서 GitHub Pages에 올리는 워크플로를 정리합니다.
+excerpt: 워크플로 파일 하나면 끝나지만, Pages 소스를 GitHub Actions로 바꾸지 않으면 아무리 돌려도 반영되지 않습니다. 자주 걸리는 것들을 함께 정리했습니다.
 date: 2026-09-21
 tags:
   - 인프라

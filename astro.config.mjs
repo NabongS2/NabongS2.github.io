@@ -10,6 +10,10 @@ export default defineConfig({
 	// `<user>.github.io` this is all you need; for any other repo name you must
 	// also set `base: '/<repo-name>/'`.
 	site: 'https://nabongs2.github.io',
+	// The floating bar at the bottom of the dev server. Dev-only either way —
+	// it never shipped to the built site — but it gets in the way while
+	// checking layouts.
+	devToolbar: { enabled: false },
 	integrations: [
 		starlight({
 			title: {
@@ -38,6 +42,8 @@ export default defineConfig({
 					},
 				}),
 			],
+			// Reshapes the blog plugin's flat tag list into a category tree.
+			routeMiddleware: './src/routeData.ts',
 			// Our own overrides on top of Starlight's defaults.
 			customCss: ['./src/styles/custom.css'],
 			// Starlight ships Korean UI strings; this only covers what it doesn't.

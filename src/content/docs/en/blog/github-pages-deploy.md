@@ -1,6 +1,7 @@
 ---
 title: Deploying to GitHub Pages with GitHub Actions
 description: The workflow that builds this site and publishes it to GitHub Pages on every push to main.
+excerpt: One workflow file covers it — but leave the Pages source on "Deploy from a branch" and nothing you build ever goes live. Plus the other things that trip people up.
 date: 2026-09-21
 tags:
   - Infrastructure
