@@ -6,7 +6,8 @@
 			"PowerShell(node *)",
 			"Bash(npm *)",
 			"Bash(npx *)",
-			"Bash(node *)"
+			"Bash(node *)",
+			"mcp__plugin_playwright_playwright"
 		],
 		"ask": [
 			"PowerShell(npm install)",

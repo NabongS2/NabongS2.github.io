@@ -25,6 +25,7 @@ pnpm-debug.log*
 
 # local tool settings
 .claude/settings.local.json
+.claude/launch.json
 .playwright-mcp/
 # Screenshots taken while checking layouts land in the repo root. Only those —
 # a blanket *.png would swallow diagrams and covers kept alongside content.
