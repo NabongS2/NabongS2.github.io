@@ -96,3 +96,25 @@ Push to `main`. The build output is never committed.
 ```
 write → git push → GitHub Actions builds → live on Pages
 ```
+
+The workflow is a single file, `.github/workflows/deploy.yml`. Astro ships an official action, so there isn't much to write.
+
+```yaml
+- uses: withastro/action@v5
+- uses: actions/deploy-pages@v4
+```
+
+Leave out the permissions and the deploy step refuses to run.
+
+```yaml
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+```
+
+### What trips people up
+
+- **A 404** — check whether **Settings → Pages → Build and deployment → Source** is still on `Deploy from a branch`. That's the default, and until it's switched the workflow can run all it likes without anything going live.
+- **Broken CSS** — the `site` value in `astro.config.mjs` doesn't match the real address. If the repository isn't named `<username>.github.io`, you also need `base: '/repository-name/'`.
+- **A post that doesn't show up** — malformed frontmatter fails the build. The content schema catches it, and the Actions log names the file and the field.

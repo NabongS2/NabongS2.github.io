@@ -96,3 +96,25 @@ authors: nabong
 ```
 글 작성 → git push → GitHub Actions 빌드 → Pages 반영
 ```
+
+워크플로는 `.github/workflows/deploy.yml` 한 파일입니다. Astro가 공식 액션을 제공해서 직접 쓸 게 많지 않습니다.
+
+```yaml
+- uses: withastro/action@v5
+- uses: actions/deploy-pages@v4
+```
+
+권한이 빠지면 배포 단계에서 막힙니다.
+
+```yaml
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+```
+
+### 자주 걸리는 것
+
+- **404가 뜬다** — 저장소의 **Settings → Pages → Build and deployment → Source**가 아직 `Deploy from a branch`에 머물러 있는지 확인합니다. 기본값이 그것이라 바꾸지 않으면 워크플로가 아무리 돌아도 반영되지 않습니다.
+- **CSS가 깨져 보인다** — `astro.config.mjs`의 `site` 값이 실제 주소와 다른 경우입니다. 저장소 이름이 `<계정명>.github.io`가 아니라면 `base: '/저장소이름/'`도 같이 넣어야 합니다.
+- **글은 썼는데 안 보인다** — 프론트매터 형식이 틀리면 빌드가 실패합니다. 콘텐츠 스키마가 잡아주니 Actions 로그에 어느 파일의 어느 필드인지 그대로 나옵니다.
