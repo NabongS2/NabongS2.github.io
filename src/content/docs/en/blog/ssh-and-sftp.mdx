@@ -1,0 +1,155 @@
+---
+title: Connecting to a server and moving files
+description: Connecting with the ssh that Windows already ships, why people use a dedicated client and which one I use, and moving files with scp and sftp.
+excerpt: You can start connecting without installing anything. What you need after that is somewhere to save connections, and a way to move files.
+cover:
+  alt: A terminal uploading a jar with scp, then connecting to check the file arrived
+  light: ../../../../assets/blog/ssh-sftp/cover-light.png
+  dark: ../../../../assets/blog/ssh-sftp/cover-dark.png
+date: 2026-09-22
+tags:
+  - Infrastructure
+  - Linux
+authors: nabong
+---
+
+What a server is and which commands you run inside it are in the [terminal post](/en/blog/terminal-basics/). This one covers what sits on either side of that: **what you connect with**, and **how files get in and out**.
+
+## A terminal and ssh are different levels
+
+A **terminal** is the window where you type commands. `ssh` is a command you run in that window.
+
+Choosing a terminal and connecting to a server are two separate things. Without that split, "install a terminal" and "connect to the server" collapse into one vague task.
+
+## Windows already ships ssh
+
+Open PowerShell and type it.
+
+```powershell
+ssh dev@192.168.0.10
+```
+
+The OpenSSH client has been included since Windows 10 1809. mac and Linux have had it in the default terminal all along. **You can start without installing anything.**
+
+Starting here is the better order the first time. It keeps picking a client separate from finding out whether you can connect at all.
+
+## Why people still use a dedicated client
+
+Four reasons.
+
+| | |
+| --- | --- |
+| **Saved connections** | Once you have a few servers, typing IPs and usernames gets old |
+| **Tabs** | Several servers in one window |
+| **Key management** | Register private key paths and pick one |
+| **File transfer** | A terminal and SFTP in the same window |
+
+I use [Termius](https://termius.com). The screen for registering connections is well done, and dragging files to and from a server is easy. There are Windows, mac and Linux builds, and it is usable for free.
+
+Other options worth knowing:
+
+- **XShell with XFtp** — widely used in Korea. The terminal and the file transfer are separate programs, and there is a free licence for home and school use
+- **MobaXterm** — opens an SFTP browser on the left alongside the SSH session
+- **PuTTY** — the old standard. Fewer features, but small and available everywhere
+- **VS Code Remote-SSH** — opens server files straight in the editor. The one to use if editing is the point
+
+### The fields you fill in
+
+Menu names differ by client. The fields do not.
+
+| Field | What goes in |
+| --- | --- |
+| Host, Address | The server's IP or domain |
+| Port | `22`, or whatever it was changed to |
+| Username | The account to log in as |
+| Password, Key | The auth method. With a key, point it at the private key file |
+| Label, Name | The name shown in the list |
+
+Save it once and connecting is picking a row from a list. Past ten servers that alone pays for using a client.
+
+## Moving files
+
+For pushing a jar up to a server or pulling a log down.
+
+**SFTP** is file transfer riding on SSH. It generally works with no extra setup once SSH does, because there is no separate service to run on the server.
+
+It is not **FTP**, despite the name. FTP has no encryption, and it needs its own service installed and running on the server.
+
+### scp — copy once and done
+
+**s**ecure **c**o**p**y.
+
+```sh
+# local → server
+scp myapp.jar dev@192.168.0.10:/opt/myapp/
+
+# server → local
+scp dev@192.168.0.10:/opt/myapp/log/myapp.log .
+
+# folders need -r
+scp -r config dev@192.168.0.10:/opt/myapp/
+```
+
+What follows the colon is the path on the server. Leave the colon out and it turns into a plain local copy, so it is worth a second look.
+
+The `.` at the end means the current folder. It is the destination, so it cannot be left off.
+
+### sftp — connect and move around
+
+```sh
+sftp dev@192.168.0.10
+sftp> ls              # list on the server
+sftp> lls             # list locally
+sftp> cd /opt/myapp   # move on the server
+sftp> lcd ~/Downloads # move locally
+sftp> put myapp.jar   # upload
+sftp> get myapp.log   # download
+sftp> exit
+```
+
+The commands with an `l` in front act on your own machine — `l` for **l**ocal. When you lose track of which side you are looking at, run `pwd` and `lpwd` one after the other.
+
+### Which one to use
+
+| Situation | |
+| --- | --- |
+| A handful of files | Dragging in a client's SFTP view is quicker |
+| Inside a script | `scp`. One line, and the result comes back as an exit code |
+| Large files, repeatedly | `rsync`. Sends only what changed |
+| Moving files within the server | Connect and use `cp` or `mv`. No reason to route it through your machine |
+
+## When permissions get in the way
+
+If an uploaded file does not appear, or you cannot delete it, it is usually permissions.
+
+```
+scp: /opt/myapp/myapp.jar: Permission denied
+```
+
+`scp` and `sftp` write files **as the account you connected with.** Connect as `dev` and files only land where `dev` can write. If the folder is owned by root, you are blocked.
+
+Two ways around it. Upload somewhere writable such as your home directory and move it with `sudo mv` on the server, or change the folder's owner to `dev` up front.
+
+```sh
+# upload somewhere you can write
+scp myapp.jar dev@192.168.0.10:~/
+
+# connect and move it
+ssh dev@192.168.0.10
+sudo mv ~/myapp.jar /opt/myapp/
+```
+
+Reading the permission string is covered in [accounts and permissions](/en/blog/terminal-basics/#accounts-and-permissions) in the terminal post.
+
+## The commands, in one place
+
+| To do this | Run | Short for |
+| --- | --- | --- |
+| Connect | `ssh dev@host` | secure shell |
+| On another port | `ssh -p 2222 dev@host` | port |
+| With a specific key | `ssh -i ~/.ssh/id_rsa dev@host` | identity |
+| Upload a file | `scp file dev@host:/path/` | secure copy |
+| Download a file | `scp dev@host:/path/file .` | secure copy |
+| A whole folder | `scp -r dir dev@host:/path/` | recursive |
+| Connect and transfer | `sftp dev@host` | ssh file transfer protocol |
+| Send only what changed | `rsync -av dir/ dev@host:/path/` | archive, verbose |
