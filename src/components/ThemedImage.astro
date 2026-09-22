@@ -34,5 +34,25 @@ function pick(theme: 'light' | 'dark') {
 }
 ---
 
-<Image src={pick('light')} alt={alt} class="dark:sl-hidden" />
-<Image src={pick('dark')} alt={alt} class="light:sl-hidden" />
+<!--
+	starlight-image-zoom 은 마크다운의 img 와 Image 만 감싼다. 이 컴포넌트는
+	그 목록에 없어서 그냥 지나치므로, 확대 기능이 필요한 래퍼를 직접 두른다.
+	버튼은 키보드로도 열 수 있게 두는 플러그인 규약이고, 평소에는 화면에
+	보이지 않는다.
+-->
+<starlight-image-zoom-zoomable>
+	<Image src={pick('light')} alt={alt} class="dark:sl-hidden" />
+	<button type="button" aria-label={`${alt} 확대`}>
+		<svg aria-hidden="true" fill="currentColor" viewBox="0 0 24 24" width="24" height="24">
+			<use href="#starlight-image-zoom-icon-zoom"></use>
+		</svg>
+	</button>
+</starlight-image-zoom-zoomable>
+<starlight-image-zoom-zoomable>
+	<Image src={pick('dark')} alt={alt} class="light:sl-hidden" />
+	<button type="button" aria-label={`${alt} 확대`}>
+		<svg aria-hidden="true" fill="currentColor" viewBox="0 0 24 24" width="24" height="24">
+			<use href="#starlight-image-zoom-icon-zoom"></use>
+		</svg>
+	</button>
+</starlight-image-zoom-zoomable>

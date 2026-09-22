@@ -3,6 +3,8 @@
 import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
 import starlightBlog from 'starlight-blog';
+import starlightImageZoom from 'starlight-image-zoom';
+import starlightLinksValidator from 'starlight-links-validator';
 
 // https://astro.build/config
 export default defineConfig({
@@ -41,7 +43,24 @@ export default defineConfig({
 						},
 					},
 				}),
+				// Diagrams in the posts are wider than the content column; this
+				// lets a reader open one full size instead of squinting.
+				starlightImageZoom(),
+				// Fails the build on a broken internal link. Only runs on `astro
+				// build`, so it never gets in the way while writing.
+				starlightLinksValidator({
+					// The validator only knows about pages that exist as files, and
+					// the blog plugin generates its listings at build time. These
+					// paths are real; everything under them is still checked.
+					exclude: ['/blog/', '/en/blog/'],
+				}),
 			],
+			// Both starlight-blog and starlight-image-zoom want to override
+			// MarkdownContent, and each backs off if the slot is taken — so one
+			// silently loses. This override takes the slot and layers both.
+			components: {
+				MarkdownContent: './src/components/MarkdownContent.astro',
+			},
 			// Reshapes the blog plugin's flat tag list into a category tree.
 			routeMiddleware: './src/routeData.ts',
 			// Our own overrides on top of Starlight's defaults.

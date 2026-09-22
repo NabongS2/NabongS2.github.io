@@ -1,0 +1,15 @@
+---
+/**
+ * starlight-blog 와 starlight-image-zoom 이 둘 다 MarkdownContent 를
+ * 덮어쓰려 한다. 두 플러그인 모두 이미 누가 차지했으면 조용히 물러나도록
+ * 짜여 있어서, 먼저 등록된 blog 가 이기고 이미지 확대는 사라졌다.
+ *
+ * 그래서 이 파일이 대신 자리를 잡고 둘을 겹쳐 올린다. blog 쪽 오버라이드를
+ * 그대로 감싸므로 글 페이지 처리는 원래대로 돌아가고, ImageZoom 만 더해진다.
+ */
+import BlogMarkdownContent from 'starlight-blog/overrides/MarkdownContent.astro';
+import ImageZoom from 'starlight-image-zoom/components/ImageZoom.astro';
+---
+
+<ImageZoom />
+<BlogMarkdownContent><slot /></BlogMarkdownContent>
