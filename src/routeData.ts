@@ -1,5 +1,32 @@
 import { defineRouteMiddleware, type StarlightRouteData } from '@astrojs/starlight/route-data';
+import { getCollection } from 'astro:content';
 import { categoryTree, uiStrings } from './categories';
+
+/** Ids of the pages that actually exist as files, built once and reused. */
+let realIds: Set<string> | undefined;
+async function getRealIds(): Promise<Set<string>> {
+	realIds ??= new Set((await getCollection('docs')).map((entry) => entry.id));
+	return realIds;
+}
+
+/**
+ * Whether this page is showing default-language content because its own
+ * translation is missing.
+ *
+ * Neither `isFallback` nor the locale fields can tell us: the blog plugin hands
+ * Starlight a synthetic id (`en/blog/docker-basics`) and locale for a file that
+ * only exists as `blog/docker-basics`, so the route data looks translated.
+ * Checking the id against the real files is the only honest signal.
+ */
+async function isUntranslated(id: string): Promise<boolean> {
+	const ids = await getRealIds();
+	if (ids.has(id)) return false;
+
+	// Only a page whose default-language original exists is a fallback; anything
+	// else (listings, tag pages) has no file behind it either way.
+	const withoutLocale = id.split('/').slice(1).join('/');
+	return withoutLocale.length > 0 && ids.has(withoutLocale);
+}
 
 type SidebarEntry = StarlightRouteData['sidebar'][number];
 
@@ -17,6 +44,21 @@ export const onRequest = defineRouteMiddleware(async (context, next) => {
 	await next();
 
 	const { starlightRoute } = context.locals;
+
+	/*
+	  When a page has no translation, Starlight still builds it in the other
+	  locale using the default-language content. There is no setting to turn that
+	  off, so the page exists and search engines would otherwise index Korean
+	  text as an English page — duplicate content in the wrong language.
+	  Keeping it out of the index is the part we can control; the page itself
+	  disappears once a real translation is added.
+	*/
+	if (starlightRoute.isFallback === true || (await isUntranslated(starlightRoute.id))) {
+		starlightRoute.head.push({
+			tag: 'meta',
+			attrs: { name: 'robots', content: 'noindex, follow' },
+		});
+	}
 	const lang = starlightRoute.locale === 'en' ? 'en' : 'ko';
 	const strings = uiStrings[lang];
 
