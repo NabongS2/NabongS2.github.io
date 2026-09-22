@@ -30,7 +30,8 @@
 - [ ] `src/content/docs/index.mdx`, `src/content/docs/en/index.mdx` — 홈 문구와 카드
 - [ ] `src/content/docs/about.md`, `src/content/docs/en/about.md` — 관심 분야와 기술 스택
 - [ ] `src/categories.ts` — 소분류 목록을 실제로 쓸 주제에 맞게 조정
-- [ ] `src/assets/blog/hello-world.png` — 블로그 첫 화면을 캡처한 임시 썸네일. 실제 쓸 이미지로 교체.
+- [ ] `src/assets/blog/blog-setup.png` — 블로그 첫 화면을 캡처한 썸네일. 더 나은 그림이 생기면 교체.
+- [ ] **진짜 첫 글** — `블로그를 시작하며`는 아직 비어 있는 자리다. 날 잡고 직접 쓸 것.
 
 ## 나중에
 

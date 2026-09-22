@@ -25,9 +25,9 @@ npm run preview  # 빌드 결과를 로컬에서 확인
 ```
 src/content/docs/
 ├── blog/
-│   └── hello-world.md   → /blog/hello-world/
+│   └── blog-setup.md    → /blog/blog-setup/
 └── en/blog/
-    └── hello-world.md   → /en/blog/hello-world/
+    └── blog-setup.md    → /en/blog/blog-setup/
 ```
 
 파일 이름이 같으면 서로의 번역본으로 묶입니다. 파일 이름이 곧 URL이므로 한글 대신 영문 슬러그를 쓰는 편이 좋습니다. 제목은 물론 한글로 씁니다.
@@ -41,7 +41,7 @@ description: 검색 결과와 링크 미리보기에 나오는 한 줄 요약.
 excerpt: 목록 페이지에 보일 2~3줄 요약.
 cover:
   alt: 이미지 설명 (필수)
-  image: ../../../assets/blog/hello-world.png
+  image: ../../../assets/blog/blog-setup.png
 date: 2026-09-21
 tags:
   - 생각
