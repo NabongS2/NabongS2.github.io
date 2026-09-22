@@ -1,0 +1,280 @@
+---
+title: Docker, from the idea to a working Dockerfile
+description: How containers differ from virtual machines, how to write a Dockerfile for a Java app, and how to build it, run it, look inside it, and move it as a tar file.
+excerpt: Putting a single Java jar into a container, in order — writing the Dockerfile, building and running it, getting inside to look around, and carrying it to a server with no registry.
+cover:
+  alt: The path from a Dockerfile to an image to a running container
+  light: ../../../../assets/blog/docker/en/cover-light.png
+  dark: ../../../../assets/blog/docker/en/cover-dark.png
+date: 2026-09-22
+tags:
+  - Infrastructure
+  - Docker
+authors: nabong
+---
+
+import ThemedImage from '../../../../components/ThemedImage.astro';
+
+What a container is, how to write a Dockerfile, and how to build and run one. **The examples are Java.** Picture a single executable `.jar` from Spring Boot going into a container.
+
+## What Docker is
+
+A tool that bundles everything an app needs to run, so the app behaves the same on any server. No more gaps from a different Java version or one missing library.
+
+### It is not a hypervisor
+
+A **hypervisor** is software that carves one physical server into what look like several. It fabricates a CPU, memory, disk and network card for each virtual machine. The OS on top believes it is installed on real hardware, which is why **every VM needs its own OS installed.**
+
+VMware ESXi, Proxmox, Hyper-V and KVM are hypervisors. An AWS EC2 instance is one slice handed out by one. So is the VirtualBox you use to run a Linux on your laptop.
+
+Docker does not carve up hardware. It isolates processes on a Linux kernel that is already running. Nothing to install, nothing to boot. They work differently, which does not make them incompatible: running Docker inside a VM is a common arrangement.
+
+| | Virtual machine | Container |
+| --- | --- | --- |
+| What sits underneath | A hypervisor | The Docker engine |
+| OS | A guest OS per app | Shares the host kernel |
+| Size | Gigabytes | Tens to hundreds of megabytes |
+| Startup | Minutes | Seconds |
+
+That is why containers are light. A container never boots an OS; it carves up the host kernel with Linux namespaces and cgroups.
+
+<ThemedImage name="docker/en/vm-vs-docker" alt="A virtual machine stacks a guest OS per app, while containers share the host kernel and stack only the app" />
+
+### Images and containers
+
+An **image** is everything your app needs to run — code, runtime, system tools, libraries, settings — packed into one bundle. It is read-only, so running it a hundred times never changes what is inside.
+
+A **container** is that image taken off the shelf and actually running. Stop it and remove it, and the image is still there. You can also start several containers from the one image.
+
+```
+Dockerfile ──build──▶ Image ──run──▶ Container
+```
+
+<ThemedImage name="docker/en/docker-concept" alt="Building an image from a Dockerfile and a jar, running it as a container, and moving it as a tar file" />
+
+## Writing a Dockerfile
+
+A Dockerfile records what goes into the image and how, in one file. **Each line becomes one layer**, stacked from the bottom up.
+
+<ThemedImage name="docker/en/dockerfile-layers" alt="Each Dockerfile instruction stacks one image layer on top of the last" />
+
+For a Java app it comes down to four decisions.
+
+1. **Which runtime do I stand on** → `FROM`
+2. **Where does the jar go** → `WORKDIR` + `COPY`
+3. **How does it start** → `ENTRYPOINT`
+4. **What stays out of the image** → `.dockerignore`
+
+### The instructions worth knowing
+
+| Instruction | What it does |
+| --- | --- |
+| `FROM` | The base image at the bottom. Almost always the first line |
+| `ARG` | A variable for **build time only**. It does not survive into the image |
+| `ENV` | An environment variable **for the container**. Also available during the build |
+| `WORKDIR` | The working directory for everything after it. Created if missing |
+| `COPY` | Copies a file from the host into the image |
+| `ADD` | COPY with extras — unpacks archives, fetches URLs. Unless you need that, use COPY |
+| `RUN` | Runs a command during the build (installing packages, compiling) |
+| `EXPOSE` | Documents the port this container uses. It does not actually open it |
+| `ENTRYPOINT` | The command that **always** runs when the container starts |
+| `CMD` | Default arguments for ENTRYPOINT. On its own, the default command |
+| `USER` | The account that runs everything after it. Without it, you are root |
+
+### The simplest form
+
+For a jar that is already built. The build happened outside, and Docker only packages it into an image.
+
+```dockerfile
+FROM eclipse-temurin:17-jre
+
+ARG JAR_FILE=./myapp.jar
+
+ENV TZ=Asia/Seoul
+ENV JAVA_OPTS=""
+
+WORKDIR /app
+COPY ${JAR_FILE} ./app.jar
+
+EXPOSE 8080
+ENTRYPOINT ["sh", "-c", "exec java ${JAVA_OPTS} -jar /app/app.jar"]
+```
+
+The `openjdk` official image is no longer updated. For anything new, `eclipse-temurin` is the safe default. The `-jre` suffix means runtime only — no compiler, so it is smaller. Unless you are building inside the image, take `-jre` over `-jdk`.
+
+### Things that catch people out
+
+- **The two forms of `ENTRYPOINT`.** The exec form, `["java", "-jar", "app.jar"]`, is the default. No shell in between, so signals land directly on the Java process and the `SIGTERM` from `docker stop` reaches your app for a clean shutdown. The catch: variables like `${JAVA_OPTS}` are **not expanded**. If you need them, wrap in `sh -c` — and write `exec java ...` so Java replaces the shell. Without `exec`, the shell stays as PID 1 and never passes the signal along. `docker stop` then waits ten seconds and kills it outright, leaving `Exited (137)`. **If stopping a container always takes ten seconds, suspect this.** The app never gets to close connections or finish what it was doing.
+- **Time zones.** Base images are usually UTC. If log timestamps look hours off, check `ENV TZ`.
+- **`ARG` and `ENV` are not the same thing.** `ARG` comes in through `docker build --build-arg` and disappears when the build ends. `ENV` is baked into the image and visible inside the container — put a password there and anyone with the image reads it back out of `docker inspect`.
+- **Put the lines that change most at the bottom.** The layer cache is reused from the top down to the first difference. With `COPY app.jar` last, a new jar leaves every layer above it untouched.
+- **Add a `.dockerignore`.** Without one, the entire folder is shipped to the daemon as build context. Excluding just `.git`, `build` and `.gradle` cuts that down sharply.
+- **Don't run as root.** For anything headed to production, create an account and drop to it with `USER`.
+
+## Build it and run it
+
+<ThemedImage name="docker/en/docker-build-flow" alt="The seven steps for rebuilding an image from a new jar and starting it" />
+
+### 1) Clear the way
+
+To reuse the same name and tag, empty the slot first.
+
+```sh
+docker ps                      # running containers
+docker ps -a                   # including stopped ones
+docker stop myapp              # stop it
+docker rm   myapp              # then remove it (it has to be stopped)
+
+docker images                  # image list
+docker image rm 1a2b3c4d5e6f   # image ID, or name:tag
+```
+
+If an image refuses to go, a container is usually still holding it. Check `docker ps -a` and remove the container first.
+
+### 2) Build
+
+Go to the folder holding the `Dockerfile`.
+
+```sh
+cd {project folder}
+docker build -t myapp:1.0 .
+```
+
+- `-t myapp:1.0` — name and tag. Leave the tag off and you get `latest`.
+- The trailing `.` — the build context, meaning the current folder. Easy to forget.
+- `--no-cache` — throws the cache away and rebuilds from the bottom. You rarely need it and it only costs time. Reach for it when a file changed but kept the same path and name, and you suspect the cache is holding the old one.
+
+### 3) Run and check
+
+```sh
+docker run -d --name myapp -p 8080:8080 myapp:1.0
+
+docker ps
+docker logs -f myapp           # follow from the beginning
+docker logs -f -n 100 myapp    # follow, starting from the last 100 lines
+```
+
+`-f` keeps streaming new output. `Ctrl+C` gets you out; the container keeps running.
+
+### 4) Get inside
+
+When the logs don't settle it, go in and look. You can check that a config file landed, or that a mount actually attached.
+
+```sh
+docker exec -it myapp bash      # open a shell
+docker exec -it myapp sh        # on a slim image with no bash
+```
+
+- `-i` keeps stdin open and `-t` attaches a terminal. A shell needs **both**. Drop either one and you get no prompt, or a prompt that ignores you.
+- `exit` when you're done. The container keeps running.
+
+You can also run a single command and come straight back out.
+
+```sh
+docker exec myapp ls -al /app            # what's actually there
+docker exec myapp cat /app/config/app.yml
+docker exec myapp env                    # did the env vars land
+docker exec myapp ps -ef                 # what's running inside
+```
+
+A few things worth knowing.
+
+- **`exec` only works on a running container.** One that died during startup is out of reach. Start a throwaway from the image instead — `--rm` cleans it up on exit.
+
+  ```sh
+  docker run --rm -it --entrypoint bash myapp:1.0
+  ```
+
+  You need `--entrypoint bash` because otherwise the original `ENTRYPOINT` starts Java, which dies for the same reason it did the first time.
+
+- **Permission denied? Go in as root.** If the image drops to a non-root `USER`, you may not be able to read the log files.
+
+  ```sh
+  docker exec -it -u root myapp bash
+  ```
+
+- **Nothing you change in there survives.** If editing a config inside the container fixed the problem, you have confirmed the cause, not fixed it. `docker rm` takes it with you. Carry the same change back to the mounted host folder or into the image.
+
+## Wrapping docker run in a script
+
+Once the options run past a few lines, typing them by hand every time gets unreliable. Bury them in a script and run that instead.
+
+```sh
+#!/bin/bash
+set -euo pipefail
+
+NAME=myapp
+VERSION="${1:-1.0}"
+IMAGE="${NAME}:${VERSION}"
+APP_HOME="/opt/${NAME}"
+
+# Clear out an existing container with the same name
+if [ -n "$(docker ps -aq -f "name=^/${NAME}$")" ]; then
+  docker stop "${NAME}" >/dev/null 2>&1 || true
+  docker rm   "${NAME}" >/dev/null
+fi
+
+docker run -d \
+  --name "${NAME}" \
+  --restart unless-stopped \
+  -p 8080:8080 \
+  -m 1g \
+  -e TZ=Asia/Seoul \
+  -e SPRING_PROFILES_ACTIVE=prod \
+  -v "${APP_HOME}/log:/app/log" \
+  -v "${APP_HOME}/config:/app/config" \
+  "${IMAGE}"
+
+docker ps -f "name=${NAME}"
+```
+
+| Option | Meaning |
+| --- | --- |
+| `-d` | Run in the background |
+| `--name` | Container name. Without it Docker invents one |
+| `--restart unless-stopped` | Comes back up after a reboot |
+| `-p 8080:8080` | `hostPort:containerPort` |
+| `-e KEY=VALUE` | Environment variable. Overrides `ENV` from the Dockerfile |
+| `-v hostPath:containerPath` | Volume mount |
+| `-v /etc/localtime:/etc/localtime:ro` | Borrow the host's clock. An alternative to `-e TZ` |
+| `-m 1g` | Memory ceiling. Only needed when several containers share a host |
+
+Remove a container and everything written inside it goes with it. Anything that has to survive — logs, config — belongs on a host folder mounted in. Then you can swap the container as often as you like. If your app also writes logs to file (a File Appender in logback or log4j2), mount that path out. Left inside, those logs only eat disk until the container takes them with it.
+
+## Moving an image as a .tar
+
+For servers with no internet and no registry in reach, carry the image as a file.
+
+```sh
+# on the way out
+docker save -o myapp.tar myapp:1.0
+
+# on the way in
+docker load -i myapp.tar
+docker images                     # check the tag came across intact
+```
+
+- `docker save` takes an **image**; `docker export` takes a **container's filesystem**. To move an image, it is `save`. What comes out of `export` has lost its layers and metadata like `ENTRYPOINT`, so it will not simply run.
+- A tar is a bundle, not compression, so it is bulky. `docker save myapp:1.0 | gzip > myapp.tar.gz` if size matters.
+- `load` restores the image only. You still start the container with `docker run`.
+
+## The commands, in one place
+
+| To do this | Run |
+| --- | --- |
+| Running containers | `docker ps` |
+| Including stopped ones | `docker ps -a` |
+| Stop a container | `docker stop {name}` |
+| Remove a container | `docker rm {name}` |
+| List images | `docker images` |
+| Remove an image | `docker image rm {imageID}` |
+| Build an image | `docker build -t {name}:{tag} .` |
+| Run a container | `docker run -d --name {name} -p 8080:8080 {image}:{tag}` |
+| Follow all logs | `docker logs -f {name}` |
+| Follow the last 100 lines | `docker logs -f -n 100 {name}` |
+| Get a shell inside | `docker exec -it {name} /bin/bash` |
+| Inspect the full config | `docker inspect {name}` |
+| Resource usage | `docker stats {name}` |
+| Image to file | `docker save -o {file}.tar {image}:{tag}` |
+| File to image | `docker load -i {file}.tar` |
+| Clean up what's unused | `docker system prune` |

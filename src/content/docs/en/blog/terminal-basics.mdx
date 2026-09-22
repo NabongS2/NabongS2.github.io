@@ -1,0 +1,442 @@
+---
+title: The terminal, from what a server is to vi
+description: What a server actually is, why closing an SSH session kills the programs you started, how the Linux directory tree is laid out, and vi's three modes.
+excerpt: Why programs die when an SSH session drops, where things live in the Linux directory tree, and vi's three modes — in that order.
+cover:
+  alt: A terminal session checking the current directory and moving into another folder on a server
+  light: ../../../../assets/blog/terminal/cover-light.png
+  dark: ../../../../assets/blog/terminal/cover-dark.png
+date: 2026-09-22
+tags:
+  - Infrastructure
+  - Linux
+authors: nabong
+---
+
+import ThemedImage from '../../../../components/ThemedImage.astro';
+
+SSH into a server and you get one line:
+
+```
+dev@server:~$
+```
+
+I knew `ls` and `cd` and still got stuck right here. I did not know where I was, or what the inside of this server looked like. Learning more commands was not going to fix that kind of stuck.
+
+So this starts before the command list. What a server is, where files go, and then the commands.
+
+Abbreviations are spelled out as they come up. Knowing `rm` is remove is one less thing to memorise.
+
+## What a server is
+
+**A computer with no screen and no keyboard.** That is genuinely the only difference from the PC on your desk. It is powered on, an OS is running, programs are up — there is just no monitor attached.
+
+Which means you need another way in.
+
+### Connecting over SSH
+
+```sh
+ssh dev@192.168.0.10
+```
+
+`ssh` is **s**ecure **sh**ell, an encrypted shell. What the command does is start a shell on that other machine and pipe its input and output to your screen. Type `ls` and you get that machine's files.
+
+There are two ways to prove who you are:
+
+- **Password** — you type the account's password
+- **Key** — you use a key pair made in advance. The public key is registered on the server and the private key stays on the machine you connect from
+
+### Closing the session kills the programs
+
+Connecting over SSH creates a **session**. Programs you start there hang off that session. Close the window, shut the laptop, lose the network, and the session dies — **and so do the programs hanging off it.**
+
+Closing the window while watching logs costs nothing; `tail` dies but the log file is untouched. This is the case that costs something:
+
+```sh
+java -jar myapp.jar      # start the app
+# close the window → the app dies with it
+```
+
+So anything meant to keep running does not hang off a session. In the [Docker post](/en/blog/docker-basics/) I described the `-d` in `docker run -d` as "run it in the background". More precisely it is **d**etached — **never attached to a session in the first place**. That is why a container keeps running after you close the SSH window.
+
+## Where you are, and paths
+
+Windows Explorer always shows the path at the top, so you never have to ask where you are. A terminal has no such display, which is why asking is a command of its own.
+
+```sh
+pwd
+```
+
+`pwd` is **p**rint **w**orking **d**irectory.
+
+<ThemedImage name="terminal/en/filesystem-tree" alt="Windows has a separate tree per drive while Linux branches everything from a single slash" />
+
+### Reading the prompt
+
+Most of the time you do not need `pwd`. It is already written in front of the cursor.
+
+```
+dev@server:/opt/myapp$
+└┬┘ └─┬──┘ └───┬────┘│
+ │    │        │     └─ $ for a normal account, # for root
+ │    │        └─ where you are now
+ │    └─ the server you are on
+ └─ the account you logged in as
+```
+
+A `~` in the position field means your home directory. Typing `/home/dev` every time gets old, so `~` stands in for it.
+
+### Absolute and relative paths
+
+| Written as | Meaning |
+| --- | --- |
+| `/opt/myapp/log` | An **absolute path**, written from the top `/`. Points at the same place wherever you run it |
+| `log` or `./log` | A **relative path**, from where you are. `.` is the current folder |
+| `../config` | `..` is one level up. Go up, then into `config` |
+| `~/notes` | `notes` under your home |
+
+Scripts are safer with absolute paths, since they have to point at the same place no matter where they are run from.
+
+## The directory tree
+
+Linux folder names are fixed by convention, so the same things sit in the same places from server to server.
+
+| Path | What is in it |
+| --- | --- |
+| `/home/dev` | The `dev` account's home. You land here when you log in |
+| `/etc` | System configuration files |
+| `/var/log` | Logs. `/var` is **var**iable — things whose contents keep changing |
+| `/opt` | **opt**ional. Software installed separately. A common home for apps you built yourself |
+| `/usr` | Software the distribution installed. `/usr/bin` holds the commands |
+| `/tmp` | Temporary files. Gone after a reboot, so nothing important goes here |
+
+`/` is the top of the tree; `/root` is the root account's home directory. Similar names, different places.
+
+## pwd, ls, cd
+
+```sh
+pwd                  # where am I
+ls                   # what is here
+cd /opt/myapp        # go there
+```
+
+| Command | Short for |
+| --- | --- |
+| `ls` | **l**i**s**t |
+| `cd` | **c**hange **d**irectory |
+
+`ls` is usually run with options, and the options are abbreviations too.
+
+```sh
+ls -l                # long: one per line, with permissions, size and time
+ls -a                # all: including hidden files (the ones starting with .)
+ls -h                # human-readable: sizes as 1.2G
+ls -lah              # they combine
+```
+
+`cd` has a few shortcuts worth knowing.
+
+```sh
+cd ..                # one level up
+cd ~                 # your home. plain cd does the same
+cd -                 # the directory you were in before. handy for going back and forth
+```
+
+### Tab and the arrow keys
+
+Two keys that never make it into a command list but get used constantly.
+
+**Tab** completes a path from a partial one. Press it twice when several things match and you get the list.
+
+**Up arrow** brings back the last command you ran. Keep pressing to walk further back. It is what you reach for when a long command needs one small change.
+
+## Working with files
+
+| Command | Short for | What it does |
+| --- | --- | --- |
+| `mkdir` | **m**a**k**e **dir**ectory | Creates a folder |
+| `touch` | touch | Its actual job is updating a file's timestamp. Point it at a file that does not exist and an empty one appears, which is the side effect people use it for |
+| `cp` | **c**o**p**y | Copy |
+| `mv` | **m**o**v**e | Move |
+| `rm` | **r**e**m**ove | Delete |
+
+```sh
+mkdir logs
+mkdir -p a/b/c       # parents: creates the intermediate folders too
+
+cp app.jar app.jar.bak
+cp -r config config.bak   # recursive: folders are not copied without -r
+
+mv old.txt new.txt        # rename
+mv old.txt /tmp/          # move
+```
+
+One `mv` does both renaming and moving. What identifies a file is its path plus its name — change the name and it is a rename, change the path and it is a move. Same operation, so one command.
+
+### rm does not ask
+
+No recycle bin, no "are you sure". It is done the moment you press enter.
+
+```sh
+rm file.txt
+rm -r logs/          # recursive: the folder and everything in it
+rm -rf logs/         # force: without asking
+```
+
+Here is the usual shape of an accident with `-rf`:
+
+```sh
+DIR=/opt/myapp/tmp
+rm -rf $DIR/         # if $DIR is empty this becomes rm -rf /
+```
+
+Misspell the variable, or let a script run before it is set, and `$DIR` expands to nothing — leaving `rm -rf /`. Which is why scripts turn undefined variables into errors with `set -u` and check the path is not empty before deleting.
+
+```sh
+set -euo pipefail
+[ -n "${DIR:-}" ] || { echo "DIR is empty"; exit 1; }
+rm -rf "${DIR}"
+```
+
+## Looking at file contents
+
+| Command | When |
+| --- | --- |
+| `cat` | A short file, all of it |
+| `head` | Just the start |
+| `tail` | Just the end |
+| `less` | A long file, one screen at a time |
+
+`cat` is **cat**enate — it prints several files joined together. Give it one file and you get that one, which is how it came to be used for reading.
+
+```sh
+cat app.yml          # a short config file
+head -n 20 big.log   # first 20 lines
+tail -n 100 big.log  # last 100 lines
+less big.log         # one screen at a time. q to quit
+```
+
+`cat` on a log file sends tens of thousands of lines past the screen. Long files go to `less` or `tail`. Inside `less` the arrow keys scroll, `/text` searches, and `q` quits.
+
+## vi
+
+For editing a file on a server. `vi` is short for **vi**sual.
+
+vi has **three modes**. The same key does different things in each, so you need to know which one you are in.
+
+<ThemedImage name="terminal/en/vi-modes" alt="A state diagram of which keys move between vi command mode, insert mode and colon mode" />
+
+It opens in **command mode**, where every key is a command and typing inserts nothing. Type a sentence in this state and each character runs as a command.
+
+### Starting to type
+
+| Key | Short for | What it does |
+| --- | --- | --- |
+| `i` | **i**nsert | Start typing at the cursor |
+| `a` | **a**ppend | Start typing **after** the cursor |
+| `o` | **o**pen line | Open a blank line below and start typing |
+| `Esc` | | Stop typing, back to command mode |
+
+### Saving and quitting
+
+Press `:` and a colon appears on the bottom line, where you type the command.
+
+| | Short for | |
+| --- | --- | --- |
+| `:w` | **w**rite | Save |
+| `:q` | **q**uit | Quit |
+| `:wq` | write + quit | Save and quit. The one you use most |
+| `:q!` | forced quit | Leave without saving. The way out when you have broken something |
+
+### Working by lines (in command mode)
+
+| Key | Short for | What it does |
+| --- | --- | --- |
+| `dd` | **d**elete | Cut the line the cursor is on. It goes to the clipboard |
+| `yy` | **y**ank | Copy the line the cursor is on |
+| `p` | **p**ut | Paste **below** the cursor |
+| `P` | | Capital pastes **above** |
+| `u` | **u**ndo | Undo the last thing |
+| `Ctrl+r` | **r**edo | Redo what you undid |
+
+`dd` is `d` twice because `d` is the delete command and a range follows it. `d` + `d` is "one line", `d` + `3d` is "three lines". `yy` works the same way.
+
+Not sure which mode you are in? Press `Esc` twice. You end up in command mode either way.
+
+## nano
+
+Run something like `crontab -e` on an Ubuntu or Debian server and nano opens instead of vi. It is the default editor on that side.
+
+nano has **no modes.** It opens ready to type, with the shortcuts always shown along the bottom. There is almost nothing to learn.
+
+There is exactly one trap. In `^X Exit` along the bottom, **`^` means Ctrl.** That is where people go looking for a `^` key.
+
+| | |
+| --- | --- |
+| `Ctrl+O` | Save (write **O**ut) |
+| `Ctrl+X` | Quit (e**X**it) |
+| `Ctrl+K` | Cut a line |
+| `Ctrl+U` | Paste |
+| `Ctrl+W` | Search (**W**here is) |
+
+The editor a server definitely has is `vi`. It is in the POSIX standard, so it survives even a minimal install, which is why the weight belongs on vi. Plenty of servers open nano first though, and knowing that `^` is Ctrl is enough to not be stuck there.
+
+## Reading logs and finding files
+
+These two are most of what you do once you are on a server.
+
+### Following a log live
+
+```sh
+tail -f -n 100 app.log
+```
+
+- `-f` — **f**ollow. Stays at the end of the file and shows new lines as they arrive
+- `-n 100` — **n**umber. Starts from the last 100 lines, then follows
+- `Ctrl+C` to get out
+
+Docker container logs take the same options. `docker logs -f -n 100` looking identical is not a coincidence.
+
+One overlap to watch: **the `f` in `tail -f` is follow, but the `f` in `rm -f` is force.** Same letter, different meaning per command.
+
+### Searching inside files
+
+```sh
+grep -rn "ConnectException" /opt/myapp/log
+```
+
+`grep` is **g**lobally search a **r**egular **e**xpression and **p**rint.
+
+- `-r` — **r**ecursive, into subfolders
+- `-n` — **n**umber, which line it was on
+- `-i` — **i**gnore case
+- `--include="*.log"` — only certain extensions
+
+Piping is common too.
+
+```sh
+tail -n 1000 app.log | grep ERROR
+```
+
+`|` hands the output of the left command to the right one as input. That line means "of the last 1000 lines, only the ones containing ERROR".
+
+## Accounts and permissions
+
+Linux has one account that can do anything: `root`. Nothing stops it from deleting system files.
+
+So you do not work as root. You log in as a normal account and borrow the privilege when you need it, which limits how far a mistake spreads. The last character of the prompt tells you which side you are on.
+
+```
+dev@server:~$      normal account
+root@server:~#     root
+```
+
+Touching a file you do not have permission for stops here:
+
+```
+-bash: /etc/hosts: Permission denied
+```
+
+That is when `sudo` runs that one line as root. **s**ubstitute **u**ser **do** — run as another account, defaulting to root.
+
+```sh
+sudo systemctl restart myapp
+sudo vi /etc/hosts
+```
+
+Stay logged in as root and every command is unlimited; nothing catches a mistyped `rm -rf`. With `sudo`, that one line runs as root and everything else stays on the normal account.
+
+### Three groups of permissions per file
+
+The first ten characters of `ls -l` are the permissions.
+
+```
+-rw-r--r--  1 dev  dev   1.2K  app.yml
+drwxr-xr-x  2 root root  4.0K  config
+```
+
+```
+-rw-r--r--
+│└┬┘└┬┘└┬┘
+│ │  │  └─ other  everyone else
+│ │  └─ group  anyone in the same group
+│ └─ user  the owner
+└─ type. - is a file, d a directory, l a link
+```
+
+They come in groups of three.
+
+| Letter | Short for | On a file | On a directory |
+| --- | --- | --- | --- |
+| `r` | **r**ead | Can read the contents | Can list what is inside |
+| `w` | **w**rite | Can change the contents | Can create and delete files inside |
+| `x` | e**x**ecute | Can run it | Can enter the folder |
+
+Read the example above and `app.yml` can only be changed by its owner `dev`, with everyone else limited to reading. `config` is owned by `root`, so the `dev` account can go in and look but cannot create files there.
+
+There is a numeric form too: `r` is 4, `w` is 2, `x` is 1, added up per group.
+
+| Number | Letters | Meaning |
+| --- | --- | --- |
+| `755` | `rwxr-xr-x` | Owner does everything, everyone else reads and runs. Common on executables and folders |
+| `644` | `rw-r--r--` | Owner writes, everyone else reads. The usual default for a plain file |
+| `600` | `rw-------` | Only the owner reads and writes. For files nobody else should see |
+
+### chmod
+
+**ch**ange **mod**e.
+
+```sh
+chmod +x docker_run.sh        # add execute permission
+chmod 600 ~/.ssh/id_rsa       # readable only by me
+```
+
+The first line is the earlier point in practice: a file does not run because of its extension, it runs because the execute permission is there. With it, `./docker_run.sh` works; without it you hand the file to bash as `bash docker_run.sh`.
+
+The second line is an SSH private key. If its permissions are open, **ssh refuses to use the key.**
+
+```
+Permissions 0644 for 'id_rsa' are too open.
+```
+
+### chown and Docker volumes
+
+**ch**ange **own**er.
+
+When an app running as root inside a container writes logs into a mounted host folder, those files come out **owned by root on the host too.**
+
+```sh
+ls -l /opt/myapp/log
+# -rw-r--r-- 1 root root 2.1M myapp.log
+
+rm /opt/myapp/log/myapp.log
+# rm: cannot remove ...: Permission denied
+```
+
+You can handle each case with `sudo`, but the real fix is not running the container as root. Drop to an account with `USER` in the image and the files are owned by that account from the start. This is where "don't run as root" from the [Docker post](/en/blog/docker-basics/) leads.
+
+## The commands, in one place
+
+| To do this | Run | Short for |
+| --- | --- | --- |
+| Where am I | `pwd` | print working directory |
+| List | `ls -lah` | list / long, all, human |
+| Move | `cd path` | change directory |
+| One level up | `cd ..` | |
+| Back to the last one | `cd -` | |
+| Make a folder | `mkdir -p path` | make directory / parents |
+| Make an empty file | `touch name` | |
+| Copy | `cp -r src dest` | copy / recursive |
+| Move or rename | `mv src dest` | move |
+| Delete | `rm -rf path` | remove / recursive, force |
+| Read a file | `cat name` | catenate |
+| Start of a file | `head -n 20 name` | |
+| End of a file | `tail -n 100 name` | |
+| Follow a log | `tail -f -n 100 name` | follow |
+| Page through | `less name` | |
+| Edit | `vi name` | visual |
+| Search | `grep -rn "text" path` | regular expression + print |
+| Run as admin | `sudo command` | substitute user do |
+| See permissions | `ls -l name` | long |
+| Add execute permission | `chmod +x name` | change mode |
+| Change owner | `sudo chown dev:dev name` | change owner |

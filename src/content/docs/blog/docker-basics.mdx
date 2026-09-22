@@ -1,0 +1,280 @@
+---
+title: 도커, 개념부터 Dockerfile 작성까지
+description: 컨테이너와 가상 머신의 차이, 자바 앱을 담는 Dockerfile 작성법, 빌드해서 띄우고 컨테이너 안을 들여다보고 tar로 옮기는 방법까지 정리했습니다.
+excerpt: 자바 jar 하나를 컨테이너에 올리는 과정을 순서대로 정리했습니다. Dockerfile 작성, 빌드와 실행, 안에서 확인하기, 다른 서버로 옮기기까지.
+cover:
+  alt: Dockerfile에서 이미지로, 이미지에서 컨테이너로 이어지는 흐름
+  light: ../../../assets/blog/docker/cover-light.png
+  dark: ../../../assets/blog/docker/cover-dark.png
+date: 2026-09-22
+tags:
+  - 인프라
+  - Docker
+authors: nabong
+draft: false
+---
+
+import ThemedImage from '../../../components/ThemedImage.astro';
+
+컨테이너가 뭔지, Dockerfile 을 어떻게 쓰는지, 빌드해서 띄우기까지. **예제는 자바 기준입니다.** 스프링 부트로 만든 실행 가능한 `.jar` 하나를 컨테이너에 올린다고 보면 됩니다.
+
+## 도커가 뭔가
+
+앱을 돌리는 데 필요한 것을 한 덩어리로 묶어서, 서버가 달라도 같은 환경에서 돌게 하는 도구입니다. 자바 버전이 서버마다 다르거나 라이브러리가 하나 빠져 있어서 생기는 문제가 없어집니다.
+
+### 하이퍼바이저와는 다릅니다
+
+**하이퍼바이저**는 물리 서버 한 대를 여러 대처럼 쪼개는 소프트웨어입니다. CPU·메모리·디스크·랜카드를 가짜로 만들어 가상 머신마다 하나씩 나눠 줍니다. 그 위에 올라간 OS 는 자기가 진짜 컴퓨터에 설치된 줄 압니다. 그래서 **가상 머신마다 OS 를 따로 설치해야 합니다.**
+
+VMware ESXi, Proxmox, Hyper-V, KVM 이 여기 속합니다. AWS EC2 인스턴스도 하이퍼바이저가 쪼개 준 한 조각입니다. 노트북에 리눅스를 하나 띄울 때 쓰는 VirtualBox 도 같은 부류입니다.
+
+도커는 하드웨어를 쪼개지 않습니다. 이미 돌고 있는 리눅스 커널 위에서 프로세스를 격리합니다. OS 를 새로 설치할 일도, 부팅할 일도 없습니다. 동작 원리가 다르다는 것이지 같이 못 쓴다는 뜻은 아닙니다. VM 안에서 도커를 돌리는 구성도 흔합니다.
+
+| | 가상 머신 | 컨테이너 |
+| --- | --- | --- |
+| 아래에 깔리는 것 | 하이퍼바이저 | Docker 엔진 |
+| OS | 게스트 OS 를 앱마다 한 벌씩 | 호스트 커널을 같이 씀 |
+| 크기 | 수 GB | 수십~수백 MB |
+| 뜨는 시간 | 분 | 초 |
+
+가벼운 이유가 이것입니다. 컨테이너는 OS 를 새로 켜지 않고 호스트 커널을 리눅스의 namespace·cgroup 으로 갈라 씁니다.
+
+<ThemedImage name="docker/vm-vs-docker" alt="가상 머신은 게스트 OS를 여러 벌 얹지만 컨테이너는 호스트 커널을 공유해 앱만 얹는다는 비교" />
+
+### 이미지와 컨테이너
+
+**이미지**는 앱을 돌리는 데 필요한 모든 것 — 코드, 런타임, 시스템 도구, 라이브러리, 설정 — 을 한 덩어리로 묶은 패키지입니다. 읽기 전용이라 몇 번을 실행해도 내용이 변하지 않습니다.
+
+**컨테이너**는 그 이미지를 떠서 실제로 돌리는 프로세스입니다. `stop` 하고 `rm` 해도 이미지는 그대로 남습니다. 같은 이미지로 컨테이너를 여러 개 띄울 수도 있습니다.
+
+```
+Dockerfile ──build──▶ Image ──run──▶ Container
+```
+
+<ThemedImage name="docker/docker-concept" alt="Dockerfile과 jar로 이미지를 빌드하고 컨테이너로 실행하는 흐름, 그리고 tar로 이미지를 옮기는 흐름" />
+
+## Dockerfile 만드는 법
+
+Dockerfile 은 이미지에 무엇을 어떻게 담을지 한 파일에 적어 둔 명령 파일입니다. **한 줄이 레이어 한 장**이 되고, 아래에서 위로 쌓입니다.
+
+<ThemedImage name="docker/dockerfile-layers" alt="Dockerfile의 각 명령이 이미지 레이어 한 장씩을 쌓아 올리는 구조" />
+
+자바 앱이면 결국 이 네 가지만 정하면 됩니다.
+
+1. **어떤 런타임 위에 올릴 것인가** → `FROM`
+2. **jar 를 어디에 둘 것인가** → `WORKDIR` + `COPY`
+3. **어떻게 실행할 것인가** → `ENTRYPOINT`
+4. **무엇을 이미지에 넣지 않을 것인가** → `.dockerignore`
+
+### 주요 명령어
+
+| 명령 | 하는 일 |
+| --- | --- |
+| `FROM` | 바닥에 깔 base 이미지. 보통 맨 윗줄 |
+| `ARG` | **빌드할 때만** 쓰는 변수. 이미지 안에는 안 남습니다 |
+| `ENV` | **컨테이너에서** 쓸 환경 변수. 빌드 중에도 쓰입니다 |
+| `WORKDIR` | 이후 명령이 실행될 작업 폴더. 없으면 만들어 줍니다 |
+| `COPY` | 호스트 파일을 이미지 안으로 복사 |
+| `ADD` | COPY 의 상위 호환. 압축 해제, 원격 URL 까지 되지만 그럴 일 아니면 COPY 를 씁니다 |
+| `RUN` | 빌드 중에 실행할 명령 (패키지 설치, 빌드 등) |
+| `EXPOSE` | 이 컨테이너가 쓰는 포트를 문서처럼 알림. 실제로 열어주지는 않습니다 |
+| `ENTRYPOINT` | 컨테이너가 뜰 때 **항상** 실행할 커맨드 |
+| `CMD` | ENTRYPOINT 에 붙일 기본 인자. 단독으로 쓰면 기본 커맨드 |
+| `USER` | 이후 명령과 실행을 맡을 계정. 안 쓰면 root 로 돕니다 |
+
+### 가장 단순한 형태
+
+jar 가 이미 빌드되어 있는 경우입니다. 빌드는 밖에서 끝나 있고 도커는 그 jar 를 이미지에 담기만 합니다.
+
+```dockerfile
+FROM eclipse-temurin:17-jre
+
+ARG JAR_FILE=./myapp.jar
+
+ENV TZ=Asia/Seoul
+ENV JAVA_OPTS=""
+
+WORKDIR /app
+COPY ${JAR_FILE} ./app.jar
+
+EXPOSE 8080
+ENTRYPOINT ["sh", "-c", "exec java ${JAVA_OPTS} -jar /app/app.jar"]
+```
+
+`openjdk` 공식 이미지는 지금 더 갱신되지 않습니다. 새로 쓸 거면 `eclipse-temurin` 쪽이 무난합니다. 태그 끝의 `-jre` 는 실행만 되는 버전이라 컴파일러가 빠져 가볍습니다. 빌드까지 안에서 할 게 아니면 `-jdk` 대신 이쪽을 고릅니다.
+
+### 쓰면서 걸리는 것들
+
+- **`ENTRYPOINT` 의 두 가지 형태.** `["java", "-jar", "app.jar"]` 같은 exec 형태가 기본입니다. 셸을 거치지 않아 시그널이 자바 프로세스에 바로 꽂히고, `docker stop` 이 보낸 `SIGTERM` 을 앱이 받아 정상 종료합니다. 대신 `${JAVA_OPTS}` 같은 변수가 **펼쳐지지 않습니다.** 변수를 써야 해서 `sh -c` 로 감쌀 때는 `exec java ...` 라고 써서 자바가 셸 프로세스를 대체하게 만듭니다. 안 그러면 셸이 1번 프로세스로 남아 시그널을 자바에 안 넘깁니다. 이때 `docker stop` 은 10초를 기다렸다가 강제 종료하고 `Exited (137)` 을 남깁니다. **컨테이너를 멈출 때마다 10초씩 걸린다면 이것을 의심합니다.** 앱은 커넥션 정리나 처리 중인 요청 마무리를 못 하고 그대로 끊깁니다.
+- **타임존.** base 이미지는 대개 UTC 입니다. 로그 시각이 9시간 어긋나 보이면 `ENV TZ=Asia/Seoul` 을 확인합니다.
+- **`ARG` 와 `ENV` 는 다른 것입니다.** `ARG` 는 `docker build --build-arg` 로 넘기고 빌드가 끝나면 사라집니다. `ENV` 는 이미지에 남아서 컨테이너 안에서도 보입니다. 비밀번호를 `ENV` 에 넣으면 이미지를 받은 누구나 `docker inspect` 로 봅니다.
+- **자주 바뀌는 줄은 아래에.** 레이어 캐시는 위에서부터 같은 데까지 재사용됩니다. `COPY app.jar` 를 맨 아래 두면 jar 만 바뀌었을 때 그 위 레이어를 다시 안 만듭니다.
+- **`.dockerignore` 를 둡니다.** 없으면 빌드 컨텍스트로 폴더 전체가 데몬에 올라갑니다. `.git`, `build`, `.gradle` 만 빼도 전송량이 크게 줍니다.
+- **root 로 돌리지 않기.** 운영에 올릴 이미지면 전용 계정을 만들고 `USER` 로 내려섭니다.
+
+## 빌드하고 띄우기
+
+<ThemedImage name="docker/docker-build-flow" alt="새 jar를 이미지로 다시 만들어 띄울 때의 일곱 단계 순서" />
+
+### 1) 치우기
+
+같은 이름·같은 태그를 다시 쓰려면 먼저 비웁니다.
+
+```sh
+docker ps                      # 실행 중인 컨테이너
+docker ps -a                   # 멈춘 것까지 전부
+docker stop myapp              # 멈추고
+docker rm   myapp              # 지웁니다 (멈춰야 지워집니다)
+
+docker images                  # 이미지 목록
+docker image rm 1a2b3c4d5e6f   # 이미지ID 나 이미지명:태그
+```
+
+이미지가 안 지워지면 대개 그 이미지를 쓰는 컨테이너가 남아 있는 것입니다. `docker ps -a` 로 확인하고 컨테이너부터 지웁니다.
+
+### 2) 빌드
+
+`Dockerfile` 이 있는 폴더로 가서 빌드합니다.
+
+```sh
+cd {프로젝트 폴더}
+docker build -t myapp:1.0 .
+```
+
+- `-t myapp:1.0` — 이름:태그. 태그를 안 주면 `latest` 가 붙습니다.
+- 맨 끝 `.` — 빌드 컨텍스트, 곧 현재 폴더. 빠뜨리기 쉽습니다.
+- `--no-cache` — 캐시를 전부 버리고 바닥부터 다시 만듭니다. 평소엔 필요 없고 오히려 느립니다. 파일 내용이 바뀌었는데 경로와 이름이 같아 캐시가 옛것을 잡고 있는 것 같을 때만 씁니다.
+
+### 3) 실행과 확인
+
+```sh
+docker run -d --name myapp -p 8080:8080 myapp:1.0
+
+docker ps
+docker logs -f myapp           # 처음부터 계속 따라붙기
+docker logs -f -n 100 myapp    # 최근 100줄부터 따라붙기
+```
+
+`-f` 는 새 로그를 계속 받아 봅니다. `Ctrl+C` 로 빠져나와도 컨테이너는 계속 돕니다.
+
+### 4) 안으로 들어가 보기
+
+로그만으로 안 풀릴 때는 컨테이너 안에 직접 들어갑니다. 설정 파일이 제대로 올라갔는지, 마운트가 붙었는지 확인할 수 있습니다.
+
+```sh
+docker exec -it myapp bash      # 셸 열기
+docker exec -it myapp sh        # bash 가 없는 슬림 이미지라면
+```
+
+- `-i` 는 표준입력을 열어 두고, `-t` 는 터미널을 붙입니다. 셸을 쓰려면 **둘 다** 필요합니다. 하나라도 빠지면 프롬프트가 안 뜨거나 입력이 안 먹습니다.
+- 나올 때는 `exit`. 컨테이너는 계속 돕니다.
+
+명령 하나만 실행하고 바로 나올 수도 있습니다.
+
+```sh
+docker exec myapp ls -al /app            # 파일 확인
+docker exec myapp cat /app/config/app.yml
+docker exec myapp env                    # 환경 변수가 제대로 들어갔나
+docker exec myapp ps -ef                 # 안에서 뭐가 도나
+```
+
+알아 둘 것 몇 가지.
+
+- **`exec` 는 실행 중인 컨테이너에만 됩니다.** 기동하다 죽은 컨테이너에는 못 들어갑니다. 그럴 때는 이미지로 새로 하나 띄워서 안을 봅니다. `--rm` 이라 나오면 사라집니다.
+
+  ```sh
+  docker run --rm -it --entrypoint bash myapp:1.0
+  ```
+
+  `--entrypoint bash` 가 필요한 이유는, 안 주면 원래 `ENTRYPOINT` 인 자바가 뜨면서 또 같은 이유로 죽기 때문입니다.
+
+- **권한이 막히면 root 로.** 이미지가 `USER` 로 계정을 내려놨으면 로그 파일을 못 읽을 수 있습니다.
+
+  ```sh
+  docker exec -it -u root myapp bash
+  ```
+
+- **여기서 고친 건 안 남습니다.** 컨테이너 안에서 설정을 고쳐 문제가 풀렸다면, 그건 확인이 끝난 것이지 고쳐진 게 아닙니다. 컨테이너를 `rm` 하는 순간 사라집니다. 호스트의 마운트된 폴더나 이미지 쪽에 같은 수정을 반영해야 합니다.
+
+## docker run 을 스크립트로 묶기
+
+옵션이 서너 줄을 넘어가면 매번 손으로 치기 어렵습니다. 스크립트에 묻어 두고 그것만 실행합니다.
+
+```sh
+#!/bin/bash
+set -euo pipefail
+
+NAME=myapp
+VERSION="${1:-1.0}"
+IMAGE="${NAME}:${VERSION}"
+APP_HOME="/opt/${NAME}"
+
+# 같은 이름이 남아 있으면 먼저 치웁니다
+if [ -n "$(docker ps -aq -f "name=^/${NAME}$")" ]; then
+  docker stop "${NAME}" >/dev/null 2>&1 || true
+  docker rm   "${NAME}" >/dev/null
+fi
+
+docker run -d \
+  --name "${NAME}" \
+  --restart unless-stopped \
+  -p 8080:8080 \
+  -e TZ=Asia/Seoul \
+  -e SPRING_PROFILES_ACTIVE=prod \
+  -v "${APP_HOME}/log:/app/log" \
+  -v "${APP_HOME}/config:/app/config" \
+  "${IMAGE}"
+
+docker ps -f "name=${NAME}"
+```
+
+| 옵션 | 뜻 |
+| --- | --- |
+| `-d` | 백그라운드로 띄웁니다 |
+| `--name` | 컨테이너 이름. 안 주면 도커가 아무 이름이나 붙입니다 |
+| `--restart unless-stopped` | 서버가 재부팅돼도 다시 뜹니다 |
+| `-p 8080:8080` | `호스트포트:컨테이너포트` |
+| `-e KEY=VALUE` | 환경 변수. Dockerfile 의 `ENV` 를 덮어씁니다 |
+| `-v 호스트경로:컨테이너경로` | 볼륨 마운트 |
+| `-v /etc/localtime:/etc/localtime:ro` | 호스트 시각을 그대로 쓰는 방법. `-e TZ` 대신 쓰기도 합니다 |
+| `-m 1g` | 메모리 한도. 여러 컨테이너가 한 호스트를 나눠 쓸 때만 필요합니다 |
+
+컨테이너를 `rm` 하면 그 안에 쓴 파일은 같이 사라집니다. 로그와 설정처럼 살아남아야 하는 것은 호스트 폴더에 마운트해 둡니다. 그래야 컨테이너를 몇 번을 갈아 끼워도 남습니다. 로그를 파일로도 쌓는다면 (logback·log4j2 의 File Appender) 그 경로를 볼륨으로 빼 둡니다. 컨테이너 안에만 쌓이면 디스크만 먹다가 컨테이너와 함께 사라집니다.
+
+## .tar 로 옮기기
+
+인터넷이나 레지스트리가 안 닿는 서버에는 이미지를 파일로 옮깁니다.
+
+```sh
+# 내보내는 쪽
+docker save -o myapp.tar myapp:1.0
+
+# 받는 쪽
+docker load -i myapp.tar
+docker images                     # 태그까지 그대로 복원됐는지 확인
+```
+
+- `docker save` 는 **이미지**를, `docker export` 는 **컨테이너의 파일시스템**을 뽑습니다. 이미지를 옮길 때는 `save` 입니다. `export` 로 뽑으면 레이어와 `ENTRYPOINT` 같은 메타데이터가 다 날아가서 그대로는 못 띄웁니다.
+- tar 는 압축이 아니라 묶음이라 용량이 큽니다. 필요하면 `docker save myapp:1.0 | gzip > myapp.tar.gz` 로 줄입니다.
+- `load` 는 이미지만 되살립니다. 컨테이너는 `docker run` 으로 다시 띄워야 합니다.
+
+## 명령어 한눈에
+
+| 하려는 것 | 명령 |
+| --- | --- |
+| 실행 중인 컨테이너 | `docker ps` |
+| 멈춘 것까지 전부 | `docker ps -a` |
+| 컨테이너 정지 | `docker stop {컨테이너명}` |
+| 컨테이너 삭제 | `docker rm {컨테이너명}` |
+| 이미지 목록 | `docker images` |
+| 이미지 삭제 | `docker image rm {이미지ID}` |
+| 이미지 빌드 | `docker build -t {이름}:{태그} .` |
+| 컨테이너 실행 | `docker run -d --name {이름} -p 8080:8080 {이미지명}:{태그}` |
+| 로그 전체 | `docker logs -f {컨테이너명}` |
+| 로그 최근 100줄 | `docker logs -f -n 100 {컨테이너명}` |
+| 컨테이너 안으로 들어가기 | `docker exec -it {컨테이너명} /bin/bash` |
+| 상세 설정 보기 | `docker inspect {컨테이너명}` |
+| 자원 사용량 | `docker stats {컨테이너명}` |
+| 이미지를 파일로 | `docker save -o {파일명}.tar {이미지명}:{태그}` |
+| 파일에서 이미지로 | `docker load -i {파일명}.tar` |
+| 안 쓰는 것 정리 | `docker system prune` |

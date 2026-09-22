@@ -1,0 +1,38 @@
+---
+/**
+ * 라이트·다크 두 벌이 있는 그림을 테마에 맞춰 보여준다.
+ *
+ *     <ThemedImage name="docker/vm-vs-docker" alt="설명" />
+ *
+ * `src/assets/blog/` 아래에서 `{name}-light.png` 와 `{name}-dark.png` 를 찾는다.
+ * 마크다운의 `![]()` 문법은 클래스를 붙일 수 없어서 테마를 따라가지 못한다.
+ * 그래서 글을 .mdx 로 두고 이 컴포넌트를 쓴다.
+ *
+ * `light:sl-hidden` 과 `dark:sl-hidden` 은 Starlight 가 제공하는 클래스로,
+ * 글 커버 그림도 같은 방식으로 두 장을 깔고 하나만 보여준다.
+ */
+import { Image } from 'astro:assets';
+
+interface Props {
+	/** `src/assets/blog/` 기준 경로에서 `-light` / `-dark` 를 뗀 이름 */
+	name: string;
+	/** 대체 텍스트. 두 장이 같은 그림이라 하나만 받는다 */
+	alt: string;
+}
+
+const { name, alt } = Astro.props;
+
+const images = import.meta.glob<{ default: ImageMetadata }>('../assets/blog/**/*.png', {
+	eager: true,
+});
+
+function pick(theme: 'light' | 'dark') {
+	const key = `../assets/blog/${name}-${theme}.png`;
+	const found = images[key];
+	if (!found) throw new Error(`ThemedImage: ${key} 를 찾지 못했다`);
+	return found.default;
+}
+---
+
+<Image src={pick('light')} alt={alt} class="dark:sl-hidden" />
+<Image src={pick('dark')} alt={alt} class="light:sl-hidden" />
