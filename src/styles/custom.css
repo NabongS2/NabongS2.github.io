@@ -16,6 +16,24 @@
 }
 
 /*
+  The stack badges on the home page. Every built-in Badge variant is a filled
+  block of colour with white text, which shouts louder than the card it sits in,
+  so these are restyled as outlines — the same shape as the tag chips under a
+  post. Starlight's own badge rules live in a cascade layer, so these plain
+  declarations win without needing to out-specify them.
+*/
+.badges {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+}
+.badges .sl-badge {
+	--sl-color-bg-badge: transparent;
+	--sl-color-border-badge: var(--sl-color-gray-5);
+	--sl-color-text-badge: var(--sl-color-gray-2);
+}
+
+/*
   Post boundaries in the list. The gap between posts was the same size as the
   gaps inside one (title → cover → date → excerpt → tags), so the eye had
   nothing to separate them by. A rule plus a wider gap makes the boundary the
