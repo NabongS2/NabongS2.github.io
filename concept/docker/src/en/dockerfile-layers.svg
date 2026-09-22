@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 490" width="900" height="490" role="img" aria-label="Each Dockerfile instruction stacks one image layer on top of the last">
+  <style>
+    svg { --bg:#ffffff; --fg:#1b1b1f; --muted:#5c5f66; --line:#c8ccd4; --accent:#2f6fd0; --accent-soft:#eaf1fc; --card:#f2f4f8; --base:#8a5cd6; --base-soft:#f1ebfb; }
+    @media (prefers-color-scheme: dark) {
+      svg { --bg:#17181c; --fg:#e8e9ed; --muted:#a3a7b0; --line:#3a3e47; --accent:#77aaf0; --accent-soft:#1c2941; --card:#22242b; --base:#b492ee; --base-soft:#262035; }
+    }
+    .bg { fill: var(--bg); }
+    .t { font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; fill: var(--fg); }
+    .h1 { font-size: 18px; font-weight: 700; }
+    .code { font-family: "D2Coding", ui-monospace, "Consolas", monospace; font-size: 13.5px; fill: var(--fg); }
+    .kw { font-family: "D2Coding", ui-monospace, "Consolas", monospace; font-size: 13.5px; fill: var(--accent); font-weight: 700; }
+    .pane { fill: var(--card); stroke: var(--line); stroke-width: 1.2; }
+    .layer { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.2; }
+    .layer-base { fill: var(--base-soft); stroke: var(--base); stroke-width: 1.2; }
+    .lbl { font-size: 12.5px; font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; fill: var(--fg); }
+    .note { font-size: 12px; fill: var(--muted); font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; }
+    .up { stroke: var(--line); stroke-width: 2; fill: none; marker-end: url(#up); }
+  </style>
+  <defs>
+    <marker id="up" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--line)"/>
+    </marker>
+  </defs>
+  <rect class="bg" width="900" height="490"/>
+
+  <text class="t h1" x="40" y="44">One Dockerfile line = one layer</text>
+  <text class="note" x="40" y="68">Stacked bottom-up. Layers below the changed line come straight from cache.</text>
+
+  <rect class="pane" x="40" y="92" width="380" height="330" rx="12"/>
+  <text class="kw" x="64" y="132">FROM</text><text class="code" x="118" y="132">eclipse-temurin:17-jre</text>
+  <text class="kw" x="64" y="180">ARG</text><text class="code" x="110" y="180">JAR_FILE=build/libs/*.jar</text>
+  <text class="kw" x="64" y="228">ENV</text><text class="code" x="110" y="228">TZ=Asia/Seoul</text>
+  <text class="kw" x="64" y="276">COPY</text><text class="code" x="118" y="276">${JAR_FILE} ./app.jar</text>
+  <text class="kw" x="64" y="324">ENTRYPOINT</text><text class="code" x="180" y="324">["java",</text>
+  <text class="code" x="180" y="344">"-jar", "./app.jar"]</text>
+  <text class="note" x="64" y="392">The FROM at the top becomes the bottom layer.</text>
+
+  <path class="up" d="M458 414 V 112"/>
+
+  <rect class="layer" x="496" y="100" width="364" height="58" rx="8"/>
+  <text class="lbl" x="516" y="124">ENTRYPOINT · the command it starts with</text>
+  <text class="note" x="516" y="143">No layer of its own; kept as metadata</text>
+
+  <rect class="layer" x="496" y="166" width="364" height="58" rx="8"/>
+  <text class="lbl" x="516" y="190">COPY · the layer holding app.jar</text>
+  <text class="note" x="516" y="209">A new jar rebuilds from here up</text>
+
+  <rect class="layer" x="496" y="232" width="364" height="58" rx="8"/>
+  <text class="lbl" x="516" y="256">ENV · environment for the container</text>
+  <text class="note" x="516" y="275">things like TZ and JAVA_OPTS</text>
+
+  <rect class="layer" x="496" y="298" width="364" height="58" rx="8"/>
+  <text class="lbl" x="516" y="322">ARG · build time only</text>
+  <text class="note" x="516" y="341">Does not survive into the image</text>
+
+  <rect class="layer-base" x="496" y="364" width="364" height="58" rx="8"/>
+  <text class="lbl" x="516" y="388">FROM eclipse-temurin:17-jre · base image</text>
+  <text class="note" x="516" y="407">A Linux with the Java 17 runtime</text>
+
+  <text class="note" x="496" y="452">--no-cache discards this cache and rebuilds from the bottom.</text>
+</svg>

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="서버에 접속해 현재 위치를 확인하고 다른 폴더로 이동하는 터미널 화면">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="var(--bg1)"/>
+      <stop offset="100%" stop-color="var(--bg2)"/>
+    </linearGradient>
+  </defs>
+  <style>
+    svg { --bg1:#f7f9fc; --bg2:#e6eefb; --fg:#1b1b1f; --accent:#2f6fd0; --term:#1e2230; --term-fg:#e8e9ed; --term-dim:#8b92a5; }
+    @media (prefers-color-scheme: dark) {
+      svg { --bg1:#1b1d22; --bg2:#141c2b; --fg:#e8e9ed; --accent:#77aaf0; --term:#0f1117; --term-fg:#e8e9ed; --term-dim:#767d8e; }
+    }
+    .t { font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; fill: var(--fg); }
+    .big { font-size: 68px; font-weight: 800; letter-spacing: -.01em; }
+    .win { fill: var(--term); }
+    .code { font-family: "D2Coding", ui-monospace, "Consolas", monospace; font-size: 19px; fill: var(--term-fg); }
+    .prompt { font-family: "D2Coding", ui-monospace, "Consolas", monospace; font-size: 19px; fill: var(--accent); }
+    .out { font-family: "D2Coding", ui-monospace, "Consolas", monospace; font-size: 19px; fill: var(--term-dim); }
+  </style>
+
+  <rect width="1200" height="630" fill="url(#g)"/>
+  <rect x="80" y="76" width="72" height="6" rx="3" fill="var(--accent)"/>
+
+  <text class="t big" x="80" y="166">Terminal</text>
+
+  <rect class="win" x="80" y="250" width="1040" height="290" rx="14"/>
+  <circle cx="112" cy="280" r="6" fill="#e0685f"/>
+  <circle cx="134" cy="280" r="6" fill="#e0b25f"/>
+  <circle cx="156" cy="280" r="6" fill="#6fbf73"/>
+  <line x1="80" y1="302" x2="1120" y2="302" stroke="#ffffff" stroke-opacity=".08" stroke-width="1"/>
+
+  <text class="prompt" x="112" y="340">dev@server:~$</text><text class="code" x="272" y="340">pwd</text>
+  <text class="out" x="112" y="368">/home/dev</text>
+
+  <text class="prompt" x="112" y="404">dev@server:~$</text><text class="code" x="272" y="404">cd /opt/myapp</text>
+
+  <text class="prompt" x="112" y="440">dev@server:/opt/myapp$</text><text class="code" x="375" y="440">ls</text>
+  <text class="out" x="112" y="468">config  log  myapp.jar</text>
+
+  <text class="prompt" x="112" y="496">dev@server:/opt/myapp$</text>
+</svg>

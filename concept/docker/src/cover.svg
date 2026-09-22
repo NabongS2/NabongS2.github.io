@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Dockerfile에서 이미지로, 이미지에서 컨테이너로 이어지는 흐름을 담은 표지">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="var(--bg1)"/>
+      <stop offset="100%" stop-color="var(--bg2)"/>
+    </linearGradient>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/>
+    </marker>
+  </defs>
+  <style>
+    svg { --bg1:#f7f9fc; --bg2:#e6eefb; --fg:#1b1b1f; --muted:#5c5f66; --line:#c8ccd4; --accent:#2f6fd0; --accent-soft:#eaf1fc; --card:#ffffff; }
+    @media (prefers-color-scheme: dark) {
+      svg { --bg1:#1b1d22; --bg2:#141c2b; --fg:#e8e9ed; --muted:#a3a7b0; --line:#3a3e47; --accent:#77aaf0; --accent-soft:#1c2941; --card:#22242b; }
+    }
+    .t { font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; fill: var(--fg); }
+    .big { font-size: 68px; font-weight: 800; letter-spacing: -.01em; }
+    .sub { font-size: 24px; fill: var(--muted); }
+    .card { fill: var(--card); stroke: var(--line); stroke-width: 2; }
+    .card-a { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }
+    .name { font-size: 25px; font-weight: 700; fill: var(--fg); font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; }
+    .desc { font-size: 17px; fill: var(--muted); font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; }
+    .cmd { font-family: "D2Coding", ui-monospace, "Consolas", monospace; font-size: 18px; fill: var(--accent); }
+    .arrow { stroke: var(--accent); stroke-width: 3; fill: none; marker-end: url(#ar); }
+  </style>
+
+  <rect width="1200" height="630" fill="url(#g)"/>
+  <rect x="80" y="86" width="72" height="6" rx="3" fill="var(--accent)"/>
+
+  <text class="t big" x="80" y="178">Docker</text>
+  <text class="sub t" x="80" y="228">설계도에서 이미지로, 이미지에서 컨테이너로</text>
+
+  <rect class="card" x="80" y="316" width="300" height="160" rx="18"/>
+  <text class="name" x="112" y="374">Dockerfile</text>
+  <text class="desc" x="112" y="410">무엇을 어떻게 담을지</text>
+  <text class="desc" x="112" y="438">적어 둔 설계도</text>
+
+  <path class="arrow" d="M400 396 H 480"/>
+  <text class="cmd" x="398" y="380">build</text>
+
+  <rect class="card-a" x="500" y="316" width="300" height="160" rx="18"/>
+  <text class="name" x="532" y="374">Image</text>
+  <text class="desc" x="532" y="410">한 번 굳으면 어느 서버에</text>
+  <text class="desc" x="532" y="438">올려도 똑같은 한 벌</text>
+
+  <path class="arrow" d="M820 396 H 900"/>
+  <text class="cmd" x="822" y="380">run</text>
+
+  <rect class="card" x="920" y="316" width="200" height="160" rx="18"/>
+  <text class="name" x="952" y="374">Container</text>
+  <text class="desc" x="952" y="410">그걸 떠서</text>
+  <text class="desc" x="952" y="438">돌리는 실체</text>
+
+  <text class="desc" x="80" y="558">호스트 커널을 공유한다. 그래서 VM 처럼 OS 를 새로 켜지 않는다.</text>
+</svg>

@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 700" width="900" height="700" role="img" aria-label="새 jar 를 이미지로 다시 만들어 띄울 때의 일곱 단계 순서">
+  <style>
+    svg { --bg:#ffffff; --fg:#1b1b1f; --muted:#5c5f66; --line:#c8ccd4; --accent:#2f6fd0; --accent-soft:#eaf1fc; }
+    @media (prefers-color-scheme: dark) {
+      svg { --bg:#17181c; --fg:#e8e9ed; --muted:#a3a7b0; --line:#3a3e47; --accent:#77aaf0; --accent-soft:#1c2941; }
+    }
+    .bg { fill: var(--bg); }
+    .t { font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; fill: var(--fg); }
+    .h1 { font-size: 20px; font-weight: 700; }
+    .hsub { font-size: 13px; fill: var(--muted); font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; }
+    .step { font-size: 15px; font-weight: 600; }
+    .cmd { font-family: "D2Coding", ui-monospace, "Consolas", monospace; font-size: 13px; fill: var(--accent); }
+    .note { font-size: 11.5px; fill: var(--muted); font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; }
+    .num { font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; font-size: 13px; font-weight: 700; fill: var(--bg); }
+    .dot { fill: var(--accent); }
+    .rail { stroke: var(--line); stroke-width: 2; }
+    .phase { font-size: 11.5px; font-weight: 700; fill: var(--muted); letter-spacing: .1em; font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; }
+    .band { fill: var(--accent-soft); }
+  </style>
+
+  <rect class="bg" width="900" height="700"/>
+
+  <text class="t h1" x="40" y="46">빌드하고 띄우는 순서</text>
+  <text class="hsub" x="40" y="70">새 .jar 를 올릴 때마다 위에서 아래로.</text>
+
+  <rect class="band" x="30" y="98" width="840" height="226" rx="14" opacity=".55"/>
+  <line class="rail" x1="57" y1="128" x2="57" y2="616"/>
+
+  <text class="phase" x="830" y="126" text-anchor="end">치우기</text>
+
+  <circle class="dot" cx="57" cy="128" r="15"/>
+  <text class="num" x="57" y="133" text-anchor="middle">1</text>
+  <text class="t step" x="92" y="125">실행 중인 컨테이너 확인</text>
+  <text class="cmd" x="92" y="150">docker ps</text>
+
+  <circle class="dot" cx="57" cy="196" r="15"/>
+  <text class="num" x="57" y="201" text-anchor="middle">2</text>
+  <text class="t step" x="92" y="193">쓰던 컨테이너 정지하고 지우기</text>
+  <text class="cmd" x="92" y="218">docker stop {컨테이너명}   →   docker rm {컨테이너명}</text>
+  <text class="note" x="92" y="238">먼저 멈춰야 지워진다.</text>
+
+  <circle class="dot" cx="57" cy="284" r="15"/>
+  <text class="num" x="57" y="289" text-anchor="middle">3</text>
+  <text class="t step" x="92" y="281">같은 태그를 쓰던 옛 이미지 지우기</text>
+  <text class="cmd" x="92" y="306">docker images   →   docker image rm {이미지ID}</text>
+
+  <text class="phase" x="830" y="350" text-anchor="end">올리기</text>
+
+  <circle class="dot" cx="57" cy="352" r="15"/>
+  <text class="num" x="57" y="357" text-anchor="middle">4</text>
+  <text class="t step" x="92" y="349">새 .jar 를 두고 그 폴더로 이동</text>
+  <text class="cmd" x="92" y="374">cd {프로젝트 폴더}</text>
+  <text class="note" x="92" y="394">Dockerfile 이 있는 폴더. 이 폴더가 곧 빌드 컨텍스트가 된다.</text>
+
+  <circle class="dot" cx="57" cy="440" r="15"/>
+  <text class="num" x="57" y="445" text-anchor="middle">5</text>
+  <text class="t step" x="92" y="437">이미지 빌드</text>
+  <text class="cmd" x="92" y="462">docker build -t myapp:{버전} .</text>
+  <text class="note" x="92" y="482">맨 끝 점은 빌드 컨텍스트, 곧 현재 폴더. 빠뜨리기 쉽다.</text>
+
+  <circle class="dot" cx="57" cy="528" r="15"/>
+  <text class="num" x="57" y="533" text-anchor="middle">6</text>
+  <text class="t step" x="92" y="525">컨테이너 실행</text>
+  <text class="cmd" x="92" y="550">docker run -d --name myapp -p 8080:8080 myapp:{버전}</text>
+  <text class="note" x="92" y="570">옵션이 길어지면 docker_run.sh 같은 스크립트에 묻어 두고 그것만 실행한다.</text>
+
+  <circle class="dot" cx="57" cy="616" r="15"/>
+  <text class="num" x="57" y="621" text-anchor="middle">7</text>
+  <text class="t step" x="92" y="613">기동 확인</text>
+  <text class="cmd" x="92" y="638">docker logs -f -n 100 {컨테이너명}</text>
+  <text class="note" x="92" y="658">-f 는 새 로그를 계속 따라붙는다. Ctrl+C 로 빠져나온다.</text>
+</svg>

@@ -1,0 +1,32 @@
+# 빌드 컨텍스트에서 뺄 것들.
+# 이 파일이 없으면 docker build 의 맨 끝 점(.)이 가리키는 폴더 전체가
+# 통째로 도커 데몬에 전송된다. .git 하나만 빼도 전송량이 크게 준다.
+
+.git
+.gitignore
+.github
+
+# 빌드 산출물 — 멀티 스테이지로 안에서 다시 빌드한다
+build/
+out/
+target/
+.gradle/
+!build/libs/*.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# 문서와 잡동사니
+README.md
+docs/
+*.log
+.DS_Store
+
+# 설정은 이미지에 굽지 말고 볼륨이나 환경 변수로 넣는다
+**/application-local.yml
+**/*.env

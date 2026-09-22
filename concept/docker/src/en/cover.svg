@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="The path from a Dockerfile to an image to a running container">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="var(--bg1)"/>
+      <stop offset="100%" stop-color="var(--bg2)"/>
+    </linearGradient>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/>
+    </marker>
+  </defs>
+  <style>
+    svg { --bg1:#f7f9fc; --bg2:#e6eefb; --fg:#1b1b1f; --muted:#5c5f66; --line:#c8ccd4; --accent:#2f6fd0; --accent-soft:#eaf1fc; --card:#ffffff; }
+    @media (prefers-color-scheme: dark) {
+      svg { --bg1:#1b1d22; --bg2:#141c2b; --fg:#e8e9ed; --muted:#a3a7b0; --line:#3a3e47; --accent:#77aaf0; --accent-soft:#1c2941; --card:#22242b; }
+    }
+    .t { font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; fill: var(--fg); }
+    .big { font-size: 68px; font-weight: 800; letter-spacing: -.01em; }
+    .sub { font-size: 24px; fill: var(--muted); }
+    .card { fill: var(--card); stroke: var(--line); stroke-width: 2; }
+    .card-a { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }
+    .name { font-size: 25px; font-weight: 700; fill: var(--fg); font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; }
+    .desc { font-size: 17px; fill: var(--muted); font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; }
+    .cmd { font-family: "D2Coding", ui-monospace, "Consolas", monospace; font-size: 18px; fill: var(--accent); }
+    .arrow { stroke: var(--accent); stroke-width: 3; fill: none; marker-end: url(#ar); }
+  </style>
+
+  <rect width="1200" height="630" fill="url(#g)"/>
+  <rect x="80" y="86" width="72" height="6" rx="3" fill="var(--accent)"/>
+
+  <text class="t big" x="80" y="178">Docker</text>
+  <text class="sub t" x="80" y="228">From a blueprint to an image to a running container</text>
+
+  <rect class="card" x="80" y="316" width="300" height="160" rx="18"/>
+  <text class="name" x="112" y="374">Dockerfile</text>
+  <text class="desc" x="112" y="410">What to put in the image,</text>
+  <text class="desc" x="112" y="438">and how</text>
+
+  <path class="arrow" d="M400 396 H 480"/>
+  <text class="cmd" x="398" y="380">build</text>
+
+  <rect class="card-a" x="500" y="316" width="300" height="160" rx="18"/>
+  <text class="name" x="532" y="374">Image</text>
+  <text class="desc" x="532" y="410">Once frozen, the same on</text>
+  <text class="desc" x="532" y="438">every server you run it</text>
+
+  <path class="arrow" d="M820 396 H 900"/>
+  <text class="cmd" x="822" y="380">run</text>
+
+  <rect class="card" x="920" y="316" width="200" height="160" rx="18"/>
+  <text class="name" x="952" y="374">Container</text>
+  <text class="desc" x="952" y="410">That image,</text>
+  <text class="desc" x="952" y="438">actually running</text>
+
+  <text class="desc" x="80" y="558">It shares the host kernel, so unlike a VM it never boots an OS of its own.</text>
+</svg>

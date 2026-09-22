@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 440" width="900" height="440" role="img" aria-label="Building an image from a Dockerfile and a jar, running it as a container, and moving it as a tar file">
+  <style>
+    svg { --bg:#ffffff; --fg:#1b1b1f; --muted:#5c5f66; --line:#c8ccd4; --accent:#2f6fd0; --accent-soft:#eaf1fc; --card:#f7f9fc; --tar:#8a5cd6; --tar-soft:#f1ebfb; }
+    @media (prefers-color-scheme: dark) {
+      svg { --bg:#17181c; --fg:#e8e9ed; --muted:#a3a7b0; --line:#3a3e47; --accent:#77aaf0; --accent-soft:#1c2941; --card:#1e2026; --tar:#b492ee; --tar-soft:#262035; }
+    }
+    .bg { fill: var(--bg); }
+    .card { fill: var(--card); stroke: var(--line); stroke-width: 1.5; }
+    .card-accent { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+    .card-tar { fill: var(--tar-soft); stroke: var(--tar); stroke-width: 1.5; }
+    .t { font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; fill: var(--fg); }
+    .title { font-size: 17px; font-weight: 700; }
+    .sub { font-size: 12.5px; fill: var(--muted); }
+    .cmd { font-family: "D2Coding", ui-monospace, "Consolas", monospace; font-size: 12.5px; fill: var(--accent); }
+    .cmd-tar { font-family: "D2Coding", ui-monospace, "Consolas", monospace; font-size: 12.5px; fill: var(--tar); }
+    .label { font-size: 11.5px; fill: var(--muted); font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; }
+    .arrow { stroke: var(--accent); stroke-width: 2; fill: none; marker-end: url(#a); }
+    .arrow-tar { stroke: var(--tar); stroke-width: 2; fill: none; marker-end: url(#b); }
+    .head { font-size: 13px; font-weight: 700; fill: var(--muted); letter-spacing: .04em; font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/>
+    </marker>
+    <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--tar)"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="900" height="440"/>
+
+  <text class="head" x="40" y="42">What goes in</text>
+  <text class="head" x="345" y="42">Frozen, ready to run</text>
+  <text class="head" x="670" y="42">A running process</text>
+
+  <!-- 1. 재료 -->
+  <rect class="card" x="40" y="60" width="215" height="112" rx="12"/>
+  <text class="t title" x="60" y="92">Dockerfile</text>
+  <text class="t sub" x="60" y="114">What to build, and how</text>
+  <text class="t title" x="60" y="142" font-size="15">+ myapp.jar</text>
+  <text class="t sub" x="60" y="161">the application itself</text>
+
+  <!-- build 화살표 -->
+  <path class="arrow" d="M262 116 H 338"/>
+  <text class="label" x="258" y="106">docker build</text>
+
+  <!-- 2. 이미지 -->
+  <rect class="card-accent" x="345" y="60" width="215" height="112" rx="12"/>
+  <text class="t title" x="365" y="92">Image</text>
+  <text class="cmd" x="365" y="116">myapp:1.0</text>
+  <text class="t sub" x="365" y="140">Read-only. Running it never</text>
+  <text class="t sub" x="365" y="157">changes what is inside.</text>
+
+  <!-- run 화살표 -->
+  <path class="arrow" d="M567 116 H 643"/>
+  <text class="label" x="560" y="106">docker run</text>
+
+  <!-- 3. 컨테이너 -->
+  <rect class="card" x="650" y="60" width="215" height="112" rx="12"/>
+  <text class="t title" x="670" y="92">Container</text>
+  <text class="t sub" x="670" y="116">The image, actually running.</text>
+  <text class="t sub" x="670" y="136">stop and rm leave the</text>
+  <text class="t sub" x="670" y="153">image untouched.</text>
+
+  <!-- 하단: tar 이동 -->
+  <line x1="40" y1="228" x2="860" y2="228" stroke="var(--line)" stroke-width="1" stroke-dasharray="4 5"/>
+  <text class="head" x="40" y="268">Moving it to a server with no registry</text>
+
+  <rect class="card-accent" x="90" y="292" width="180" height="96" rx="12"/>
+  <text class="t title" x="110" y="326">Local image</text>
+  <text class="cmd" x="110" y="352">myapp:1.0</text>
+  <text class="t sub" x="110" y="373">built here</text>
+
+  <rect class="card-tar" x="360" y="292" width="150" height="96" rx="12"/>
+  <text class="t title" x="382" y="330">One file</text>
+  <text class="cmd-tar" x="382" y="356">myapp.tar</text>
+
+  <rect class="card-accent" x="600" y="292" width="180" height="96" rx="12"/>
+  <text class="t title" x="620" y="326">Server image</text>
+  <text class="cmd" x="620" y="352">myapp:1.0</text>
+  <text class="t sub" x="620" y="373">restored intact</text>
+
+  <path class="arrow-tar" d="M277 340 H 353"/>
+  <text class="label" x="315" y="326" text-anchor="middle">docker save</text>
+  <path class="arrow-tar" d="M517 340 H 593"/>
+  <text class="label" x="555" y="326" text-anchor="middle">docker load</text>
+</svg>

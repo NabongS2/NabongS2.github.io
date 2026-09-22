@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 460" width="900" height="460" role="img" aria-label="vi 의 명령 모드, 입력 모드, 콜론 모드 사이를 어떤 키로 오가는지 보여주는 상태도">
+  <style>
+    svg { --bg:#ffffff; --fg:#1b1b1f; --muted:#5c5f66; --line:#c8ccd4; --accent:#2f6fd0; --accent-soft:#eaf1fc; --card:#f7f9fc; --exit:#8a5cd6; --exit-soft:#f1ebfb; }
+    @media (prefers-color-scheme: dark) {
+      svg { --bg:#17181c; --fg:#e8e9ed; --muted:#a3a7b0; --line:#3a3e47; --accent:#77aaf0; --accent-soft:#1c2941; --card:#1e2026; --exit:#b492ee; --exit-soft:#262035; }
+    }
+    .bg { fill: var(--bg); }
+    .t { font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; fill: var(--fg); }
+    .h1 { font-size: 18px; font-weight: 700; }
+    .hsub { font-size: 12.5px; fill: var(--muted); font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; }
+    .box { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.6; }
+    .box-plain { fill: var(--card); stroke: var(--line); stroke-width: 1.6; }
+    .box-exit { fill: var(--exit-soft); stroke: var(--exit); stroke-width: 1.6; }
+    .name { font-size: 16px; font-weight: 700; fill: var(--fg); font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; }
+    .desc { font-size: 11.5px; fill: var(--muted); font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; }
+    .key { font-family: "D2Coding", ui-monospace, "Consolas", monospace; font-size: 13px; fill: var(--accent); font-weight: 700; }
+    .key-exit { font-family: "D2Coding", ui-monospace, "Consolas", monospace; font-size: 13px; fill: var(--exit); font-weight: 700; }
+    .arrow { stroke: var(--accent); stroke-width: 2; fill: none; marker-end: url(#a); }
+    .arrow-exit { stroke: var(--exit); stroke-width: 2; fill: none; marker-end: url(#b); }
+    .arrow-in { stroke: var(--muted); stroke-width: 2; fill: none; marker-end: url(#c); }
+    .tip { font-size: 12.5px; fill: var(--fg); font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/>
+    </marker>
+    <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--exit)"/>
+    </marker>
+    <marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--muted)"/>
+    </marker>
+  </defs>
+  <rect class="bg" width="900" height="460"/>
+
+  <text class="t h1" x="40" y="42">vi 는 모드가 셋이다</text>
+  <text class="hsub" x="40" y="66">지금 어느 모드인지 모르는 것이 vi 가 어려운 이유의 거의 전부다.</text>
+
+  <!-- 들어오기 -->
+  <text class="key" x="40" y="176">vi 파일명</text>
+  <path class="arrow-in" d="M126 172 H 246"/>
+  <text class="desc" x="132" y="196">열면 명령 모드로 시작</text>
+
+  <!-- 명령 모드 -->
+  <rect class="box" x="254" y="132" width="210" height="82" rx="12"/>
+  <text class="name" x="359" y="168" text-anchor="middle">명령 모드</text>
+  <text class="desc" x="359" y="190" text-anchor="middle">키 하나하나가 명령이다.</text>
+  <text class="desc" x="359" y="206" text-anchor="middle">여기서는 글자가 안 써진다.</text>
+
+  <!-- 입력 모드 -->
+  <rect class="box-plain" x="640" y="132" width="200" height="82" rx="12"/>
+  <text class="name" x="740" y="168" text-anchor="middle">입력 모드</text>
+  <text class="desc" x="740" y="190" text-anchor="middle">이제 타이핑이 된다.</text>
+  <text class="desc" x="740" y="206" text-anchor="middle">평소 쓰는 편집기처럼.</text>
+
+  <!-- 명령 → 입력 -->
+  <path class="arrow" d="M470 152 C 540 130, 570 130, 634 152"/>
+  <text class="key" x="552" y="126" text-anchor="middle">i  a  o</text>
+
+  <!-- 입력 → 명령 -->
+  <path class="arrow" d="M634 196 C 570 218, 540 218, 470 196"/>
+  <text class="key" x="552" y="238" text-anchor="middle">Esc</text>
+
+  <!-- 콜론 모드 -->
+  <rect class="box-plain" x="254" y="300" width="210" height="82" rx="12"/>
+  <text class="name" x="359" y="336" text-anchor="middle">콜론 모드</text>
+  <text class="desc" x="359" y="358" text-anchor="middle">맨 아래 줄에 명령을 적는다.</text>
+  <text class="desc" x="359" y="374" text-anchor="middle">저장과 종료가 여기 있다.</text>
+
+  <path class="arrow" d="M330 220 V 294"/>
+  <text class="key" x="316" y="262" text-anchor="end">:</text>
+
+  <path class="arrow" d="M392 294 V 220"/>
+  <text class="key" x="406" y="262">Esc</text>
+
+  <!-- 종료 -->
+  <rect class="box-exit" x="640" y="300" width="200" height="82" rx="12"/>
+  <text class="name" x="740" y="336" text-anchor="middle">빠져나옴</text>
+  <text class="desc" x="740" y="358" text-anchor="middle">터미널로 돌아온다.</text>
+
+  <path class="arrow-exit" d="M470 341 H 634"/>
+  <text class="key-exit" x="552" y="332" text-anchor="middle">:wq</text>
+  <text class="desc" x="552" y="360" text-anchor="middle">저장하고 종료</text>
+
+  <text class="tip" x="40" y="428">모드를 잃어버렸다면 <tspan class="key">Esc</tspan> 를 두어 번 누른다. 어느 모드에 있었든 명령 모드로 돌아온다.</text>
+</svg>

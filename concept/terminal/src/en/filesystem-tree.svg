@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" width="900" height="560" role="img" aria-label="Windows has a separate tree per drive while Linux branches everything from a single slash">
+  <style>
+    svg { --bg:#ffffff; --fg:#1b1b1f; --muted:#5c5f66; --line:#c8ccd4; --accent:#2f6fd0; --accent-soft:#eaf1fc; --card:#f7f9fc; --other:#b3541e; }
+    @media (prefers-color-scheme: dark) {
+      svg { --bg:#17181c; --fg:#e8e9ed; --muted:#a3a7b0; --line:#3a3e47; --accent:#77aaf0; --accent-soft:#1c2941; --card:#1e2026; --other:#e0a06a; }
+    }
+    .bg { fill: var(--bg); }
+    .t { font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; fill: var(--fg); }
+    .h1 { font-size: 17px; font-weight: 700; }
+    .pane { fill: var(--card); stroke: var(--line); stroke-width: 1.2; }
+    .code { font-family: "D2Coding", ui-monospace, "Consolas", monospace; font-size: 13.5px; fill: var(--fg); }
+    .dim { font-family: "D2Coding", ui-monospace, "Consolas", monospace; font-size: 13.5px; fill: var(--muted); }
+    .root { font-family: "D2Coding", ui-monospace, "Consolas", monospace; font-size: 14px; font-weight: 700; fill: var(--accent); }
+    .note { font-size: 11.5px; fill: var(--muted); font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; }
+    .tip { font-size: 12.5px; fill: var(--fg); font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; }
+    .link { stroke: var(--accent); stroke-width: 1.4; stroke-dasharray: 4 4; fill: none; opacity: .75; }
+    .badge { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.2; }
+  </style>
+  <rect class="bg" width="900" height="560"/>
+
+  <text class="t h1" x="40" y="42">Windows</text>
+  <text class="note" x="168" y="42">one tree per drive</text>
+
+  <text class="t h1" x="490" y="42">Linux</text>
+  <text class="note" x="562" y="42">one tree, always</text>
+
+  <!-- 윈도우 -->
+  <rect class="pane" x="40" y="60" width="380" height="300" rx="12"/>
+  <text class="root" x="64" y="92">C:\</text>
+  <text class="code" x="64" y="118">├─ Users\</text>
+  <text class="code" x="64" y="142">│  └─ dev\</text>
+  <text class="code" x="64" y="166">├─ Program Files\</text>
+  <text class="code" x="64" y="190">├─ Windows\</text>
+  <text class="code" x="64" y="214">└─ Temp\</text>
+  <text class="root" x="64" y="256">D:\</text>
+  <text class="dim" x="64" y="280">└─ ...</text>
+  <text class="note" x="64" y="324">Add a disk and E:\ shows up.</text>
+  <text class="note" x="64" y="341">That is one more tree.</text>
+
+  <!-- 리눅스 -->
+  <rect class="pane" x="490" y="60" width="380" height="300" rx="12"/>
+  <text class="root" x="514" y="92">/</text>
+  <text class="code" x="514" y="118">├─ home/</text>
+  <text class="code" x="514" y="142">│  └─ dev/</text>
+  <text class="code" x="514" y="166">├─ opt/</text>
+  <text class="code" x="514" y="190">├─ usr/</text>
+  <text class="code" x="514" y="214">├─ etc/</text>
+  <text class="code" x="514" y="238">├─ var/log/</text>
+  <text class="code" x="514" y="262">└─ tmp/</text>
+  <text class="note" x="514" y="324">A new disk mounts somewhere inside</text>
+  <text class="note" x="514" y="341">this tree. The top is always /.</text>
+
+  <!-- 같은 자리 잇기. 두 트리의 행 높이를 맞춰 뒀다 -->
+  <path class="link" d="M414 138 H 505"/>
+  <rect class="badge" x="296" y="127" width="112" height="22" rx="11"/>
+  <text class="note" x="352" y="142" text-anchor="middle" fill="var(--accent)">your folder</text>
+
+  <path class="link" d="M414 162 H 505"/>
+  <rect class="badge" x="296" y="151" width="112" height="22" rx="11"/>
+  <text class="note" x="352" y="166" text-anchor="middle" fill="var(--accent)">installed apps</text>
+
+  <path class="link" d="M414 210 C 455 210, 460 258, 505 258"/>
+  <rect class="badge" x="296" y="199" width="112" height="22" rx="11"/>
+  <text class="note" x="352" y="214" text-anchor="middle" fill="var(--accent)">temp files</text>
+
+  <!-- 알아 둘 것 -->
+  <line x1="40" y1="396" x2="860" y2="396" stroke="var(--line)" stroke-width="1" stroke-dasharray="4 5"/>
+
+  <text class="tip" x="40" y="430">·  You land in <tspan class="code">/home/dev</tspan> when you log in. <tspan class="code">~</tspan> is shorthand for it.</text>
+  <text class="tip" x="40" y="458">·  <tspan class="code">/</tspan>  is the top of the tree. <tspan class="code">/root</tspan> is the root account's home. Different places.</text>
+  <text class="tip" x="40" y="486">·  <tspan class="code">Log</tspan>  and <tspan class="code">log</tspan> are different files. Unlike Windows, case matters.</text>
+  <text class="tip" x="40" y="514">·  <tspan class="code">.exe</tspan>  does not make a file run. The execute permission decides.</text>
+</svg>

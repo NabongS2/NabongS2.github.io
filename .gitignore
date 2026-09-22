@@ -29,3 +29,8 @@ pnpm-debug.log*
 # Screenshots taken while checking layouts land in the repo root. Only those —
 # a blanket *.png would swallow diagrams and covers kept alongside content.
 /*.png
+
+# concept/ 의 그림 생성물. 소스는 concept/<주제>/src/ 에 있고,
+# node concept/build-images.mjs 로 다시 만든다.
+concept/**/*-light.svg
+concept/**/*-dark.svg

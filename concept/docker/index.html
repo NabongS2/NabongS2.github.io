@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Docker 개념 그림</title>
+<style>
+	:root {
+		color-scheme: light dark;
+		--bg: #ffffff;
+		--fg: #1b1b1f;
+		--muted: #5c5f66;
+		--line: #e2e5ea;
+		--accent: #2f6fd0;
+	}
+	@media (prefers-color-scheme: dark) {
+		:root { --bg: #17181c; --fg: #e8e9ed; --muted: #a3a7b0; --line: #2a2d34; --accent: #77aaf0; }
+	}
+	body {
+		margin: 0;
+		padding: 48px 16px 96px;
+		background: var(--bg);
+		color: var(--fg);
+		font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif;
+		line-height: 1.6;
+	}
+	main { max-width: 960px; margin: 0 auto; }
+	h1 { font-size: 28px; margin: 0 0 8px; }
+	.lede { color: var(--muted); margin: 0 0 48px; }
+	figure { margin: 0 0 56px; }
+	figcaption { color: var(--muted); font-size: 14px; margin-bottom: 12px; }
+	figcaption b { color: var(--fg); font-size: 16px; display: block; margin-bottom: 2px; }
+	img { width: 100%; height: auto; display: block; border: 1px solid var(--line); border-radius: 12px; }
+	code { font-family: ui-monospace, "D2Coding", Consolas, monospace; font-size: 13px; color: var(--accent); }
+	footer { color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); padding-top: 24px; }
+</style>
+</head>
+<body>
+<main>
+	<h1>Docker 개념 그림</h1>
+	<p class="lede">
+		시스템 테마를 따라 라이트·다크가 바뀐다. 소스는 <code>src/</code>, 고친 뒤
+		<code>node concept/docker/build-images.mjs</code> 로 다시 뽑는다.
+	</p>
+
+	<figure>
+		<figcaption><b>커버</b>썸네일. 1200×630</figcaption>
+		<picture>
+			<source srcset="cover-dark.svg" media="(prefers-color-scheme: dark)">
+			<img src="cover-light.svg" alt="Dockerfile에서 이미지로, 이미지에서 컨테이너로 이어지는 흐름을 담은 표지">
+		</picture>
+	</figure>
+
+	<figure>
+		<figcaption><b>가상 머신과 컨테이너</b>가벼운 이유는 하이퍼바이저가 아니라 커널 공유다</figcaption>
+		<picture>
+			<source srcset="vm-vs-docker-dark.svg" media="(prefers-color-scheme: dark)">
+			<img src="vm-vs-docker-light.svg" alt="가상 머신은 게스트 OS를 여러 벌 얹지만 컨테이너는 호스트 커널을 공유해 앱만 얹는다는 비교">
+		</picture>
+	</figure>
+
+	<figure>
+		<figcaption><b>Dockerfile · 이미지 · 컨테이너</b>그리고 .tar 로 옮기는 길</figcaption>
+		<picture>
+			<source srcset="docker-concept-dark.svg" media="(prefers-color-scheme: dark)">
+			<img src="docker-concept-light.svg" alt="Dockerfile과 jar로 이미지를 빌드하고 컨테이너로 실행하는 흐름, 그리고 tar로 이미지를 옮기는 흐름">
+		</picture>
+	</figure>
+
+	<figure>
+		<figcaption><b>Dockerfile 한 줄 = 레이어 한 장</b>캐시가 어디서부터 깨지는지</figcaption>
+		<picture>
+			<source srcset="dockerfile-layers-dark.svg" media="(prefers-color-scheme: dark)">
+			<img src="dockerfile-layers-light.svg" alt="Dockerfile의 각 명령이 이미지 레이어 한 장씩을 쌓아 올리는 구조">
+		</picture>
+	</figure>
+
+	<figure>
+		<figcaption><b>개발 빌드 순서</b>새 jar 를 올릴 때마다 위에서 아래로</figcaption>
+		<picture>
+			<source srcset="docker-build-flow-dark.svg" media="(prefers-color-scheme: dark)">
+			<img src="docker-build-flow-light.svg" alt="개발 서버에 도커 이미지를 다시 올릴 때의 일곱 단계 순서">
+		</picture>
+	</figure>
+
+
+	<h1 style="font-size:22px;margin:64px 0 8px;border-top:1px solid var(--line);padding-top:48px">English</h1>
+	<p class="lede">영어 글이 쓰는 그림. 소스는 <code>src/en/</code>.</p>
+
+	<figure>
+		<figcaption><b>커버</b>en/cover</figcaption>
+		<picture>
+			<source srcset="en/cover-dark.svg" media="(prefers-color-scheme: dark)">
+			<img src="en/cover-light.svg" alt="The path from a Dockerfile to an image to a running container">
+		</picture>
+	</figure>
+
+	<figure>
+		<figcaption><b>가상 머신과 컨테이너</b>en/vm-vs-docker</figcaption>
+		<picture>
+			<source srcset="en/vm-vs-docker-dark.svg" media="(prefers-color-scheme: dark)">
+			<img src="en/vm-vs-docker-light.svg" alt="A virtual machine stacks a guest OS per app, while containers share the host kernel and stack only the app">
+		</picture>
+	</figure>
+
+	<figure>
+		<figcaption><b>Dockerfile · 이미지 · 컨테이너</b>en/docker-concept</figcaption>
+		<picture>
+			<source srcset="en/docker-concept-dark.svg" media="(prefers-color-scheme: dark)">
+			<img src="en/docker-concept-light.svg" alt="Building an image from a Dockerfile and a jar, running it as a container, and moving it as a tar file">
+		</picture>
+	</figure>
+
+	<figure>
+		<figcaption><b>레이어</b>en/dockerfile-layers</figcaption>
+		<picture>
+			<source srcset="en/dockerfile-layers-dark.svg" media="(prefers-color-scheme: dark)">
+			<img src="en/dockerfile-layers-light.svg" alt="Each Dockerfile instruction stacks one image layer on top of the last">
+		</picture>
+	</figure>
+
+	<figure>
+		<figcaption><b>빌드 순서</b>en/docker-build-flow</figcaption>
+		<picture>
+			<source srcset="en/docker-build-flow-dark.svg" media="(prefers-color-scheme: dark)">
+			<img src="en/docker-build-flow-light.svg" alt="The seven steps for rebuilding an image from a new jar and starting it">
+		</picture>
+	</figure>
+
+	<footer>
+		한국어 소스는 <code>src/</code>, 영어는 <code>src/en/</code>. 설명은 <code>README.md</code>, 예제는 <code>examples/</code> 에 있다.
+	</footer>
+</main>
+</body>
+</html>
