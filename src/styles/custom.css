@@ -1,0 +1,16 @@
+/*
+  Overrides on top of Starlight's defaults. Starlight exposes its palette as
+  custom properties, so matching the portfolio's blue is a matter of redefining
+  the accent ramp rather than restyling components.
+*/
+:root {
+	--sl-color-accent-low: #182e52;
+	--sl-color-accent: #2f6fd0;
+	--sl-color-accent-high: #b9d3f7;
+}
+
+:root[data-theme='light'] {
+	--sl-color-accent-low: #cfe0f8;
+	--sl-color-accent: #1d4ed8;
+	--sl-color-accent-high: #16306b;
+}

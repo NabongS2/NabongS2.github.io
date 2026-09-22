@@ -1,0 +1,29 @@
+---
+title: Nabong's Dev Blog
+description: Notes from a full-stack web developer.
+template: splash
+hero:
+  tagline: |
+    I write about what I learn building for the web —
+    frontend, backend, and everything that breaks on the way to production.
+  actions:
+    - text: Read the blog
+      link: /en/blog/
+      icon: right-arrow
+    - text: About
+      link: /en/about/
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+<CardGrid>
+	<Card title="What I write about" icon="pencil">
+		Concepts I'm working through, and problems I ran into on the job along with how I got out of
+		them. The ones that didn't go well tend to be more useful later than the ones that did.
+	</Card>
+	<Card title="What I work with" icon="setting">
+		Frontend, backend, data design and infrastructure. React and TypeScript, Java and Spring Boot,
+		and whatever runs them.
+	</Card>
+</CardGrid>

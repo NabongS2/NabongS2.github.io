@@ -1,0 +1,30 @@
+{
+	"permissions": {
+		"allow": [
+			"PowerShell(npm *)",
+			"PowerShell(npx *)",
+			"PowerShell(node *)",
+			"Bash(npm *)",
+			"Bash(npx *)",
+			"Bash(node *)"
+		],
+		"ask": [
+			"PowerShell(npm install)",
+			"PowerShell(npm install *)",
+			"PowerShell(npm i *)",
+			"PowerShell(npm add *)",
+			"PowerShell(npm uninstall *)",
+			"PowerShell(npm remove *)",
+			"PowerShell(npm update *)",
+			"PowerShell(npx astro add *)",
+			"Bash(npm install)",
+			"Bash(npm install *)",
+			"Bash(npm i *)",
+			"Bash(npm add *)",
+			"Bash(npm uninstall *)",
+			"Bash(npm remove *)",
+			"Bash(npm update *)",
+			"Bash(npx astro add *)"
+		]
+	}
+}

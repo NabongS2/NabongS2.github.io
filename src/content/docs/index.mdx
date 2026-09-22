@@ -1,0 +1,29 @@
+---
+title: 나봉 개발 블로그
+description: 풀스택 웹개발자의 개발 기록과 삽질 노트.
+template: splash
+hero:
+  tagline: |
+    웹을 만들면서 배운 것들을 기록합니다.
+    프론트엔드부터 백엔드, 배포까지 그때그때 부딪힌 문제와 해결 과정을 남겨둡니다.
+  actions:
+    - text: 글 보러 가기
+      link: /blog/
+      icon: right-arrow
+    - text: 소개
+      link: /about/
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+<CardGrid>
+	<Card title="무엇을 쓰나" icon="pencil">
+		기술 개념 정리, 일하면서 부딪힌 문제와 그걸 풀어낸 과정. 잘 된 것보다 잘 안 된 쪽이 나중에 더
+		쓸모 있더군요.
+	</Card>
+	<Card title="주로 다루는 것" icon="setting">
+		프론트엔드 · 백엔드 · 데이터 설계 · 인프라. React와 TypeScript, Java와 Spring Boot, 그리고
+		그것들을 띄우는 환경.
+	</Card>
+</CardGrid>
