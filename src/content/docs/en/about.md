@@ -1,17 +1,13 @@
 ---
 title: About
-description: What I build, and what I build it with.
+description: A full-stack web developer building web admin panels and call systems in the AICC call bot domain.
 ---
 
-I'm **nabong**. I build web services, usually the whole vertical slice — from the screen down through the backend and the deploy.
+I'm **nabong**, a full-stack web developer.
 
-What I keep coming back to is **the bottleneck in repetitive work**: moving things done by hand into an interface, and pulling scattered code into shared modules.
+I work at an R&D center in the AICC call bot domain, building web admin panels, the data design behind the call bot system, the call system itself, and other Java-based systems such as TTSC.
 
-## What interests me
-
-- Making complex data structures visible — graphs, editors, dashboards
-- Monorepos and shared package design
-- Build and deployment automation
+Coming from a design major and then transferring into computer science, I use that CS grounding to work in a structured way — from planning through design to implementation.
 
 ## Stack
 
@@ -22,6 +18,8 @@ What I keep coming back to is **the bottleneck in repetitive work**: moving thin
 | Data | MariaDB, Oracle, Redis |
 | Infrastructure | Docker, Linux, Nginx, CI/CD |
 
-## More
+## This blog
+
+Notes on the concepts I work through, and the problems I actually run into.
 
 My code is on [GitHub](https://github.com/NabongS2).
