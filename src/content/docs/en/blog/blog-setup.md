@@ -5,7 +5,7 @@ excerpt: Astro emits the static HTML, the Starlight docs theme sits on top, and 
 cover:
   alt: The home page of Nabong's dev blog
   image: ../../../../assets/blog/blog-setup.png
-date: 2026-09-21
+date: 2026-09-21T19:00:00+09:00
 tags:
   - Thoughts
   - Retrospective

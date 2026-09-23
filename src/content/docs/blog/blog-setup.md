@@ -5,7 +5,7 @@ excerpt: 정적 HTML을 뽑는 Astro 위에 문서 테마 Starlight를 얹고, �
 cover:
   alt: 나봉 개발 블로그 첫 화면
   image: ../../../assets/blog/blog-setup.png
-date: 2026-09-21
+date: 2026-09-21T19:00:00+09:00
 tags:
   - 생각
   - 회고
