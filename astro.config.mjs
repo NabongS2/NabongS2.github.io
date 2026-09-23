@@ -36,6 +36,10 @@ export default defineConfig({
 						ko: '블로그',
 						en: 'Blog',
 					},
+					// The default is 5 per page, and the list only offers bare
+					// newer/older buttons with no page numbers. With few posts, one
+					// page is friendlier; revisit (archive page) near 20 posts.
+					postCount: 20,
 					authors: {
 						nabong: {
 							name: 'nabong',

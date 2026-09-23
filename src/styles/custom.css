@@ -75,3 +75,23 @@
 	--cover-from: #0891b2;
 	--cover-to: #4f46e5;
 }
+
+/*
+  The author line under every date. Every post here is by the same person, so
+  on the list it repeated one name down the whole page and said nothing. Only
+  the display goes: the plugin still writes the author into the page's
+  structured data and the RSS feed, which is where it's worth having.
+*/
+.sl-blog-metadata .sl-blog-metadata-authors {
+	display: none;
+}
+
+/*
+  Date to excerpt. The plugin's 1.5rem gap between the header and the excerpt
+  stacks with the 1rem top margin Starlight gives markdown blocks, 40px in all.
+  The author line used to sit in that space; without it the date floated. This
+  pulls the excerpt up so date and summary read as one unit.
+*/
+.sl-blog-preview .sl-blog-preview-excerpt {
+	margin-top: -0.75rem;
+}
