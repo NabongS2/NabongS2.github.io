@@ -1,13 +1,6 @@
 import { defineRouteMiddleware, type StarlightRouteData } from '@astrojs/starlight/route-data';
-import { getCollection } from 'astro:content';
 import { categoryTree, uiStrings } from './categories';
-
-/** Ids of the pages that actually exist as files, built once and reused. */
-let realIds: Set<string> | undefined;
-async function getRealIds(): Promise<Set<string>> {
-	realIds ??= new Set((await getCollection('docs')).map((entry) => entry.id));
-	return realIds;
-}
+import { getDocsById, openGraphImage } from './og';
 
 /**
  * Whether this page is showing default-language content because its own
@@ -19,18 +12,21 @@ async function getRealIds(): Promise<Set<string>> {
  * Checking the id against the real files is the only honest signal.
  */
 async function isUntranslated(id: string): Promise<boolean> {
-	const ids = await getRealIds();
-	if (ids.has(id)) return false;
+	const docs = await getDocsById();
+	if (docs.has(id)) return false;
 
 	// Only a page whose default-language original exists is a fallback; anything
 	// else (listings, tag pages) has no file behind it either way.
 	const withoutLocale = id.split('/').slice(1).join('/');
-	return withoutLocale.length > 0 && ids.has(withoutLocale);
+	return withoutLocale.length > 0 && docs.has(withoutLocale);
 }
 
 type SidebarEntry = StarlightRouteData['sidebar'][number];
 
 /**
+ * Runs after every page is resolved, for two jobs: finishing the `<head>` (the
+ * noindex on untranslated pages, the social card) and reshaping the sidebar.
+ *
  * starlight-blog builds the blog sidebar in its own route middleware and lists
  * every tag in one flat "태그" group. This runs after it (`await next()`) and
  * swaps that group for a two-level "카테고리" tree, leaving the rest of the
@@ -59,6 +55,35 @@ export const onRequest = defineRouteMiddleware(async (context, next) => {
 			attrs: { name: 'robots', content: 'noindex, follow' },
 		});
 	}
+
+	/*
+	  Starlight writes og:title, og:description and twitter:card but never an
+	  image, so every shared link rendered as an empty card — the twitter:card
+	  value it does write, `summary_large_image`, promises one. Adding it here
+	  rather than in `head` config is what lets the value depend on the page.
+	*/
+	const ogImage = await openGraphImage(starlightRoute.id, starlightRoute.locale, context.site);
+	if (ogImage) {
+		starlightRoute.head.push(
+			{ tag: 'meta', attrs: { property: 'og:image', content: ogImage.url } },
+			{ tag: 'meta', attrs: { name: 'twitter:image', content: ogImage.url } },
+		);
+		if (ogImage.alt) {
+			starlightRoute.head.push({
+				tag: 'meta',
+				attrs: { property: 'og:image:alt', content: ogImage.alt },
+			});
+		}
+		// Optional, but a crawler that has them can lay the card out before it
+		// has finished downloading the image.
+		if (ogImage.width && ogImage.height) {
+			starlightRoute.head.push(
+				{ tag: 'meta', attrs: { property: 'og:image:width', content: String(ogImage.width) } },
+				{ tag: 'meta', attrs: { property: 'og:image:height', content: String(ogImage.height) } },
+			);
+		}
+	}
+
 	const lang = starlightRoute.locale === 'en' ? 'en' : 'ko';
 	const strings = uiStrings[lang];
 
