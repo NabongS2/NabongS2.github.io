@@ -9,7 +9,13 @@
  */
 import BlogMarkdownContent from 'starlight-blog/overrides/MarkdownContent.astro';
 import ImageZoom from 'starlight-image-zoom/components/ImageZoom.astro';
+
+import SeriesNav from './SeriesNav.astro';
 ---
 
 <ImageZoom />
-<BlogMarkdownContent><slot /></BlogMarkdownContent>
+<BlogMarkdownContent>
+	{/* 시리즈에 속한 글에만 보이고 나머지 페이지에서는 아무것도 그리지 않는다. */}
+	<SeriesNav />
+	<slot />
+</BlogMarkdownContent>
