@@ -1,0 +1,215 @@
+---
+title: Spring 에서 Redis 쓰기
+description: Spring Data Redis 로 Redis 에 붙이는 방법입니다. StringRedisTemplate 로 자료구조별 코드를 적고, redis-cli 로 꺼내면 값이 깨져 보이는 직렬화 문제를 정리했습니다.
+excerpt: redis-cli 에서 치던 명령이 Java 에서 무엇에 대응하는지, 그리고 Java 로 넣은 값이 redis-cli 에서 읽히지 않는 이유를 정리합니다.
+cover:
+  alt: Spring 과 Redis 사이에 놓인 RedisTemplate
+  light: ../../../assets/blog/redis/cover-java-light.png
+  dark: ../../../assets/blog/redis/cover-java-dark.png
+date: 2026-09-23T20:00:00+09:00
+tags:
+  - 데이터
+  - Redis
+authors: nabong
+draft: true
+---
+
+Redis 가 무엇이고 `redis-cli` 에서 어떻게 보는지는 [앞 글](/blog/redis-basics/)에 적었습니다. 이 글은 그 명령들을 Spring 에서 어떻게 부르는지입니다.
+
+## 붙이기
+
+```groovy
+implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+```
+
+```yaml
+spring:
+  data:
+    redis:
+      host: 192.168.0.10
+      port: 6379
+```
+
+Spring Boot 2.x 에서는 `spring.redis.host` 였습니다. 3.x 에서 `spring.data.redis.host` 로 바뀌었습니다. 예전 설정이 남아 있으면 값이 안 먹고 `localhost:6379` 로 붙으려다 실패합니다.
+
+스타터를 넣으면 `StringRedisTemplate` 이 자동으로 만들어집니다. 주입해서 씁니다.
+
+```java
+@Service
+@RequiredArgsConstructor
+public class SessionStore {
+
+    private final StringRedisTemplate redis;
+}
+```
+
+## redis-cli 에서 값이 깨져 보일 때
+
+여기서 한 번 걸립니다.
+
+```java
+@Autowired
+private RedisTemplate<Object, Object> redis;   // 이렇게 쓰면
+
+redis.opsForValue().set("user:1000", "나봉");
+```
+
+`redis-cli` 로 꺼내면 이렇게 나옵니다.
+
+```
+127.0.0.1:6379> KEYS *
+1) "\xac\xed\x00\x05t\x00\tuser:1000"
+```
+
+키 이름부터 알아볼 수 없습니다.
+
+`RedisTemplate` 의 기본 직렬화가 **JDK 직렬화**라서 그렇습니다. 자바 객체를 바이트로 바꿔 넣기 때문에 자바 밖에서는 읽을 수도, 같은 키로 찾을 수도 없습니다.
+
+`StringRedisTemplate` 을 쓰면 키와 값을 그대로 문자열로 넣습니다.
+
+```java
+private final StringRedisTemplate redis;
+
+redis.opsForValue().set("user:1000", "나봉");
+```
+
+```
+127.0.0.1:6379> GET user:1000
+"나봉"
+```
+
+객체를 통째로 넣어야 하면 JSON 으로 직렬화해서 문자열로 넣습니다. 그러면 `redis-cli` 에서도 읽힙니다.
+
+```java
+redis.opsForValue().set("user:1000", objectMapper.writeValueAsString(user));
+```
+
+**운영 중에 값을 눈으로 확인할 수 있는지가 갈립니다.** 장애가 났을 때 `redis-cli` 로 바로 들여다보려면 문자열로 넣어 두는 편이 낫습니다.
+
+## String
+
+```java
+ValueOperations<String, String> ops = redis.opsForValue();
+
+ops.set("session:a1b2c3", "user=1000");
+String v = ops.get("session:a1b2c3");
+
+ops.set("session:a1b2c3", "user=1000", Duration.ofMinutes(30));
+
+ops.increment("visits:2026-09-22");
+ops.increment("visits:2026-09-22", 5);
+
+redis.delete("session:a1b2c3");
+```
+
+`increment` 는 값을 읽어 더해 다시 쓰는 것이 아니라 Redis 안에서 한 번에 처리됩니다. 서버 여러 대가 같은 카운터를 올려도 값이 어긋나지 않습니다. 자바에서 `get` → `+1` → `set` 으로 직접 짜면 그 사이에 다른 서버가 끼어들 수 있습니다.
+
+## Hash
+
+```java
+HashOperations<String, String, String> ops = redis.opsForHash();
+
+ops.put("user:1000", "name", "나봉");
+ops.putAll("user:1000", Map.of("name", "나봉", "age", "30"));
+
+String name = ops.get("user:1000", "name");
+Map<String, String> all = ops.entries("user:1000");
+
+ops.increment("user:1000", "age", 1);
+ops.delete("user:1000", "age");
+```
+
+`HashOperations<H, HK, HV>` 는 타입 인자가 셋입니다. 키 타입, 필드 타입, 값 타입 순입니다.
+
+## List
+
+```java
+ListOperations<String, String> ops = redis.opsForList();
+
+ops.rightPush("recent:1000", "item-a");
+ops.leftPush("recent:1000", "item-b");
+
+List<String> top10 = ops.range("recent:1000", 0, 9);
+String one = ops.leftPop("recent:1000");
+Long size = ops.size("recent:1000");
+
+ops.trim("recent:1000", 0, 9);
+```
+
+최근 목록을 만들 때는 넣고 바로 자릅니다.
+
+```java
+ops.leftPush("recent:1000", item);
+ops.trim("recent:1000", 0, 9);
+```
+
+## Set
+
+```java
+SetOperations<String, String> ops = redis.opsForSet();
+
+ops.add("tags:post:1", "redis", "java");
+Set<String> members = ops.members("tags:post:1");
+Boolean has = ops.isMember("tags:post:1", "redis");
+ops.remove("tags:post:1", "java");
+Long count = ops.size("tags:post:1");
+
+Set<String> both = ops.intersect("tags:post:1", "tags:post:2");
+```
+
+`isMember` 는 원소가 몇 개든 일정한 시간에 끝납니다. `members` 로 전부 받아와 자바에서 `contains` 하는 것과 다릅니다. 원소가 많으면 그 차이가 커집니다.
+
+## Sorted Set
+
+```java
+ZSetOperations<String, String> ops = redis.opsForZSet();
+
+ops.add("rank:2026-09", "user:1000", 120);
+ops.incrementScore("rank:2026-09", "user:1000", 10);
+
+Set<ZSetOperations.TypedTuple<String>> top =
+        ops.reverseRangeWithScores("rank:2026-09", 0, 9);
+
+Long rank = ops.reverseRank("rank:2026-09", "user:1000");
+Double score = ops.score("rank:2026-09", "user:1000");
+```
+
+`reverseRange` 는 값만, `reverseRangeWithScores` 는 점수까지 같이 줍니다. 순위표를 만들 때는 점수도 보여줘야 하니 대개 뒤쪽을 씁니다.
+
+## 만료
+
+```java
+redis.expire("session:a1b2c3", Duration.ofMinutes(30));
+Long left = redis.getExpire("session:a1b2c3", TimeUnit.SECONDS);
+redis.persist("session:a1b2c3");
+```
+
+`getExpire` 가 `-1` 이면 만료가 없는 키, `-2` 면 키가 없는 것입니다.
+
+값을 넣을 때 같이 거는 편이 안전합니다. `set` 하고 `expire` 를 따로 부르면 그 사이에 예외가 나거나 프로세스가 죽었을 때 만료 없는 키가 남습니다.
+
+```java
+ops.set("session:a1b2c3", "user=1000", Duration.ofMinutes(30));
+```
+
+## redis-cli 와 대응
+
+| 하려는 것 | redis-cli | Java |
+| --- | --- | --- |
+| 값 넣기 | `SET k v` | `opsForValue().set(k, v)` |
+| 만료까지 같이 | `SET k v EX 1800` | `opsForValue().set(k, v, Duration.ofMinutes(30))` |
+| 값 꺼내기 | `GET k` | `opsForValue().get(k)` |
+| 숫자 올리기 | `INCR k` | `opsForValue().increment(k)` |
+| 객체 필드 넣기 | `HSET k f v` | `opsForHash().put(k, f, v)` |
+| 객체 전체 꺼내기 | `HGETALL k` | `opsForHash().entries(k)` |
+| 목록에 넣기 | `RPUSH k v` | `opsForList().rightPush(k, v)` |
+| 목록 잘라 보기 | `LRANGE k 0 9` | `opsForList().range(k, 0, 9)` |
+| 목록 길이 제한 | `LTRIM k 0 9` | `opsForList().trim(k, 0, 9)` |
+| 모음에 넣기 | `SADD k v` | `opsForSet().add(k, v)` |
+| 들어 있나 | `SISMEMBER k v` | `opsForSet().isMember(k, v)` |
+| 점수와 함께 넣기 | `ZADD k 120 v` | `opsForZSet().add(k, v, 120)` |
+| 상위 10개 | `ZREVRANGE k 0 9` | `opsForZSet().reverseRange(k, 0, 9)` |
+| 만료 걸기 | `EXPIRE k 1800` | `expire(k, Duration.ofMinutes(30))` |
+| 남은 시간 | `TTL k` | `getExpire(k, TimeUnit.SECONDS)` |
+| 지우기 | `DEL k` | `delete(k)` |
+| 자료구조 확인 | `TYPE k` | `type(k)` |

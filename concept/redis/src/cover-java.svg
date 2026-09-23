@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="redis-cli 명령과 Java 메서드를 나란히 놓은 표지">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="var(--bg1)"/>
+      <stop offset="100%" stop-color="var(--bg2)"/>
+    </linearGradient>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/>
+    </marker>
+  </defs>
+  <style>
+    svg { --bg1:#f7f9fc; --bg2:#e6eefb; --fg:#1b1b1f; --muted:#5c5f66; --line:#c8ccd4; --accent:#2f6fd0; --accent-soft:#eaf1fc; --card:#ffffff; }
+    @media (prefers-color-scheme: dark) {
+      svg { --bg1:#1b1d22; --bg2:#141c2b; --fg:#e8e9ed; --muted:#a3a7b0; --line:#3a3e47; --accent:#77aaf0; --accent-soft:#1c2941; --card:#22242b; }
+    }
+    .t { font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; fill: var(--fg); }
+    .big { font-size: 68px; font-weight: 800; letter-spacing: -.01em; }
+    .mid { font-size: 56px; font-weight: 800; letter-spacing: -.01em; }
+    .card { fill: var(--card); stroke: var(--line); stroke-width: 2; }
+    .card-a { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }
+    .lab { font-size: 38px; font-weight: 700; fill: var(--fg); font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; }
+    .mono { font-family: "D2Coding", ui-monospace, "Consolas", monospace; font-size: 34px; font-weight: 700; fill: var(--fg); }
+    .code { font-family: "D2Coding", ui-monospace, "Consolas", monospace; font-size: 30px; fill: var(--muted); }
+    .tag { font-size: 24px; fill: var(--muted); font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; }
+    .arrow { stroke: var(--accent); stroke-width: 4; fill: none; marker-end: url(#ar); }
+  </style>
+
+  <rect width="1200" height="630" fill="url(#g)"/>
+  <rect x="80" y="86" width="72" height="6" rx="3" fill="var(--accent)"/>
+
+  <text class="t mid" x="80" y="172">Spring 에서 Redis 쓰기</text>
+
+  <rect class="card" x="80" y="300" width="400" height="200" rx="20"/>
+  <g transform="translate(116 342) scale(1.8333)"><path d="M22.71 13.145c-1.66 2.092-3.452 4.483-7.038 4.483-3.203 0-4.397-2.825-4.48-5.12.701 1.484 2.073 2.685 4.214 2.63 4.117-.133 6.94-3.852 6.94-7.239 0-4.05-3.022-6.972-8.268-6.972-3.752 0-8.4 1.428-11.455 3.685C2.59 6.937 3.885 9.958 4.35 9.626c2.648-1.904 4.748-3.13 6.784-3.744C8.12 9.244.886 17.05 0 18.425c.1 1.261 1.66 4.648 2.424 4.648.232 0 .431-.133.664-.365a100.49 100.49 0 0 0 5.54-6.765c.222 3.104 1.748 6.898 6.014 6.898 3.819 0 7.604-2.756 9.33-8.965.2-.764-.73-1.361-1.261-.73zm-4.349-5.013c0 1.959-1.926 2.922-3.685 2.922-.941 0-1.664-.247-2.235-.568 1.051-1.592 2.092-3.225 3.21-4.973 1.972.334 2.71 1.43 2.71 2.619z" fill="#FF4438"/></g>
+  <text class="tag" x="176" y="374">redis-cli 명령</text>
+  <text class="mono" x="116" y="452">HSET</text>
+
+  <path class="arrow" d="M500 400 H 580"/>
+
+  <rect class="card-a" x="600" y="300" width="480" height="200" rx="20"/>
+  <g transform="translate(636 342) scale(1.8333)"><path d="M21.8537 1.4158a10.4504 10.4504 0 0 1-1.284 2.2471A11.9666 11.9666 0 1 0 3.8518 20.7757l.4445.3951a11.9543 11.9543 0 0 0 19.6316-8.2971c.3457-3.0126-.568-6.8649-2.0743-11.458zM5.5805 20.8745a1.0174 1.0174 0 1 1-.1482-1.4323 1.0396 1.0396 0 0 1 .1482 1.4323zm16.1991-3.5806c-2.9385 3.9263-9.2601 2.5928-13.2852 2.7904 0 0-.7161.0494-1.4323.1481 0 0 .2717-.1234.6174-.2469 2.8398-.9877 4.1732-1.1853 5.9018-2.0743 3.2349-1.6545 6.4698-5.2844 7.1118-9.0379-1.2347 3.6053-4.9881 6.7167-8.3959 7.9761-2.3459.8643-6.5685 1.7039-6.5685 1.7039l-.1729-.0988c-2.8645-1.4076-2.9632-7.6304 2.2718-9.6306 2.2966-.889 4.4696-.395 6.9637-.9877 2.6422-.6174 5.7043-2.5929 6.939-5.1857 1.3828 4.1732 3.062 10.643.0493 14.6434z" fill="#6DB33F"/></g>
+  <text class="tag" x="696" y="374">Java 메서드</text>
+  <text class="mono" x="636" y="452">opsForHash()</text>
+</svg>
