@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" width="900" height="600" role="img" aria-label="How String, Hash, List, Set and Sorted Set each shape the value they hold">
+  <style>
+    svg { --bg:#ffffff; --fg:#1b1b1f; --muted:#5c5f66; --line:#c8ccd4; --accent:#2f6fd0; --accent-soft:#eaf1fc; --card:#f7f9fc; }
+    @media (prefers-color-scheme: dark) {
+      svg { --bg:#17181c; --fg:#e8e9ed; --muted:#a3a7b0; --line:#3a3e47; --accent:#77aaf0; --accent-soft:#1c2941; --card:#1e2026; }
+    }
+    .bg { fill: var(--bg); }
+    .t { font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; fill: var(--fg); }
+    .h1 { font-size: 18px; font-weight: 700; }
+    .hsub { font-size: 12.5px; fill: var(--muted); font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; }
+    .name { font-size: 15px; font-weight: 700; fill: var(--fg); font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; }
+    .note { font-size: 11.5px; fill: var(--muted); font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; }
+    .chip { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.2; }
+    .chip-plain { fill: var(--card); stroke: var(--line); stroke-width: 1.2; }
+    .val { font-family: "D2Coding", ui-monospace, "Consolas", monospace; font-size: 12.5px; fill: var(--fg); }
+    .field { font-family: "D2Coding", ui-monospace, "Consolas", monospace; font-size: 11px; fill: var(--accent); }
+    .cmd { font-family: "D2Coding", ui-monospace, "Consolas", monospace; font-size: 12px; fill: var(--accent); }
+    .sep { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 4; }
+    .arrow { stroke: var(--muted); stroke-width: 1.4; fill: none; marker-end: url(#a); }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--muted)"/>
+    </marker>
+  </defs>
+  <rect class="bg" width="900" height="600"/>
+
+  <text class="t h1" x="40" y="44">Five data types</text>
+  <text class="hsub" x="40" y="68">The shape of the value differs. Pick by what you read and change most often.</text>
+
+  <!-- String -->
+  <text class="name" x="40" y="126">String</text>
+  <text class="note" x="40" y="145">one value</text>
+  <rect class="chip" x="200" y="104" width="200" height="40" rx="8"/>
+  <text class="val" x="216" y="129">"user=1000"</text>
+  <text class="note" x="420" y="129">A string, a number, JSON — all just a value</text>
+  <text class="cmd" x="700" y="150">SET · GET · INCR</text>
+  <line class="sep" x1="40" y1="170" x2="860" y2="170"/>
+
+  <!-- Hash -->
+  <text class="name" x="40" y="216">Hash</text>
+  <text class="note" x="40" y="235">fields and values</text>
+  <rect class="chip" x="200" y="194" width="150" height="40" rx="8"/>
+  <text class="field" x="214" y="211">name</text>
+  <text class="val" x="214" y="228">"nabong"</text>
+  <rect class="chip" x="360" y="194" width="130" height="40" rx="8"/>
+  <text class="field" x="374" y="211">state</text>
+  <text class="val" x="374" y="228">"TALKING"</text>
+  <rect class="chip" x="500" y="194" width="100" height="40" rx="8"/>
+  <text class="field" x="514" y="211">age</text>
+  <text class="val" x="514" y="228">30</text>
+  <text class="note" x="620" y="219">Change one field at a time</text>
+  <text class="cmd" x="700" y="240">HSET · HGET</text>
+  <line class="sep" x1="40" y1="260" x2="860" y2="260"/>
+
+  <!-- List -->
+  <text class="name" x="40" y="306">List</text>
+  <text class="note" x="40" y="325">an ordered list</text>
+  <text class="note" x="200" y="290">LPUSH</text>
+  <path class="arrow" d="M200 300 H 236"/>
+  <rect class="chip" x="244" y="284" width="110" height="40" rx="8"/>
+  <text class="val" x="258" y="309">item-c</text>
+  <rect class="chip" x="360" y="284" width="110" height="40" rx="8"/>
+  <text class="val" x="374" y="309">item-b</text>
+  <rect class="chip" x="476" y="284" width="110" height="40" rx="8"/>
+  <text class="val" x="490" y="309">item-a</text>
+  <path class="arrow" d="M594 300 H 630"/>
+  <text class="note" x="596" y="290">RPUSH</text>
+  <text class="note" x="648" y="309">Push and pop at either end</text>
+  <text class="cmd" x="700" y="330">RPUSH · LRANGE</text>
+  <line class="sep" x1="40" y1="350" x2="860" y2="350"/>
+
+  <!-- Set -->
+  <text class="name" x="40" y="396">Set</text>
+  <text class="note" x="40" y="415">no duplicates</text>
+  <rect class="chip-plain" x="200" y="374" width="110" height="40" rx="20"/>
+  <text class="val" x="220" y="399">"redis"</text>
+  <rect class="chip-plain" x="320" y="374" width="100" height="40" rx="20"/>
+  <text class="val" x="340" y="399">"java"</text>
+  <rect class="chip-plain" x="430" y="374" width="110" height="40" rx="20"/>
+  <text class="val" x="448" y="399">"spring"</text>
+  <text class="note" x="560" y="393">No order</text>
+  <text class="note" x="560" y="410">The same value added twice stays one</text>
+  <text class="cmd" x="700" y="430">SADD · SISMEMBER</text>
+  <line class="sep" x1="40" y1="440" x2="860" y2="440"/>
+
+  <!-- Sorted Set -->
+  <text class="name" x="40" y="486">Sorted Set</text>
+  <text class="note" x="40" y="505">ordered by score</text>
+  <rect class="chip" x="200" y="464" width="140" height="40" rx="8"/>
+  <text class="field" x="214" y="481">120</text>
+  <text class="val" x="214" y="498">"user:A"</text>
+  <rect class="chip" x="350" y="464" width="140" height="40" rx="8"/>
+  <text class="field" x="364" y="481">95</text>
+  <text class="val" x="364" y="498">"user:B"</text>
+  <rect class="chip" x="500" y="464" width="140" height="40" rx="8"/>
+  <text class="field" x="514" y="481">80</text>
+  <text class="val" x="514" y="498">"user:C"</text>
+  <text class="note" x="660" y="489">Position is set on write, by score</text>
+  <text class="cmd" x="700" y="520">ZADD · ZREVRANGE</text>
+
+  <line class="sep" x1="40" y1="546" x2="860" y2="546"/>
+  <text class="note" x="40" y="576">If you always read and write the whole value, String is enough. Use the others when you change parts of it.</text>
+</svg>

@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 540" width="900" height="540" role="img" aria-label="두 서버가 같은 값을 동시에 고칠 때 JSON 문자열은 한쪽 변경이 덮어써지고 Hash 는 둘 다 남는다는 비교">
+  <style>
+    svg { --bg:#ffffff; --fg:#1b1b1f; --muted:#5c5f66; --line:#c8ccd4; --accent:#2f6fd0; --accent-soft:#eaf1fc; --card:#f7f9fc; --warn:#b3541e; --warn-soft:#fbeee4; --ok:#2e7d52; --ok-soft:#e6f4ec; }
+    @media (prefers-color-scheme: dark) {
+      svg { --bg:#17181c; --fg:#e8e9ed; --muted:#a3a7b0; --line:#3a3e47; --accent:#77aaf0; --accent-soft:#1c2941; --card:#1e2026; --warn:#e0a06a; --warn-soft:#332519; --ok:#6fbf90; --ok-soft:#18291f; }
+    }
+    .bg { fill: var(--bg); }
+    .t { font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; fill: var(--fg); }
+    .h1 { font-size: 18px; font-weight: 700; }
+    .hsub { font-size: 12.5px; fill: var(--muted); font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; }
+    .pane { fill: var(--card); stroke: var(--line); stroke-width: 1.2; }
+    .ptitle { font-size: 15px; font-weight: 700; fill: var(--fg); font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; }
+    .who { font-size: 12px; font-weight: 700; font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; }
+    .code { font-family: "D2Coding", ui-monospace, "Consolas", monospace; font-size: 12.5px; fill: var(--fg); }
+    .dim { font-family: "D2Coding", ui-monospace, "Consolas", monospace; font-size: 12px; fill: var(--muted); }
+    .note { font-size: 11.5px; fill: var(--muted); font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; }
+    .res-bad { fill: var(--warn-soft); stroke: var(--warn); stroke-width: 1.4; }
+    .res-ok { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 1.4; }
+    .lbl-bad { font-size: 12px; font-weight: 700; fill: var(--warn); font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; }
+    .lbl-ok { font-size: 12px; font-weight: 700; fill: var(--ok); font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; }
+    .step { stroke: var(--line); stroke-width: 1; }
+  </style>
+  <rect class="bg" width="900" height="540"/>
+
+  <text class="t h1" x="40" y="44">두 서버가 같은 값을 동시에 고치면</text>
+  <text class="hsub" x="40" y="68">통화 상태를 A 는 ENDED 로, B 는 담당자를 2000 으로 바꾸는 상황입니다.</text>
+
+  <!-- 왼쪽: JSON -->
+  <rect class="pane" x="40" y="92" width="400" height="330" rx="12"/>
+  <text class="ptitle" x="64" y="124">JSON 문자열 하나로</text>
+
+  <text class="who" x="64" y="162" fill="var(--accent)">A</text>
+  <text class="code" x="88" y="162">GET</text>
+  <text class="dim" x="140" y="162">→ {state:TALKING, agent:1000}</text>
+
+  <text class="who" x="64" y="196" fill="var(--warn)">B</text>
+  <text class="code" x="88" y="196">GET</text>
+  <text class="dim" x="140" y="196">→ {state:TALKING, agent:1000}</text>
+
+  <line class="step" x1="64" y1="214" x2="416" y2="214"/>
+
+  <text class="who" x="64" y="244" fill="var(--accent)">A</text>
+  <text class="code" x="88" y="244">SET</text>
+  <text class="dim" x="140" y="244">{state:ENDED, agent:1000}</text>
+
+  <text class="who" x="64" y="278" fill="var(--warn)">B</text>
+  <text class="code" x="88" y="278">SET</text>
+  <text class="dim" x="140" y="278">{state:TALKING, agent:2000}</text>
+
+  <rect class="res-bad" x="64" y="308" width="352" height="54" rx="8"/>
+  <text class="note" x="80" y="328">남은 값</text>
+  <text class="code" x="80" y="348">{state:TALKING, agent:2000}</text>
+  <text class="lbl-bad" x="64" y="388">A 가 바꾼 ENDED 가 사라졌습니다</text>
+  <text class="note" x="64" y="406">B 는 자기가 읽은 옛 값으로 전체를 덮어썼습니다</text>
+
+  <!-- 오른쪽: Hash -->
+  <rect class="pane" x="460" y="92" width="400" height="330" rx="12"/>
+  <text class="ptitle" x="484" y="124">Hash 로</text>
+
+  <text class="who" x="484" y="162" fill="var(--accent)">A</text>
+  <text class="code" x="508" y="162">HSET</text>
+  <text class="dim" x="560" y="162">state ENDED</text>
+
+  <text class="who" x="484" y="196" fill="var(--warn)">B</text>
+  <text class="code" x="508" y="196">HSET</text>
+  <text class="dim" x="560" y="196">agent 2000</text>
+
+  <line class="step" x1="484" y1="214" x2="836" y2="214"/>
+
+  <text class="note" x="484" y="244">읽어 오는 단계가 없습니다.</text>
+  <text class="note" x="484" y="262">각자 자기 필드만 건드립니다.</text>
+
+  <rect class="res-ok" x="484" y="308" width="352" height="54" rx="8"/>
+  <text class="note" x="500" y="328">남은 값</text>
+  <text class="code" x="500" y="348">{state:ENDED, agent:2000}</text>
+  <text class="lbl-ok" x="484" y="388">둘 다 남았습니다</text>
+  <text class="note" x="484" y="406">Redis 가 명령을 하나씩 처리해 순서가 정해집니다</text>
+
+  <line x1="40" y1="452" x2="860" y2="452" stroke="var(--line)" stroke-width="1" stroke-dasharray="4 5"/>
+  <text class="note" x="40" y="482">같은 필드를 동시에 고치면 Hash 에서도 나중 것이 남습니다. 다른 필드를 건드릴 때 차이가 납니다.</text>
+  <text class="note" x="40" y="504">전체를 항상 통째로 읽고 쓰는 값이라면 JSON 문자열로 둬도 이 문제가 생기지 않습니다.</text>
+</svg>

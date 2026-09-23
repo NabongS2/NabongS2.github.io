@@ -35,8 +35,9 @@ export const categoryTree: CategoryNode[] = [
 		],
 	},
 	{
-		label: { ko: '데이터 설계', en: 'Data design' },
+		label: { ko: '데이터', en: 'Data' },
 		children: [
+			{ label: { ko: 'Redis', en: 'Redis' } },
 			{ label: { ko: '스키마 설계', en: 'Schema design' } },
 			{ label: { ko: '쿼리 튜닝', en: 'Query tuning' } },
 			{ label: { ko: '트랜잭션', en: 'Transactions' } },

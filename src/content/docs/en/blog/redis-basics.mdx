@@ -1,0 +1,320 @@
+---
+title: Redis, from the idea to data types and commands
+description: What Redis is and why it is fast, how it differs from a relational database, when to pick each of the five data types, and the redis-cli commands for them.
+excerpt: Almost everything about Redis follows from one fact — the data sits in memory. The five data types and the redis-cli commands that go with them.
+date: 2026-09-23T16:00:00+09:00
+tags:
+  - Data
+  - Redis
+authors: nabong
+draft: false
+---
+
+import ThemedImage from '../../../../components/ThemedImage.astro';
+
+## What Redis is
+
+A store you put a value into under a key and read back by that key. It keeps that data **in memory, not on disk.**
+
+```
+SET  session:a1b2c3  "user=1000"
+GET  session:a1b2c3
+→ "user=1000"
+```
+
+The name is **RE**mote **DI**ctionary **S**erver. Think of the `Map` you use inside a program, lifted out of the process so several servers can share it. Point three servers at the same Redis and all three share the same session.
+
+Nearly every property follows from "it is in memory".
+
+| Because it is in memory | What follows |
+| --- | --- |
+| No round trip to disk | Responses drop below a millisecond |
+| Memory is the ceiling | How much you can hold is tied to the machine's RAM |
+| It goes when the process goes | Keeping anything means configuring a separate write to disk |
+
+## How it differs from a relational database
+
+Only the places where the habits you already have do not carry over.
+
+| | Relational DB | Redis |
+| --- | --- | --- |
+| Where data lives | On disk. Memory is a buffer pool | In memory. Disk is for persistence |
+| Data model | Tables, columns, types, constraints | Key-value. No schema |
+| How you read | SQL, with conditions | Direct access by key |
+| Joins | Yes | No |
+| Transactions | Commit and rollback, isolation levels | Atomic execution, but no rollback |
+| Capacity ceiling | Disk size | Memory size |
+
+A **buffer pool** is the area where a relational database holds pages it read from disk. The original is on disk; memory is a temporary spot for what gets used often.
+
+**Persistence** is writing what is in memory out to disk. Memory goes when the process goes, so a copy is kept in a file to bring it back on restart.
+
+Redis is the mirror image. The original is in memory, and what sits on disk is the copy.
+
+### If you do not know the key, you cannot find it
+
+This is the largest difference. In a relational database you can store data first and invent the question later.
+
+```sql
+SELECT * FROM users WHERE age > 30;
+```
+
+Redis has nothing like this. To look people up by age, you have to **build the list of keys for that condition ahead of time.**
+
+```
+SADD  users:age:over30  1000  1001  1002
+SMEMBERS users:age:over30
+```
+
+So Redis is a store where you **decide what you will read and how, then write it in that shape.** A relational database runs the other way around, which is why you can put a new condition on data you stored long ago.
+
+There is a `KEYS *` that walks everything. It is not used in production. The reason is right below.
+
+## Commands are lined up and handled one at a time
+
+Redis runs command execution on a single thread. It finishes one and starts the next, in arrival order. (Network I/O is split across threads, but the commands themselves run one at a time.)
+
+That cuts both ways.
+
+- **The good side** — no lock contention and no context switching, so each command is very fast. Two commands never touch the same key at once, which makes counters and locks simple to build
+- **The side to watch** — one slow command blocks everything for its duration. Type `KEYS *` against millions of keys and every other request waits it out
+
+When you do need to walk the keyspace, use `SCAN`. It comes back in pieces, so nothing is blocked.
+
+A relational database handles connections in parallel, so one heavy query does not stop the rest. In exchange you have locks and isolation levels to think about.
+
+## Where it gets used
+
+| Use | What goes in | Data type |
+| --- | --- | --- |
+| **Sessions** | Login state | String, Hash |
+| **In-flight state** | A call in progress, an order being processed | Hash |
+| Cache | Results of a relational query | String |
+| Counters | View counts, call volume | String + `INCR` |
+| Leaderboards | Top N by score | Sorted Set |
+| Distributed locks | Making sure something runs once | String + `SET NX` |
+
+It is the same Redis, but the reason for choosing it differs by use. **Any one** of the six below is reason enough, and usually several apply at once.
+
+| If you need this | For example |
+| --- | --- |
+| A disk round trip is too slow | Cache, in-flight state |
+| Several servers have to see the same thing | Sessions, distributed locks |
+| It has to survive a redeploy or restart | Sessions, in-flight state |
+| It has to disappear on its own after a while | Sessions, cache |
+| Concurrent changes must not drift apart | Counters, distributed locks |
+| A sorted order has to stay maintained | Leaderboards |
+
+On that last line: pull a ranking out of a relational database and you sort on every read. A Sorted Set settles the position on write, so the top ten — or one user's rank — comes back immediately.
+
+The middle three have nothing to do with speed. A `Map` inside the app process satisfies the first line and none of the rest. A relational database is the opposite: it satisfies everything but the first.
+
+These, on the other hand, are no reason to reach for Redis.
+
+- **Anything you search by condition** — without the key you cannot find it
+- **Anything you keep for a long time** — memory costs more than disk
+- **Anything that needs transactions** — there is no rollback
+
+### It comes down to where the original lives
+
+| | Example | If Redis dies |
+| --- | --- | --- |
+| The original is in the relational DB | Cache, leaderboards | Read it again and refill |
+| Redis is the original | Sessions, in-flight state | You lose whatever was in flight |
+
+Take a call in progress. For as long as the call lasts, that state exists only in Redis. It reaches the relational database as history after the call ends.
+
+If you are holding things Redis is the original for, **persistence and the memory policy have to be decided too.** With a pure cache you can skip both.
+
+## JSON string, or a data type
+
+There are two ways to put an object into Redis.
+
+As one JSON string,
+
+```sh
+SET call:a1b2c3 '{"agent":"1000","state":"TALKING"}'
+```
+
+or as a Hash.
+
+```sh
+HSET call:a1b2c3 agent 1000 state TALKING
+```
+
+Reading the whole thing, there is barely a difference. What separates them is **changing part of it.**
+
+Say the call state goes from `TALKING` to `ENDED`. The JSON side takes three steps.
+
+```sh
+GET call:a1b2c3                # fetch the whole object
+                               # parse it in the app, change state
+SET call:a1b2c3 '{...}'        # send the whole object back
+```
+
+The Hash side takes one.
+
+```sh
+HSET call:a1b2c3 state ENDED
+```
+
+Two things differ here.
+
+**How much moves.** The JSON side carries the whole object twice to change one field. Thirty fields means thirty received and thirty sent.
+
+**Concurrent changes.** This is the one that matters.
+
+<ThemedImage name="redis/en/concurrent-update" alt="When two servers change the same value at once, a JSON string loses one change while a Hash keeps both" />
+
+On the JSON side, server B overwrote everything based on the old value it had read. It never touched `state`, and yet A's `ENDED` is gone.
+
+`HSET` changes only the field you name. There is no read step, so there is no old value to overwrite with.
+
+**So you choose like this.**
+
+| | How to store it |
+| --- | --- |
+| You always read and write the whole thing | A JSON string is simpler |
+| You change fields separately | Hash |
+| Several servers change the same object | Hash |
+
+Lists work the same way. A JSON array in a String means a full round trip for every addition; a List makes it one `RPUSH`.
+
+## Trying the commands
+
+The commands below are typed at the `redis-cli` prompt. If you are running it as a container, this gets you in.
+
+```sh
+docker exec -it myapp-redis redis-cli
+```
+
+Once connected the prompt becomes `127.0.0.1:6379>`. `exit` leaves. Commands for checking its state and connecting a GUI are in [Connecting to a Redis container and checking its state](/en/blog/redis-docker/).
+
+## The five
+
+| Data type | What it is | Where it fits |
+| --- | --- | --- |
+| **String** | One value under one key | Sessions, cache, counters |
+| **Hash** | Fields and values. One object | Reading and changing an object field by field |
+| **List** | An ordered list. Push and pop at either end | Recent items, a simple queue |
+| **Set** | A collection with no duplicates. No order | Deduplication, intersections |
+| **Sorted Set** | A collection ordered by score | Leaderboards, time-ordered lists |
+
+<ThemedImage name="redis/en/data-types" alt="How String, Hash, List, Set and Sorted Set each shape the value they hold" />
+
+### String
+
+```sh
+SET    session:a1b2c3  "user=1000"
+GET    session:a1b2c3
+SET    session:a1b2c3  "user=1000"  EX 1800   # expires in 30 minutes
+INCR   visits:2026-09-22
+INCRBY visits:2026-09-22  5
+DEL    session:a1b2c3
+```
+
+`INCR` is not a read, add and write back — Redis does it in one go. That is why several servers can raise the same counter without the value drifting.
+
+### Hash
+
+```sh
+HSET    user:1000  name "nabong"  age 30
+HGET    user:1000  name
+HGETALL user:1000
+HINCRBY user:1000  age  1
+HDEL    user:1000  age
+HKEYS   user:1000
+```
+
+### List
+
+```sh
+RPUSH  recent:1000  "item-a"      # push on the right
+LPUSH  recent:1000  "item-b"      # push on the left
+LRANGE recent:1000  0  9          # index 0 through 9
+LPOP   recent:1000                # pop one off the left
+LLEN   recent:1000
+LTRIM  recent:1000  0  9          # keep the first 10, cut the rest
+```
+
+`LPUSH` to add and `LTRIM 0 9` to cut gives you a list that holds the last ten. Trimming on every write is the convention.
+
+`RPUSH` on one side and `LPOP` on the other makes a queue. If you need retries or failure handling, reach for a dedicated tool like RabbitMQ — a List queue loses the message if the worker dies while processing it.
+
+### Set
+
+```sh
+SADD      tags:post:1  "redis"  "java"
+SMEMBERS  tags:post:1
+SISMEMBER tags:post:1  "redis"     # 1 if present, 0 if not
+SREM      tags:post:1  "java"
+SCARD     tags:post:1              # how many
+SINTER    tags:post:1  tags:post:2 # intersection
+```
+
+`SISMEMBER` takes the same time no matter how many members there are. That is not what happens when you fetch the whole list and search it in the app.
+
+### Sorted Set
+
+Each value goes in with a score, and the collection stays ordered by it.
+
+```sh
+ZADD       rank:2026-09  120  "user:1000"
+ZINCRBY    rank:2026-09  10   "user:1000"    # raise the score
+ZREVRANGE  rank:2026-09  0  9  WITHSCORES    # top 10 by score
+ZREVRANK   rank:2026-09  "user:1000"         # what rank is this
+ZSCORE     rank:2026-09  "user:1000"
+ZCARD      rank:2026-09
+```
+
+Put a timestamp in the score and you have a time-ordered list. `ZRANGEBYSCORE` slices it by period.
+
+## Setting an expiry
+
+Give a key a lifetime and **Redis deletes it for you** once the time passes. That lifetime is called the **TTL**, for **T**ime **T**o **L**ive.
+
+```sh
+EXPIRE   session:a1b2c3  1800    # gone in 30 minutes
+TTL      session:a1b2c3          # how many seconds are left
+PERSIST  session:a1b2c3          # drop the expiry
+```
+
+`TTL` answers one of three ways.
+
+| | |
+| --- | --- |
+| A positive number | Seconds remaining |
+| `-1` | No expiry. It stays forever |
+| `-2` | No such key. Already gone, or never there |
+
+A relational database has nothing like this. You keep an expiry column and clear it with a batch job, or compare timestamps on every read. That is why "it has to disappear on its own after a while" counts as a reason to reach for Redis in [Where it gets used](#where-it-gets-used) above.
+
+Setting it as you write the value is safer. `SET` followed by a separate `EXPIRE` leaves a key with no expiry if the process dies in between.
+
+```sh
+SET session:a1b2c3 "user=1000" EX 1800
+```
+
+Keys piling up with a `TTL` of `-1` is a common reason memory keeps filling.
+
+## Command reference
+
+| What you want | Command |
+| --- | --- |
+| Store a value | `SET k v` |
+| With an expiry | `SET k v EX 1800` |
+| Read a value | `GET k` |
+| Increment a number | `INCR k` |
+| Set an object field | `HSET k f v` |
+| Read a whole object | `HGETALL k` |
+| Append to a list | `RPUSH k v` |
+| Slice a list | `LRANGE k 0 9` |
+| Cap a list's length | `LTRIM k 0 9` |
+| Add to a set | `SADD k v` |
+| Is it in there | `SISMEMBER k v` |
+| Add with a score | `ZADD k 120 v` |
+| Top 10 | `ZREVRANGE k 0 9` |
+| Set an expiry | `EXPIRE k 1800` |
+| Time remaining | `TTL k` |
+| Delete | `DEL k` |
+| Check the data type | `TYPE k` |
