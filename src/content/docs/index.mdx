@@ -16,6 +16,7 @@ hero:
 ---
 
 import { Badge, Card, CardGrid } from '@astrojs/starlight/components';
+import RecentPosts from '../../components/RecentPosts.astro';
 
 <CardGrid>
 	<Card title="다루는 주제" icon="list-format">
@@ -37,3 +38,5 @@ import { Badge, Card, CardGrid } from '@astrojs/starlight/components';
 		</span>
 	</Card>
 </CardGrid>
+
+<RecentPosts title="최근 글" more="글 전체 보기 →" href="/blog/" />

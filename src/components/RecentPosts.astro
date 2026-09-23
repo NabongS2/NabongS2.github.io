@@ -1,0 +1,132 @@
+---
+/**
+ * The most recent posts, for the home page.
+ *
+ * The home uses `template: splash`, which hides the sidebar — and the sidebar
+ * is where 최근 글 lives. So the front page showed no writing at all, and the
+ * blog was a click away from anyone who didn't already know it was there.
+ *
+ * Posts come from starlight-blog's own data, which is already filtered to this
+ * locale, has drafts removed in a production build, and is sorted newest
+ * first. Reading it is cheaper than a second `getCollection` and can't drift
+ * from what the blog itself shows.
+ */
+interface Props {
+	/** Section heading. */
+	title: string;
+	/** Label of the link to the full list. */
+	more: string;
+	/** Where that link goes — `/blog/` or `/en/blog/`. */
+	href: string;
+	/** How many posts to show. */
+	count?: number;
+}
+
+const { title, more, href, count = 3 } = Astro.props;
+
+const posts = Astro.locals.starlightBlog.posts.slice(0, count);
+---
+
+{
+	posts.length > 0 && (
+		<section class="recent">
+			<h2 class="recent-heading">{title}</h2>
+
+			<ul class="recent-list">
+				{posts.map((post) => (
+					<li class="recent-item">
+						<a class="recent-link" href={post.href}>
+							{post.title}
+						</a>
+						<p class="recent-meta">
+							{/* The same string the post and list pages format their date with. */}
+							<time datetime={post.createdAt.toISOString()}>
+								{Astro.locals.t('starlightBlog.post.date', { date: post.createdAt })}
+							</time>
+						</p>
+						{post.entry.data.excerpt && <p class="recent-excerpt">{post.entry.data.excerpt}</p>}
+					</li>
+				))}
+			</ul>
+
+			<a class="recent-more" href={href}>
+				{more}
+			</a>
+		</section>
+	)
+}
+
+<style>
+	.recent {
+		margin-top: 3rem;
+	}
+
+	.recent-heading {
+		font-size: var(--sl-text-2xl);
+		margin-bottom: 1.5rem;
+	}
+
+	.recent-list {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: grid;
+		gap: 1rem;
+	}
+
+	/*
+	  Same chrome as Starlight's own LinkCard. That component takes its
+	  description as a single HTML string, which can't hold a date line and an
+	  excerpt as separate blocks, so the markup is ours and the look is borrowed.
+	*/
+	.recent-item {
+		position: relative;
+		border: 1px solid var(--sl-color-gray-5);
+		border-radius: 0.5rem;
+		padding: 1rem 1.25rem;
+		box-shadow: var(--sl-shadow-sm);
+	}
+
+	.recent-item:hover {
+		background: var(--sl-color-gray-7, var(--sl-color-gray-6));
+		border-color: var(--sl-color-gray-2);
+	}
+
+	.recent-link {
+		color: var(--sl-color-white);
+		font-size: var(--sl-text-lg);
+		font-weight: 600;
+		text-decoration: none;
+		line-height: var(--sl-line-height-headings);
+	}
+
+	/* Makes the whole card the click target without nesting anything in the
+	   link, which would swallow the excerpt's text selection. */
+	.recent-link::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+	}
+
+	.recent-item:hover .recent-link {
+		color: var(--sl-color-text-accent);
+	}
+
+	.recent-meta {
+		margin: 0.35rem 0 0;
+		font-size: var(--sl-text-xs);
+		color: var(--sl-color-gray-3);
+	}
+
+	.recent-excerpt {
+		margin: 0.6rem 0 0;
+		color: var(--sl-color-gray-2);
+		line-height: 1.6;
+	}
+
+	.recent-more {
+		display: inline-block;
+		margin-top: 1.25rem;
+		font-size: var(--sl-text-sm);
+	}
+</style>

@@ -16,6 +16,7 @@ hero:
 ---
 
 import { Badge, Card, CardGrid } from '@astrojs/starlight/components';
+import RecentPosts from '../../../components/RecentPosts.astro';
 
 <CardGrid>
 	<Card title="What I cover" icon="list-format">
@@ -37,3 +38,5 @@ import { Badge, Card, CardGrid } from '@astrojs/starlight/components';
 		</span>
 	</Card>
 </CardGrid>
+
+<RecentPosts title="Latest posts" more="All posts →" href="/en/blog/" />
