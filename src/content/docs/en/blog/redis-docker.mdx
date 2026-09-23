@@ -1,0 +1,185 @@
+---
+title: Connecting to a Redis container and checking its state
+description: How to reach a Redis running in a container with redis-cli, check its memory, look up keys and monitor commands, and connect a GUI tool.
+excerpt: Connecting to a running Redis container, checking its state and looking up keys, and connecting a GUI tool to it.
+date: 2026-09-23T16:10:00+09:00
+tags:
+  - Data
+  - Redis
+authors: nabong
+draft: false
+---
+
+What Redis is and how its data types work is in the [concepts post](/en/blog/redis-basics/). This one is about connecting to a Redis that is already running in a container and checking its state.
+
+## Connecting with redis-cli
+
+If you started it with Docker, `redis-cli` is already inside the container. There is nothing to install.
+
+```sh
+docker ps                          # find the container name or ID
+docker exec -it myapp-redis bash   # get into the container
+redis-cli                          # connect to Redis from there
+```
+
+Get the name exactly right. If you run containers with a version in the name, it is `myapp-redis_1.0.0`, not `myapp-redis`, and a guess gets you `No such container`. The rightmost column of `docker ps` is the actual name.
+
+You can also connect in one step, without the shell in between.
+
+```sh
+docker exec -it myapp-redis redis-cli
+```
+
+The difference: the first way lets you look at config files or run other commands inside the container too; the second is one line when Redis is all you need.
+
+A slim image may not have `bash`. Use `sh` instead.
+
+```sh
+docker exec -it myapp-redis sh
+```
+
+Once connected, the prompt changes to this.
+
+```
+127.0.0.1:6379>
+```
+
+The front is the address and port you are connected to; commands go after the `>`. `exit` leaves.
+
+If a password is set, type `AUTH your-password` first after connecting. Without it every command comes back with `NOAUTH Authentication required.`
+
+If the port is published to the host and the host has its own `redis-cli`, you can skip the container and connect directly with `redis-cli -h 192.168.0.10 -p 6379`.
+
+## Checking memory
+
+How much memory is in use right now, and whether keys are being evicted because the limit was hit.
+
+```sh
+docker exec myapp-redis redis-cli INFO memory | grep -E "used_memory_human|maxmemory_human|maxmemory_policy"
+docker exec myapp-redis redis-cli INFO stats | grep evicted_keys
+```
+
+| Field | Meaning |
+| --- | --- |
+| `used_memory_human` | How much is in use now |
+| `maxmemory_human` | The limit. `0B` means there is none |
+| `maxmemory_policy` | What happens when the limit is reached |
+| `evicted_keys` | How many keys were dropped because of the limit |
+
+If `evicted_keys` is not 0, **keys are already being thrown away.** If you are storing sessions, that many logouts have happened.
+
+## Key lookup and monitoring
+
+You can also ask one-off questions without opening a session. For a Redis inside a container, put `docker exec myapp-redis` in front.
+
+```sh
+redis-cli DBSIZE                            # number of keys
+redis-cli TYPE session:a1b2c3               # which data type this key holds
+redis-cli TTL  session:a1b2c3
+```
+
+To find keys, use `--scan` instead of `KEYS`. It fetches in pieces, so nothing else is blocked.
+
+```sh
+redis-cli --scan --pattern "session:*" | head -20
+redis-cli --scan --pattern "session:*" | wc -l
+```
+
+This finds the keys taking up the most memory.
+
+```sh
+redis-cli --bigkeys
+```
+
+To watch commands as they go by, use `MONITOR`. It prints every command, so in production turn it on only briefly.
+
+```sh
+redis-cli MONITOR
+```
+
+## GUI tools
+
+`redis-cli` covers a lot, but once there are many keys, scanning a list by eye is faster.
+
+I use [Another Redis Desktop Manager](https://github.com/qishibo/AnotherRedisDesktopManager). It is open source and free, with Windows, macOS and Linux builds.
+
+Three things made me pick it. **Copying a key is one click, values holding JSON show up indented, and you can edit or delete a value in place.**
+
+The second one makes the biggest difference. Store an object as a JSON string and `redis-cli` gives it back as one long line.
+
+```
+"{\"callId\":\"a1b2c3\",\"agent\":\"1000\",\"startedAt\":\"2026-09-22T10:00:00\",\"state\":\"TALKING\"}"
+```
+
+Past ten fields or so it is hard to read. In the terminal you have to pipe it through `jq`.
+
+```sh
+docker exec myapp-redis redis-cli GET session:a1b2c3 | jq
+```
+
+A GUI expands it for you. If you check values often, that adds up.
+
+You can change values with `redis-cli` too, but changing one field of a long JSON means typing the whole thing again. A GUI edits and saves in place. It is handy for making test data by hand or fixing a value that went in wrong.
+
+That same feature is dangerous against a production Redis. As the [concepts post](/en/blog/redis-basics/#it-comes-down-to-where-the-original-lives) puts it, **a call in progress or a session has Redis as its original** at that moment. Delete it by mistake and there is nowhere to restore it from. Some tools delete without asking for confirmation, so it is safer to make production and development connections look clearly different in the list. Putting `[prod]` in the connection name is enough.
+
+It also folds keys on the colon. With thousands of keys like `call:20260922:1000`, they group into `call` → `20260922`, so you can open them up to see what kinds there are and how many.
+
+### Other tools
+
+| Tool | What it is |
+| --- | --- |
+| **RedisInsight** | The official tool from the makers of Redis. Free. Analyzes which keys use the most memory and shows the slow command log |
+| **DataGrip**, IntelliJ Ultimate | If you already use JetBrains tools, it sits in the same window |
+| **VS Code extensions** | Browse keys and edit values inside the editor |
+| **TablePlus** | Paid. Relational databases and Redis in one tool |
+| **Medis** | macOS |
+
+If you dig into production state a lot, it is worth having **RedisInsight** installed alongside. Its screen for finding memory-heavy keys is easier to read than `--bigkeys`, and it gives you something to go on when setting a memory policy.
+
+> Search around and the name **Redis Desktop Manager** comes up a lot. It has since been renamed `RESP.app` and become paid. It is a different tool from the Another Redis Desktop Manager described here. Pricing changes, so check before you download.
+
+### Ports and SSH tunnels
+
+A GUI connects from outside the container, so **the port has to be published to the host.**
+
+```sh
+docker port myapp-redis
+# 6379/tcp -> 0.0.0.0:6379   if you see this, you can connect
+```
+
+If nothing comes back, it was started for use inside the container only. You have two ways in: go through the server with the tool's **SSH tunnel** feature, or `docker exec` in and use `redis-cli`.
+
+`0.0.0.0` means it is open on every network interface of the host. Anyone who can reach that host can try to connect, so check whether a password is set while you are at it.
+
+```sh
+docker exec myapp-redis redis-cli CONFIG GET requirepass
+```
+
+An empty value means there is no password. To open it on one interface only, put an address in front: `-p 127.0.0.1:6379:6379` instead of `-p 6379:6379`.
+
+With an SSH tunnel there are two sets of fields to fill in.
+
+| | What goes in |
+| --- | --- |
+| Host, Port | `127.0.0.1`, `6379` — the Redis address as the server sees it |
+| SSH Host, Port | The server IP, `22` |
+| SSH Username | Your login on the server |
+| SSH Key, Password | Authentication for the server |
+
+Writing `127.0.0.1` for the Redis address is the confusing part. It is not your PC — it is **the address as seen from the server you tunneled into.**
+
+Once connected, think before pressing the button that loads the key list. If that button uses `KEYS`, [all of Redis stops for as long as it runs](/en/blog/redis-basics/#commands-are-lined-up-and-handled-one-at-a-time) when there are many keys. Try it against a development Redis first, and use `MONITOR` from earlier to see which command it sends.
+
+## Command reference
+
+| What you want | Command |
+| --- | --- |
+| Connect from inside the container | `docker exec -it myapp-redis redis-cli` |
+| Check published ports | `docker port myapp-redis` |
+| Memory state | `redis-cli INFO memory` |
+| Evicted key count | `evicted_keys` in `redis-cli INFO stats` |
+| Number of keys | `redis-cli DBSIZE` |
+| Find keys | `redis-cli --scan --pattern "session:*"` |
+| Find big keys | `redis-cli --bigkeys` |
+| Watch commands | `redis-cli MONITOR` |
