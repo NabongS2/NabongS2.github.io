@@ -1,0 +1,98 @@
+---
+/**
+ * The comment box under a post.
+ *
+ * Only on posts — a listing, a tag page or 소개 has nothing to discuss — and
+ * only once `src/giscus.ts` has the GitHub side filled in.
+ *
+ * giscus is an iframe, so it can't read the page's colours. The script tag is
+ * built in the browser instead of here, because the theme has to be known at
+ * the moment it loads, and a static tag would have to guess.
+ */
+import { giscus, giscusReady } from '../giscus';
+import { getDocsById } from '../og';
+
+const { id, locale } = Astro.locals.starlightRoute;
+
+const baseId = locale ? id.slice(locale.length + 1) : id;
+
+const docs = await getDocsById();
+const isPost = baseId.startsWith('blog/') && (docs.has(id) || docs.has(baseId));
+
+const attrs = {
+	'data-repo': giscus.repo,
+	'data-repo-id': giscus.repoId,
+	'data-category': giscus.category,
+	'data-category-id': giscus.categoryId,
+	'data-mapping': giscus.mapping,
+	'data-strict': giscus.strict,
+	'data-reactions-enabled': giscus.reactionsEnabled,
+	'data-emit-metadata': giscus.emitMetadata,
+	'data-input-position': giscus.inputPosition,
+	'data-loading': giscus.loading,
+	'data-lang': locale === 'en' ? 'en' : 'ko',
+};
+---
+
+{
+	giscusReady && isPost && (
+		<section class="comments">
+			<script is:inline define:vars={{ attrs }}>
+				(() => {
+					/* Starlight always resolves its theme to one of these two on the
+					   root element, including when the reader has it on 자동. */
+					const theme = () =>
+						document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+
+					const script = document.createElement('script');
+					script.src = 'https://giscus.app/client.js';
+					script.crossOrigin = 'anonymous';
+					script.async = true;
+					for (const [name, value] of Object.entries(attrs)) script.setAttribute(name, value);
+					script.setAttribute('data-theme', theme());
+					document.currentScript.parentElement.append(script);
+
+					/* The iframe keeps its own copy of the theme, so a reader who
+					   flips the switch mid-page has to be told. */
+					let wanted = theme();
+					let loaded = false;
+
+					const send = () => {
+						if (!loaded) return;
+						const frame = document.querySelector('iframe.giscus-frame');
+						frame?.contentWindow?.postMessage(
+							{ giscus: { setConfig: { theme: wanted } } },
+							'https://giscus.app',
+						);
+					};
+
+					/* Until giscus.app has actually loaded, the frame is still on our
+					   own origin and the browser drops a message addressed to theirs.
+					   Their first message back is the signal that it's there — and it
+					   also catches a reader who flipped the theme while it loaded. */
+					addEventListener('message', (event) => {
+						if (loaded || event.origin !== 'https://giscus.app') return;
+						loaded = true;
+						send();
+					});
+
+					new MutationObserver(() => {
+						wanted = theme();
+						send();
+					}).observe(document.documentElement, {
+						attributes: true,
+						attributeFilter: ['data-theme'],
+					});
+				})();
+			</script>
+		</section>
+	)
+}
+
+<style>
+	.comments {
+		margin-top: 3rem;
+		padding-top: 2rem;
+		border-top: 1px solid var(--sl-color-gray-5);
+	}
+</style>

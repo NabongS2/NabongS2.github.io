@@ -1,0 +1,15 @@
+---
+/**
+ * Starlight's own footer — 최종 수정, 이전·다음 글 — with the comment box
+ * after it.
+ *
+ * Footer is the one slot below the article that no plugin here has taken, so
+ * wrapping it is enough; nothing has to be rebuilt by hand.
+ */
+import StarlightFooter from '@astrojs/starlight/components/Footer.astro';
+
+import Comments from './Comments.astro';
+---
+
+<StarlightFooter><slot /></StarlightFooter>
+<Comments />

@@ -60,6 +60,9 @@ export default defineConfig({
 			// silently loses. This override takes the slot and layers both.
 			components: {
 				MarkdownContent: './src/components/MarkdownContent.astro',
+				// Nothing else claims the slot below the article, so wrapping
+				// Starlight's own footer is all the comment box needs.
+				Footer: './src/components/Footer.astro',
 			},
 			// Reshapes the blog plugin's flat tag list into a category tree.
 			routeMiddleware: './src/routeData.ts',
