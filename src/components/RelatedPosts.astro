@@ -1,0 +1,106 @@
+---
+/**
+ * Up to three other posts on the same subject, at the end of a post.
+ *
+ * "Same subject" is read off the tags, weighted by the category tree: sharing
+ * a subcategory (Linux, Docker) says much more than sharing only the top-level
+ * category (인프라), which half the blog has. Ties go to the newer post.
+ *
+ * Parts of the same series are left out — SeriesNav already lists them at the
+ * top, and repeating them here would crowd out anything new. A post with
+ * nothing related renders nothing rather than padding the list with strangers.
+ *
+ * Scoring always uses the Korean tags: the English files translate their tags,
+ * and a post with no translation only has the Korean ones.
+ */
+import { LinkCard } from '@astrojs/starlight/components';
+import { categoryTree } from '../categories';
+import { getDocsById } from '../og';
+import { seriesList } from '../series';
+
+const MAX = 3;
+const strings = {
+	ko: { heading: '함께 읽을 글' },
+	en: { heading: 'Related posts' },
+} as const;
+
+const { id, locale } = Astro.locals.starlightRoute;
+
+const lang = locale === 'en' ? 'en' : 'ko';
+const prefix = locale ? `${locale}/` : '';
+const baseId = locale ? id.slice(prefix.length) : id;
+
+const docs = await getDocsById();
+const current = docs.get(baseId);
+
+const topLevel = new Set(categoryTree.map((node) => node.label.ko));
+const weight = (tag: string) => (topLevel.has(tag) ? 1 : 2);
+
+const isPost = (postId: string) => postId.startsWith('blog/');
+const series = seriesList.find((candidate) => candidate.posts.includes(baseId));
+
+const related =
+	current && isPost(baseId)
+		? [...docs.values()]
+				.filter(
+					(entry) =>
+						isPost(entry.id) &&
+						entry.id !== baseId &&
+						!series?.posts.includes(entry.id) &&
+						// Drafts have no page in production; in dev they're fair game.
+						!(import.meta.env.PROD && entry.data.draft),
+				)
+				.map((entry) => {
+					const mine = new Set(current.data.tags ?? []);
+					const shared = [...new Set(entry.data.tags ?? [])].filter((tag) => mine.has(tag));
+					return { entry, score: shared.reduce((sum, tag) => sum + weight(tag), 0) };
+				})
+				.filter(({ score }) => score > 0)
+				.sort(
+					(a, b) =>
+						b.score - a.score ||
+						(b.entry.data.date?.getTime() ?? 0) - (a.entry.data.date?.getTime() ?? 0),
+				)
+				.slice(0, MAX)
+				.map(({ entry }) => {
+					// The translation if there is one, the original otherwise — which is
+					// what the page at that URL will show.
+					const shown = docs.get(`${prefix}${entry.id}`) ?? entry;
+					return {
+						title: shown.data.title,
+						description: shown.data.description,
+						href: `/${prefix}${entry.id}/`,
+					};
+				})
+		: [];
+---
+
+{
+	related.length > 0 && (
+		<nav class="related" aria-labelledby="related-heading">
+			<h2 id="related-heading">{strings[lang].heading}</h2>
+			<div class="related-cards">
+				{related.map((post) => (
+					<LinkCard title={post.title} description={post.description} href={post.href} />
+				))}
+			</div>
+		</nav>
+	)
+}
+
+<style>
+	.related {
+		margin-top: 3rem;
+	}
+
+	.related h2 {
+		font-size: var(--sl-text-h4);
+		color: var(--sl-color-white);
+		margin-bottom: 1rem;
+	}
+
+	.related-cards {
+		display: grid;
+		gap: 0.75rem;
+	}
+</style>

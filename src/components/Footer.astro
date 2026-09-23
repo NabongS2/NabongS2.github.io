@@ -1,7 +1,7 @@
 ---
 /**
- * Starlight's own footer — 최종 수정, 이전·다음 글 — with the comment box
- * after it.
+ * Starlight's own footer — 최종 수정, 이전·다음 글 — with related posts
+ * before it and the comment box after it.
  *
  * Footer is the one slot below the article that no plugin here has taken, so
  * wrapping it is enough; nothing has to be rebuilt by hand.
@@ -9,7 +9,9 @@
 import StarlightFooter from '@astrojs/starlight/components/Footer.astro';
 
 import Comments from './Comments.astro';
+import RelatedPosts from './RelatedPosts.astro';
 ---
 
+<RelatedPosts />
 <StarlightFooter><slot /></StarlightFooter>
 <Comments />

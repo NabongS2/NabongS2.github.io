@@ -71,7 +71,10 @@ export default defineConfig({
 			// Starlight ships Korean UI strings; this only covers what it doesn't.
 			editLink: undefined,
 			lastUpdated: true,
-			pagination: true,
+			// starlight-blog already puts newer/older post links under each post.
+			// Starlight's own prev/next repeated the same link right below it, and
+			// on the other pages (home, about) it only walked the sidebar order.
+			pagination: false,
 		}),
 	],
 });
