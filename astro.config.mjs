@@ -40,6 +40,14 @@ export default defineConfig({
 					// newer/older buttons with no page numbers. With few posts, one
 					// page is friendlier; revisit (archive page) near 20 posts.
 					postCount: 20,
+					// "읽는 데 N분" next to the date. Code counts as words too, so a
+					// code-heavy post can read long; override per post with
+					// `metrics: { readingTime: <seconds> }` in its frontmatter.
+					metrics: { readingTime: true },
+					// Older post on the left, newer on the right, the way a timeline
+					// reads. The default put the newer one on the left behind a ←,
+					// which pointed a series' next part backwards.
+					prevNextLinksOrder: 'chronological',
 					authors: {
 						nabong: {
 							name: 'nabong',

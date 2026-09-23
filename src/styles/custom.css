@@ -87,11 +87,41 @@
 }
 
 /*
-  Date to excerpt. The plugin's 1.5rem gap between the header and the excerpt
-  stacks with the 1rem top margin Starlight gives markdown blocks, 40px in all.
-  The author line used to sit in that space; without it the date floated. This
-  pulls the excerpt up so date and summary read as one unit.
+  Spacing inside a list entry. The plugin puts a 1.5rem gap between header,
+  excerpt and tags, and Starlight adds a 1rem top margin to each of those
+  blocks, so every step was 40px — the same as nothing being related. Date and
+  summary read as one unit (12px); the tags sit a little apart (16px).
 */
 .sl-blog-preview .sl-blog-preview-excerpt {
 	margin-top: -0.75rem;
+}
+.sl-blog-preview .sl-blog-preview-footer {
+	margin-top: -0.5rem;
+}
+
+/*
+  The date-ordered links under a post only showed a title and an arrow, which
+  left "earlier or later?" to guesswork — and they sit right under the series
+  box, which moves by reading order instead. A small label on each says which
+  axis this is. Scoped to post pages; the list page's buttons carry their own
+  text already.
+*/
+.sl-blog-post-footer .sl-blog-pagination a[rel] .title::before {
+	display: block;
+	margin-bottom: 0.2rem;
+	font-size: var(--sl-text-xs);
+	font-weight: 400;
+	color: var(--sl-color-gray-3);
+}
+.sl-blog-post-footer .sl-blog-pagination a[rel='prev'] .title::before {
+	content: '이전 글';
+}
+.sl-blog-post-footer .sl-blog-pagination a[rel='next'] .title::before {
+	content: '다음 글';
+}
+:lang(en) .sl-blog-post-footer .sl-blog-pagination a[rel='prev'] .title::before {
+	content: 'Previous post';
+}
+:lang(en) .sl-blog-post-footer .sl-blog-pagination a[rel='next'] .title::before {
+	content: 'Next post';
 }

@@ -11,6 +11,7 @@ import BlogMarkdownContent from 'starlight-blog/overrides/MarkdownContent.astro'
 import ImageZoom from 'starlight-image-zoom/components/ImageZoom.astro';
 
 import SeriesNav from './SeriesNav.astro';
+import SeriesPager from './SeriesPager.astro';
 ---
 
 <ImageZoom />
@@ -18,4 +19,6 @@ import SeriesNav from './SeriesNav.astro';
 	{/* 시리즈에 속한 글에만 보이고 나머지 페이지에서는 아무것도 그리지 않는다. */}
 	<SeriesNav />
 	<slot />
+	{/* 시리즈 글이면 본문 끝에 이전 편·다음 편을 건다. */}
+	<SeriesPager />
 </BlogMarkdownContent>

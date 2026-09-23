@@ -1,0 +1,113 @@
+---
+/**
+ * The previous and next part of the series, at the end of the post.
+ *
+ * The newer/older links under a post follow publication dates, which only
+ * match reading order by luck. This box follows the order in `src/series.ts`
+ * instead, and borrows the look of the contents box at the top of the post
+ * (SeriesNav) so the two read as one feature, apart from the date links.
+ *
+ * Renders nothing outside a series or when the series has a single part.
+ */
+import { getSeriesParts, seriesStrings } from '../series';
+
+const { id, locale } = Astro.locals.starlightRoute;
+
+const lang = locale === 'en' ? 'en' : 'ko';
+const strings = seriesStrings[lang];
+const found = await getSeriesParts(id, locale);
+const parts = found?.parts ?? [];
+const index = parts.findIndex((part) => part.current);
+
+const prev = index > 0 ? parts[index - 1] : undefined;
+const next = index === -1 ? undefined : parts[index + 1];
+const show = found && parts.length > 1 && index !== -1;
+---
+
+{
+	show && (
+		<nav class="series-pager not-content" aria-label={`${strings.label} ${found.series.label[lang]}`}>
+			<p class="series-pager-heading">
+				<span class="series-word">{strings.label}</span>
+				{found.series.label[lang]} · {index + 1}/{parts.length}
+			</p>
+			<div class="series-pager-links">
+				{prev ? (
+					<a class="series-pager-link" href={prev.href} rel="prev">
+						<span class="series-pager-dir">← {strings.prev}</span>
+						<span class="series-pager-title">{prev.title}</span>
+					</a>
+				) : (
+					<span />
+				)}
+				{next && (
+					<a class="series-pager-link series-pager-next" href={next.href} rel="next">
+						<span class="series-pager-dir">{strings.next} →</span>
+						<span class="series-pager-title">{next.title}</span>
+					</a>
+				)}
+			</div>
+		</nav>
+	)
+}
+
+<style>
+	/* Same box as SeriesNav at the top of the post. */
+	.series-pager {
+		margin-top: 3rem;
+		border: 1px solid var(--sl-color-gray-5);
+		border-inline-start: 3px solid var(--sl-color-accent);
+		border-radius: 0.5rem;
+		padding: 1rem 1.25rem;
+		background: var(--sl-color-gray-7, var(--sl-color-gray-6));
+	}
+
+	.series-pager-heading {
+		margin: 0 0 0.75rem;
+		font-size: var(--sl-text-sm);
+		font-weight: 600;
+		color: var(--sl-color-white);
+	}
+
+	.series-word {
+		color: var(--sl-color-gray-3);
+		font-weight: 400;
+	}
+
+	.series-word::after {
+		content: ' · ';
+	}
+
+	.series-pager-links {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 1rem;
+	}
+
+	.series-pager-link {
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+		text-decoration: none;
+	}
+
+	.series-pager-next {
+		grid-column: 2;
+		text-align: end;
+	}
+
+	.series-pager-dir {
+		font-size: var(--sl-text-xs);
+		color: var(--sl-color-gray-3);
+	}
+
+	.series-pager-title {
+		font-size: var(--sl-text-sm);
+		font-weight: 600;
+		color: var(--sl-color-text-accent);
+	}
+
+	.series-pager-link:hover .series-pager-title {
+		color: var(--sl-color-white);
+	}
+</style>

@@ -9,44 +9,14 @@
  * Renders nothing on a page that isn't part of a series, which is most of them
  * — it sits in the MarkdownContent override, so every page passes through it.
  */
-import { getDocsById } from '../og';
-import { seriesList, seriesStrings } from '../series';
+import { getSeriesParts, seriesStrings } from '../series';
 
 const { id, locale } = Astro.locals.starlightRoute;
 
 const lang = locale === 'en' ? 'en' : 'ko';
-const prefix = locale ? `${locale}/` : '';
-
-// `en/blog/redis-basics` and `blog/redis-basics` are the same post to a series.
-const baseId = locale ? id.slice(prefix.length) : id;
-
-const series = seriesList.find((candidate) => candidate.posts.includes(baseId));
-
-const docs = await getDocsById();
-
-const parts = (series?.posts ?? []).map((postId) => {
-	const entry = docs.get(postId);
-	if (!entry) {
-		throw new Error(`시리즈에 적힌 ${postId} 가 없다. src/series.ts 를 고칠 것.`);
-	}
-
-	return {
-		id: postId,
-		// The translation if there is one, the original otherwise — which is what
-		// the page at that URL will show.
-		title: (docs.get(`${prefix}${postId}`) ?? entry).data.title,
-		href: `/${prefix}${postId}/`,
-		current: postId === baseId,
-		draft: entry.data.draft === true,
-	};
-});
-
-/*
-  A draft has no page in a production build, so linking to one would be a dead
-  link — the link validator fails the build on those, which is the behaviour we
-  want. In dev the drafts are there, so they're listed.
-*/
-const visible = import.meta.env.PROD ? parts.filter((part) => !part.draft) : parts;
+const found = await getSeriesParts(id, locale);
+const series = found?.series;
+const visible = found?.parts ?? [];
 
 // One part on its own isn't a series worth announcing.
 const show = series && visible.length > 1;
