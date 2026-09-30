@@ -1,0 +1,708 @@
+<!DOCTYPE html><html lang="en" dir="ltr" data-theme="dark" data-has-toc data-has-sidebar class="astro-g5ptsecz"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>The terminal, from what a server is to vi | Nabong's Dev Blog</title><link rel="canonical" href="https://nabongs2.github.io/en/blog/terminal-basics/"/><link rel="alternate" hreflang="ko" href="https://nabongs2.github.io/blog/terminal-basics/"/><link rel="alternate" hreflang="en" href="https://nabongs2.github.io/en/blog/terminal-basics/"/><link rel="alternate" hreflang="x-default" href="https://nabongs2.github.io/blog/terminal-basics/"/><link rel="sitemap" href="/sitemap-index.xml"/><link href="https://nabongs2.github.io/blog/rss.xml" rel="alternate" title="Blog" type="application/rss+xml"/><link rel="shortcut icon" href="/favicon.svg" type="image/svg+xml"/><meta name="generator" content="Astro v7.3.3"/><meta name="generator" content="Starlight v0.42.2"/><meta property="og:title" content="The terminal, from what a server is to vi"/><meta property="og:type" content="article"/><meta property="og:url" content="https://nabongs2.github.io/en/blog/terminal-basics/"/><meta property="og:locale" content="en"/><meta property="og:description" content="What a server actually is, why closing an SSH session kills the programs you started, how the Linux directory tree is laid out, and vi's three modes."/><meta property="og:site_name" content="Nabong's Dev Blog"/><meta name="twitter:card" content="summary_large_image"/><meta name="description" content="What a server actually is, why closing an SSH session kills the programs you started, how the Linux directory tree is laid out, and vi's three modes."/><script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","datePublished":"2026-09-22T10:00:00.000Z","headline":"The terminal, from what a server is to vi","inLanguage":"en","isPartOf":{"@id":"https://nabongs2.github.io/en/blog/#blog","@type":"Blog","name":"Blog","url":"https://nabongs2.github.io/en/blog/"},"mainEntityOfPage":"https://nabongs2.github.io/en/blog/terminal-basics/","url":"https://nabongs2.github.io/en/blog/terminal-basics/","author":[{"@type":"Person","@id":"https://nabongs2.github.io/en/blog/authors/nabong/#author","name":"nabong","url":"https://github.com/NabongS2"}],"description":"What a server actually is, why closing an SSH session kills the programs you started, how the Linux directory tree is laid out, and vi's three modes.","image":"https://nabongs2.github.io/_astro/cover-light.VEuPIPQF.png","keywords":["Infrastructure","Linux"]},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Blog","item":"https://nabongs2.github.io/en/blog/"},{"@type":"ListItem","position":2,"name":"The terminal, from what a server is to vi"}]}]}</script><meta property="og:image" content="https://nabongs2.github.io/_astro/cover-light.VEuPIPQF_UTysy.png"/><meta name="twitter:image" content="https://nabongs2.github.io/_astro/cover-light.VEuPIPQF_UTysy.png"/><meta property="og:image:alt" content="A terminal session checking the current directory and moving into another folder on a server"/><meta property="og:image:width" content="1200"/><meta property="og:image:height" content="630"/><script>
+	window.StarlightThemeProvider = (() => {
+		const storedTheme =
+			typeof localStorage !== 'undefined' && localStorage.getItem('starlight-theme');
+		const theme =
+			storedTheme ||
+			(window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+		document.documentElement.dataset.theme = theme === 'light' ? 'light' : 'dark';
+		return {
+			updatePickers(theme = storedTheme || 'auto') {
+				document.querySelectorAll('starlight-theme-select').forEach((picker) => {
+					const select = picker.querySelector('select');
+					if (select) select.value = theme;
+					/** @type {HTMLTemplateElement | null} */
+					const tmpl = document.querySelector(`#theme-icons`);
+					const newIcon = tmpl && tmpl.content.querySelector('.' + theme);
+					if (newIcon) {
+						const oldIcon = picker.querySelector('svg.label-icon');
+						if (oldIcon) {
+							oldIcon.replaceChildren(...newIcon.cloneNode(true).childNodes);
+						}
+					}
+				});
+			},
+		};
+	})();
+</script><template id="theme-icons"><svg aria-hidden="true" class="light astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M5 12a1 1 0 0 0-1-1H3a1 1 0 0 0 0 2h1a1 1 0 0 0 1-1Zm.64 5-.71.71a1 1 0 0 0 0 1.41 1 1 0 0 0 1.41 0l.71-.71A1 1 0 0 0 5.64 17ZM12 5a1 1 0 0 0 1-1V3a1 1 0 0 0-2 0v1a1 1 0 0 0 1 1Zm5.66 2.34a1 1 0 0 0 .7-.29l.71-.71a1 1 0 1 0-1.41-1.41l-.66.71a1 1 0 0 0 0 1.41 1 1 0 0 0 .66.29Zm-12-.29a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.71-.71a1.004 1.004 0 1 0-1.43 1.41l.73.71ZM21 11h-1a1 1 0 0 0 0 2h1a1 1 0 0 0 0-2Zm-2.64 6A1 1 0 0 0 17 18.36l.71.71a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.76-.66ZM12 6.5a5.5 5.5 0 1 0 5.5 5.5A5.51 5.51 0 0 0 12 6.5Zm0 9a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Zm0 3.5a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 0-1-1Z"/></svg><svg aria-hidden="true" class="dark astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.64 13a1 1 0 0 0-1.05-.14 8.049 8.049 0 0 1-3.37.73 8.15 8.15 0 0 1-8.14-8.1 8.59 8.59 0 0 1 .25-2A1 1 0 0 0 8 2.36a10.14 10.14 0 1 0 14 11.69 1 1 0 0 0-.36-1.05Zm-9.5 6.69A8.14 8.14 0 0 1 7.08 5.22v.27a10.15 10.15 0 0 0 10.14 10.14 9.784 9.784 0 0 0 2.1-.22 8.11 8.11 0 0 1-7.18 4.32v-.04Z"/></svg><svg aria-hidden="true" class="auto astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg></template><link rel="stylesheet" href="/_astro/print.ehPL0gv-.css" media="print"><link rel="stylesheet" href="/_astro/middleware.DLtPqXDX.css"><style>@layer starlight.components{.card:where(.astro-oag6qnet){--sl-card-border:var(--sl-color-purple);--sl-card-bg:var(--sl-color-purple-low);border:1px solid var(--sl-color-gray-5);background-color:var(--sl-color-black);flex-direction:column;gap:clamp(.5rem,.125rem + 1vw,1rem);padding:clamp(1rem,.125rem + 3vw,2.5rem)}.card:where(.astro-oag6qnet):nth-child(4n+1){--sl-card-border:var(--sl-color-orange);--sl-card-bg:var(--sl-color-orange-low)}.card:where(.astro-oag6qnet):nth-child(4n+3){--sl-card-border:var(--sl-color-green);--sl-card-bg:var(--sl-color-green-low)}.card:where(.astro-oag6qnet):nth-child(4n+4){--sl-card-border:var(--sl-color-red);--sl-card-bg:var(--sl-color-red-low)}.card:where(.astro-oag6qnet):nth-child(4n+5){--sl-card-border:var(--sl-color-blue);--sl-card-bg:var(--sl-color-blue-low)}.title:where(.astro-oag6qnet){font-weight:600;font-size:var(--sl-text-h4);color:var(--sl-color-white);line-height:var(--sl-line-height-headings);align-items:center;gap:1rem}.card:where(.astro-oag6qnet) .icon:where(.astro-oag6qnet){border:1px solid var(--sl-card-border);background-color:var(--sl-card-bg);border-radius:.25rem;flex-shrink:0;padding:.2em}.card:where(.astro-oag6qnet) .body:where(.astro-oag6qnet){font-size:clamp(var(--sl-text-sm), calc(.5rem + 1vw), var(--sl-text-body));margin:0}}
+@layer starlight.components{svg:where(.astro-hkc32dio){color:var(--sl-icon-color);font-size:var(--sl-icon-size,1em);width:1em;height:1em}:root{--sl-badge-default-border:var(--sl-color-accent);--sl-badge-default-bg:var(--sl-color-accent-low);--sl-badge-default-text:#fff;--sl-badge-note-border:var(--sl-color-blue);--sl-badge-note-bg:var(--sl-color-blue-low);--sl-badge-note-text:#fff;--sl-badge-danger-border:var(--sl-color-red);--sl-badge-danger-bg:var(--sl-color-red-low);--sl-badge-danger-text:#fff;--sl-badge-success-border:var(--sl-color-green);--sl-badge-success-bg:var(--sl-color-green-low);--sl-badge-success-text:#fff;--sl-badge-caution-border:var(--sl-color-orange);--sl-badge-caution-bg:var(--sl-color-orange-low);--sl-badge-caution-text:#fff;--sl-badge-tip-border:var(--sl-color-purple);--sl-badge-tip-bg:var(--sl-color-purple-low);--sl-badge-tip-text:#fff}[data-theme=light]:root{--sl-badge-default-bg:var(--sl-color-accent-high);--sl-badge-note-bg:var(--sl-color-blue-high);--sl-badge-danger-bg:var(--sl-color-red-high);--sl-badge-success-bg:var(--sl-color-green-high);--sl-badge-caution-bg:var(--sl-color-orange-high);--sl-badge-tip-bg:var(--sl-color-purple-high)}.sl-badge:where(.astro-f4zorn72){border:1px solid var(--sl-color-border-badge);font-family:var(--sl-font-system-mono);color:var(--sl-color-text-badge);background-color:var(--sl-color-bg-badge);overflow-wrap:anywhere;border-radius:.25rem;line-height:normal;display:inline-block}.sidebar-content .sl-badge:where(.astro-f4zorn72){line-height:1;font-size:var(--sl-text-xs);padding:.125rem .375rem}.sidebar-content a[aria-current=page]>.sl-badge:where(.astro-f4zorn72){--sl-color-bg-badge:transparent;--sl-color-border-badge:currentColor;color:inherit}.default:where(.astro-f4zorn72){--sl-color-bg-badge:var(--sl-badge-default-bg);--sl-color-border-badge:var(--sl-badge-default-border);--sl-color-text-badge:var(--sl-badge-default-text)}.note:where(.astro-f4zorn72){--sl-color-bg-badge:var(--sl-badge-note-bg);--sl-color-border-badge:var(--sl-badge-note-border);--sl-color-text-badge:var(--sl-badge-note-text)}.danger:where(.astro-f4zorn72){--sl-color-bg-badge:var(--sl-badge-danger-bg);--sl-color-border-badge:var(--sl-badge-danger-border);--sl-color-text-badge:var(--sl-badge-danger-text)}.success:where(.astro-f4zorn72){--sl-color-bg-badge:var(--sl-badge-success-bg);--sl-color-border-badge:var(--sl-badge-success-border);--sl-color-text-badge:var(--sl-badge-success-text)}.tip:where(.astro-f4zorn72){--sl-color-bg-badge:var(--sl-badge-tip-bg);--sl-color-border-badge:var(--sl-badge-tip-border);--sl-color-text-badge:var(--sl-badge-tip-text)}.caution:where(.astro-f4zorn72){--sl-color-bg-badge:var(--sl-badge-caution-bg);--sl-color-border-badge:var(--sl-badge-caution-border);--sl-color-text-badge:var(--sl-badge-caution-text)}.small:where(.astro-f4zorn72){font-size:var(--sl-text-xs);padding:.125rem .25rem}.medium:where(.astro-f4zorn72){font-size:var(--sl-text-sm);padding:.175rem .35rem}.large:where(.astro-f4zorn72){font-size:var(--sl-text-base);padding:.225rem .45rem}.sl-markdown-content :is(h1,h2,h3,h4,h5,h6) .sl-badge:where(.astro-f4zorn72){vertical-align:middle}.card-grid:where(.astro-7qmvx3iy){grid-template-columns:100%;gap:1rem;display:grid}.card-grid:where(.astro-7qmvx3iy)>*{margin-top:0!important}@media (width>=50rem){.card-grid:where(.astro-7qmvx3iy){grid-template-columns:1fr 1fr;gap:1.5rem}.stagger:where(.astro-7qmvx3iy){--stagger-height:5rem;padding-bottom:var(--stagger-height)}.stagger:where(.astro-7qmvx3iy)>:nth-child(2n){transform:translateY(var(--stagger-height))}}}
+</style><script type="module" src="/_astro/page.Dwipeu-R.js"></script></head><body class="astro-g5ptsecz"><a class="sl-skip-link astro-qb7clj6f" href="#_top">Skip to content</a><div class="page sl-flex astro-yntsjkba"><header class="header astro-yntsjkba"><div class="header astro-by6fddyj"><div class="title-wrapper sl-flex astro-by6fddyj"><a href="/en" class="site-title sl-flex astro-6rvad3va"><span class="astro-6rvad3va" translate="no">Nabong&#39;s Dev Blog</span></a></div><div class="sl-flex print:hidden astro-by6fddyj"><site-search class="astro-by6fddyj astro-b5kgnn7o" data-translations="{&quot;placeholder&quot;:&quot;Search&quot;}"><button data-open-modal disabled aria-label="Search" aria-keyshortcuts="Control+K" class="astro-b5kgnn7o"><svg aria-hidden="true" class="astro-b5kgnn7o astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.71 20.29 18 16.61A9 9 0 1 0 16.61 18l3.68 3.68a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.39ZM11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"/></svg><span class="sl-hidden md:sl-block astro-b5kgnn7o" aria-hidden="true">Search</span><kbd class="sl-hidden md:sl-flex astro-b5kgnn7o" style="display: none;"><kbd class="astro-b5kgnn7o">Ctrl</kbd><kbd class="astro-b5kgnn7o">K</kbd></kbd></button><dialog style="padding:0" aria-label="Search" class="astro-b5kgnn7o"><div class="dialog-frame sl-flex astro-b5kgnn7o"><button data-close-modal class="sl-flex md:sl-hidden astro-b5kgnn7o">Cancel</button><div class="search-container astro-b5kgnn7o"><div id="starlight__search" class="astro-b5kgnn7o"></div></div></div></dialog></site-search><script>
+	(() => {
+		const openBtn = document.querySelector('button[data-open-modal]');
+		const shortcut = openBtn?.querySelector('kbd');
+		if (!openBtn || !(shortcut instanceof HTMLElement)) return;
+		const platformKey = shortcut.querySelector('kbd');
+		if (platformKey && /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform)) {
+			platformKey.textContent = '⌘';
+			openBtn.setAttribute('aria-keyshortcuts', 'Meta+K');
+		}
+		shortcut.style.display = '';
+	})();
+</script><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.DZqJ8Bdf.js"></script></div><div class="sl-hidden md:sl-flex print:hidden right-group astro-by6fddyj"><div class="sl-flex social-icons astro-by6fddyj"><a href="https://github.com/NabongS2" rel="me" class="sl-flex astro-n2mnl6yq"><span class="sr-only astro-n2mnl6yq">GitHub</span><svg aria-hidden="true" class="astro-n2mnl6yq astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a><a href="https://nabongs2.github.io/blog/rss.xml" rel="me" class="sl-flex astro-n2mnl6yq"><span class="sr-only astro-n2mnl6yq">RSS</span><svg aria-hidden="true" class="astro-n2mnl6yq astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M2.88 16.88a3 3 0 0 0 0 4.24 3 3 0 0 0 4.24 0 3 3 0 0 0-4.24-4.24Zm2.83 2.83a1 1 0 0 1-1.42-1.42 1 1 0 0 1 1.42 0 1 1 0 0 1 0 1.42ZM5 12a1 1 0 0 0 0 2 5 5 0 0 1 5 5 1 1 0 0 0 2 0 7 7 0 0 0-7-7Zm0-4a1 1 0 0 0 0 2 9 9 0 0 1 9 9 1 1 0 0 0 2 0 11.08 11.08 0 0 0-3.22-7.78A11.08 11.08 0 0 0 5 8Zm10.61.39A15.11 15.11 0 0 0 5 4a1 1 0 0 0 0 2 13 13 0 0 1 13 13 1 1 0 0 0 2 0 15.11 15.11 0 0 0-4.39-10.61Z"/></svg></a></div><div class="sl-blog-header-links astro-2zgbb2in"><a class="sl-blog-header-link astro-2zgbb2in" href="/en/blog/">Blog</a></div><starlight-theme-select><label style="--sl-select-width: 6.25em" class="astro-2z5xp7gb"><span class="sr-only astro-2z5xp7gb">Select theme</span><svg aria-hidden="true" class="icon label-icon astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg><select autocomplete="off" class="astro-2z5xp7gb"><option value="dark" class="astro-2z5xp7gb">Dark</option><option value="light" class="astro-2z5xp7gb">Light</option><option value="auto" selected class="astro-2z5xp7gb">Auto</option></select><svg aria-hidden="true" class="icon caret astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg></label></starlight-theme-select><script>
+	StarlightThemeProvider.updatePickers();
+</script><script type="module">var e=`starlight-theme`,t=e=>e===`auto`||e===`dark`||e===`light`?e:`auto`,n=()=>t(typeof localStorage<`u`&&localStorage.getItem(e));function r(t){typeof localStorage<`u`&&localStorage.setItem(e,t===`light`||t===`dark`?t:``)}var i=()=>matchMedia(`(prefers-color-scheme: light)`).matches?`light`:`dark`;function a(e){StarlightThemeProvider.updatePickers(e),document.documentElement.dataset.theme=e===`auto`?i():e,r(e)}matchMedia(`(prefers-color-scheme: light)`).addEventListener(`change`,()=>{n()===`auto`&&a(`auto`)});var o=class extends HTMLElement{constructor(){super(),a(n()),this.querySelector(`select`)?.addEventListener(`change`,e=>{e.currentTarget instanceof HTMLSelectElement&&a(t(e.currentTarget.value))})}};customElements.define(`starlight-theme-select`,o);</script><starlight-lang-select><label style="--sl-select-width: 7em" class="astro-2z5xp7gb"><span class="sr-only astro-2z5xp7gb">Select language</span><svg aria-hidden="true" class="icon label-icon astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path fill-rule="evenodd" d="M8.516 3a.94.94 0 0 0-.941.94v1.15H2.94a.94.94 0 1 0 0 1.882h7.362a7.422 7.422 0 0 1-1.787 3.958 7.42 7.42 0 0 1-1.422-2.425.94.94 0 1 0-1.774.627 9.303 9.303 0 0 0 1.785 3.043 7.422 7.422 0 0 1-4.164 1.278.94.94 0 1 0 0 1.881 9.303 9.303 0 0 0 5.575-1.855 9.303 9.303 0 0 0 4.11 1.74l-.763 1.525a.968.968 0 0 0-.016.034l-1.385 2.77a.94.94 0 1 0 1.683.841l1.133-2.267h5.806l1.134 2.267a.94.94 0 0 0 1.683-.841l-1.385-2.769a.95.95 0 0 0-.018-.036l-3.476-6.951a.94.94 0 0 0-1.682 0l-1.82 3.639a7.423 7.423 0 0 1-3.593-1.256 9.303 9.303 0 0 0 2.27-5.203h1.894a.94.94 0 0 0 0-1.881H9.456V3.94A.94.94 0 0 0 8.516 3Zm6.426 11.794a1.068 1.068 0 0 1-.02.039l-.703 1.407h3.924l-1.962-3.924-1.24 2.478Z" clip-rule="evenodd"/></svg><select autocomplete="off" class="astro-2z5xp7gb"><option value="/blog/terminal-basics/" class="astro-2z5xp7gb">한국어</option><option value="/en/blog/terminal-basics/" selected class="astro-2z5xp7gb">English</option></select><svg aria-hidden="true" class="icon caret astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg></label></starlight-lang-select><script type="module">var e=class extends HTMLElement{constructor(){super();let e=this.querySelector(`select`);e&&(e.addEventListener(`change`,e=>{e.currentTarget instanceof HTMLSelectElement&&(window.location.pathname=e.currentTarget.value)}),window.addEventListener(`pageshow`,t=>{if(!t.persisted)return;let n=e.querySelector(`option[selected]`)?.index;n!==e.selectedIndex&&(e.selectedIndex=n??0)}))}};customElements.define(`starlight-lang-select`,e);</script></div></div></header><nav class="sidebar print:hidden astro-yntsjkba" aria-label="Main"><button popovertarget="starlight__sidebar" class="sl-menu-button sl-flex md:sl-hidden print:hidden astro-r2osgdlg"><svg aria-hidden="true" class="open-menu astro-r2osgdlg astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M3 8h18a1 1 0 1 0 0-2H3a1 1 0 0 0 0 2Zm18 8H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Zm0-5H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Z"/></svg><svg aria-hidden="true" class="close-menu astro-r2osgdlg astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="m13.41 12 6.3-6.29a1.004 1.004 0 1 0-1.42-1.42L12 10.59l-6.29-6.3a1.004 1.004 0 0 0-1.42 1.42l6.3 6.29-6.3 6.29a1 1 0 0 0 0 1.42.998.998 0 0 0 1.42 0l6.29-6.3 6.29 6.3a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.42L13.41 12Z"/></svg><span class="sr-only astro-r2osgdlg">Menu</span></button><script type="module">var e=class extends HTMLElement{constructor(){super();let e=matchMedia(`(min-width: 50em)`),t=()=>{this.popover=e.matches?null:`auto`};t(),e.addEventListener(`change`,()=>t()),this.addEventListener(`toggle`,({newState:e})=>this.trapFocus(e===`open`))}trapFocus(e){document.querySelectorAll(`.main-frame, .sl-skip-link`).forEach(t=>{t.toggleAttribute(`inert`,e)})}};customElements.define(`sl-sidebar-pane`,e);</script><sl-sidebar-pane popover id="starlight__sidebar" class="sidebar-pane astro-yntsjkba"><div class="sidebar-content sl-flex astro-yntsjkba"><sl-sidebar-state-persist data-hash="1w4lnll" class="astro-ipdry5cl"><script aria-hidden="true">
+		(() => {
+			try {
+				if (!matchMedia('(min-width: 50em)').matches) return;
+				/** @type {HTMLElement | null} */
+				const target = document.querySelector('sl-sidebar-state-persist');
+				const state = JSON.parse(sessionStorage.getItem('sl-sidebar-state') || '0');
+				if (!target || !state || target.dataset.hash !== state.hash) return;
+				window._starlightScrollRestore = state.scroll;
+				customElements.define(
+					'sl-sidebar-restore',
+					class SidebarRestore extends HTMLElement {
+						connectedCallback() {
+							try {
+								const idx = parseInt(this.dataset.index || '');
+								const details = this.closest('details');
+								if (details && typeof state.open[idx] === 'boolean') details.open = state.open[idx];
+							} catch {}
+						}
+					}
+				);
+			} catch {}
+		})();
+	</script><ul class="top-level astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/en/blog/" class="large astro-rmhv4bp6"><span class="astro-rmhv4bp6">All posts</span></a></li><li class="astro-rmhv4bp6"><details open class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">Recent posts</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="0"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/en/blog/nginx-basics/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Nginx, from static files to an API proxy</span></a></li><li class="astro-rmhv4bp6"><a href="/en/blog/redis-java/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Using Redis from Spring</span></a></li><li class="astro-rmhv4bp6"><a href="/en/blog/redis-docker/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Connecting to a Redis container and checking its state</span></a></li><li class="astro-rmhv4bp6"><a href="/en/blog/redis-basics/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Redis, from the idea to data types and commands</span></a></li><li class="astro-rmhv4bp6"><a href="/en/blog/docker-basics/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Docker, from the idea to a working Dockerfile</span></a></li><li class="astro-rmhv4bp6"><a href="/en/blog/ssh-and-sftp/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Connecting to a server and moving files</span></a></li><li class="astro-rmhv4bp6"><a href="/en/blog/terminal-basics/" aria-current="page" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">The terminal, from what a server is to vi</span></a></li><li class="astro-rmhv4bp6"><a href="/en/blog/blog-setup/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">How this blog is put together</span></a></li></ul></details></li><li class="astro-rmhv4bp6"><details open class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">Categories</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="1"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><details class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">Data (3)</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="2"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/en/blog/tags/redis/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Redis (3)</span></a></li></ul></details></li><li class="astro-rmhv4bp6"><details class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">Infrastructure (4)</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="3"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/en/blog/tags/docker/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Docker (1)</span></a></li><li class="astro-rmhv4bp6"><a href="/en/blog/tags/nginx/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Nginx (1)</span></a></li><li class="astro-rmhv4bp6"><a href="/en/blog/tags/linux/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Linux (2)</span></a></li></ul></details></li><li class="astro-rmhv4bp6"><details class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">Thoughts (1)</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="4"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/en/blog/tags/retrospective/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Retrospective (1)</span></a></li></ul></details></li></ul></details></li><li class="astro-rmhv4bp6"><a href="/en/blog/rss.xml" class="large astro-rmhv4bp6"><span class="astro-rmhv4bp6">RSS</span></a></li></ul><script aria-hidden="true">
+		(() => {
+			const scroller = document.getElementById('starlight__sidebar');
+			if (!window._starlightScrollRestore || !scroller) return;
+			scroller.scrollTop = window._starlightScrollRestore;
+			delete window._starlightScrollRestore;
+		})();
+	</script></sl-sidebar-state-persist><div class="md:sl-hidden"><div class="mobile-preferences sl-flex astro-p4azlveh"><div class="social-icons astro-p4azlveh"><a href="https://github.com/NabongS2" rel="me" class="sl-flex astro-n2mnl6yq"><span class="sr-only astro-n2mnl6yq">GitHub</span><svg aria-hidden="true" class="astro-n2mnl6yq astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a><a href="https://nabongs2.github.io/blog/rss.xml" rel="me" class="sl-flex astro-n2mnl6yq"><span class="sr-only astro-n2mnl6yq">RSS</span><svg aria-hidden="true" class="astro-n2mnl6yq astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M2.88 16.88a3 3 0 0 0 0 4.24 3 3 0 0 0 4.24 0 3 3 0 0 0-4.24-4.24Zm2.83 2.83a1 1 0 0 1-1.42-1.42 1 1 0 0 1 1.42 0 1 1 0 0 1 0 1.42ZM5 12a1 1 0 0 0 0 2 5 5 0 0 1 5 5 1 1 0 0 0 2 0 7 7 0 0 0-7-7Zm0-4a1 1 0 0 0 0 2 9 9 0 0 1 9 9 1 1 0 0 0 2 0 11.08 11.08 0 0 0-3.22-7.78A11.08 11.08 0 0 0 5 8Zm10.61.39A15.11 15.11 0 0 0 5 4a1 1 0 0 0 0 2 13 13 0 0 1 13 13 1 1 0 0 0 2 0 15.11 15.11 0 0 0-4.39-10.61Z"/></svg></a></div><div class="sl-blog-header-links astro-2zgbb2in"><a class="sl-blog-header-link astro-2zgbb2in" href="/en/blog/">Blog</a></div><starlight-theme-select><label style="--sl-select-width: 6.25em" class="astro-2z5xp7gb"><span class="sr-only astro-2z5xp7gb">Select theme</span><svg aria-hidden="true" class="icon label-icon astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg><select autocomplete="off" class="astro-2z5xp7gb"><option value="dark" class="astro-2z5xp7gb">Dark</option><option value="light" class="astro-2z5xp7gb">Light</option><option value="auto" selected class="astro-2z5xp7gb">Auto</option></select><svg aria-hidden="true" class="icon caret astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg></label></starlight-theme-select><script>
+	StarlightThemeProvider.updatePickers();
+</script><starlight-lang-select><label style="--sl-select-width: 7em" class="astro-2z5xp7gb"><span class="sr-only astro-2z5xp7gb">Select language</span><svg aria-hidden="true" class="icon label-icon astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path fill-rule="evenodd" d="M8.516 3a.94.94 0 0 0-.941.94v1.15H2.94a.94.94 0 1 0 0 1.882h7.362a7.422 7.422 0 0 1-1.787 3.958 7.42 7.42 0 0 1-1.422-2.425.94.94 0 1 0-1.774.627 9.303 9.303 0 0 0 1.785 3.043 7.422 7.422 0 0 1-4.164 1.278.94.94 0 1 0 0 1.881 9.303 9.303 0 0 0 5.575-1.855 9.303 9.303 0 0 0 4.11 1.74l-.763 1.525a.968.968 0 0 0-.016.034l-1.385 2.77a.94.94 0 1 0 1.683.841l1.133-2.267h5.806l1.134 2.267a.94.94 0 0 0 1.683-.841l-1.385-2.769a.95.95 0 0 0-.018-.036l-3.476-6.951a.94.94 0 0 0-1.682 0l-1.82 3.639a7.423 7.423 0 0 1-3.593-1.256 9.303 9.303 0 0 0 2.27-5.203h1.894a.94.94 0 0 0 0-1.881H9.456V3.94A.94.94 0 0 0 8.516 3Zm6.426 11.794a1.068 1.068 0 0 1-.02.039l-.703 1.407h3.924l-1.962-3.924-1.24 2.478Z" clip-rule="evenodd"/></svg><select autocomplete="off" class="astro-2z5xp7gb"><option value="/blog/terminal-basics/" class="astro-2z5xp7gb">한국어</option><option value="/en/blog/terminal-basics/" selected class="astro-2z5xp7gb">English</option></select><svg aria-hidden="true" class="icon caret astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg></label></starlight-lang-select></div></div></div></sl-sidebar-pane></nav><div class="main-frame astro-yntsjkba"><script type="module">var e=document.getElementById(`starlight__sidebar`),t=e?.querySelector(`sl-sidebar-state-persist`),n=`sl-sidebar-state`,r=()=>{let r=[],i=t?.dataset.hash||``;try{let e=sessionStorage.getItem(n),t=JSON.parse(e||`{}`);Array.isArray(t.open)&&t.hash===i&&(r=t.open)}catch{}return{hash:i,open:r,scroll:e?.scrollTop||0}},i=e=>{try{sessionStorage.setItem(n,JSON.stringify(e))}catch{}},a=()=>i(r()),o=(e,t)=>{let n=r();n.open[t]=e,i(n)};t?.addEventListener(`click`,e=>{if(!(e.target instanceof Element))return;let t=e.target.closest(`summary`)?.closest(`details`);if(!t)return;let n=t.querySelector(`sl-sidebar-restore`),r=parseInt(n?.dataset.index||``);isNaN(r)||o(!t.open,r)}),addEventListener(`visibilitychange`,()=>{document.visibilityState===`hidden`&&a()});</script><div class="lg:sl-flex astro-lrzkfocr"><aside class="right-sidebar-container print:hidden astro-lrzkfocr"><div class="right-sidebar astro-lrzkfocr"><div class="lg:sl-hidden astro-qok35upx"><mobile-starlight-toc data-min-h="2" data-max-h="3" class="astro-66cqc7ze"><nav aria-labelledby="starlight__on-this-page--mobile" class="astro-66cqc7ze"><details id="starlight__mobile-toc" class="astro-66cqc7ze"><summary id="starlight__on-this-page--mobile" class="sl-flex astro-66cqc7ze"><span class="toggle sl-flex astro-66cqc7ze">On this page<svg aria-hidden="true" class="caret astro-66cqc7ze astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></span><span class="display-current astro-66cqc7ze"></span></summary><div class="dropdown astro-66cqc7ze"><ul class="isMobile astro-jugkfwgx" style="--depth: 0;"><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#_top" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Overview</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#what-a-server-is" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">What a server is</span></a><ul class="isMobile astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#connecting-over-ssh" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Connecting over SSH</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#closing-the-session-kills-the-programs" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Closing the session kills the programs</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#where-you-are-and-paths" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Where you are, and paths</span></a><ul class="isMobile astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#reading-the-prompt" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Reading the prompt</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#absolute-and-relative-paths" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Absolute and relative paths</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#the-directory-tree" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">The directory tree</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#pwd-ls-cd" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">pwd, ls, cd</span></a><ul class="isMobile astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#tab-and-the-arrow-keys" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Tab and the arrow keys</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#working-with-files" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Working with files</span></a><ul class="isMobile astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#rm-does-not-ask" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">rm does not ask</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#looking-at-file-contents" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Looking at file contents</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#vi" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">vi</span></a><ul class="isMobile astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#starting-to-type" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Starting to type</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#saving-and-quitting" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Saving and quitting</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#working-by-lines-in-command-mode" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Working by lines (in command mode)</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#nano" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">nano</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#reading-logs-and-finding-files" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Reading logs and finding files</span></a><ul class="isMobile astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#following-a-log-live" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Following a log live</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#searching-inside-files" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Searching inside files</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#accounts-and-permissions" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Accounts and permissions</span></a><ul class="isMobile astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#three-groups-of-permissions-per-file" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Three groups of permissions per file</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#chmod" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">chmod</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#chown-and-docker-volumes" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">chown and Docker volumes</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#the-commands-in-one-place" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">The commands, in one place</span></a></li></ul></div></details></nav></mobile-starlight-toc><script type="module" src="/_astro/MobileTableOfContents.astro_astro_type_script_index_0_lang.BcSo_yiZ.js"></script></div><div class="right-sidebar-panel sl-hidden lg:sl-block astro-qok35upx"><div class="sl-container astro-qok35upx"><starlight-toc data-min-h="2" data-max-h="3"><nav aria-labelledby="starlight__on-this-page"><h2 id="starlight__on-this-page">On this page</h2><ul class="astro-jugkfwgx" style="--depth: 0;"><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#_top" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Overview</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#what-a-server-is" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">What a server is</span></a><ul class="astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#connecting-over-ssh" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Connecting over SSH</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#closing-the-session-kills-the-programs" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Closing the session kills the programs</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#where-you-are-and-paths" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Where you are, and paths</span></a><ul class="astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#reading-the-prompt" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Reading the prompt</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#absolute-and-relative-paths" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Absolute and relative paths</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#the-directory-tree" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">The directory tree</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#pwd-ls-cd" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">pwd, ls, cd</span></a><ul class="astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#tab-and-the-arrow-keys" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Tab and the arrow keys</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#working-with-files" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Working with files</span></a><ul class="astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#rm-does-not-ask" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">rm does not ask</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#looking-at-file-contents" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Looking at file contents</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#vi" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">vi</span></a><ul class="astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#starting-to-type" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Starting to type</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#saving-and-quitting" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Saving and quitting</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#working-by-lines-in-command-mode" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Working by lines (in command mode)</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#nano" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">nano</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#reading-logs-and-finding-files" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Reading logs and finding files</span></a><ul class="astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#following-a-log-live" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Following a log live</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#searching-inside-files" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Searching inside files</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#accounts-and-permissions" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Accounts and permissions</span></a><ul class="astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#three-groups-of-permissions-per-file" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Three groups of permissions per file</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#chmod" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">chmod</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#chown-and-docker-volumes" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">chown and Docker volumes</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#the-commands-in-one-place" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">The commands, in one place</span></a></li></ul></nav></starlight-toc><script type="module" src="/_astro/TableOfContents.astro_astro_type_script_index_0_lang.Csloo1VZ.js"></script></div></div></div></aside><div class="main-pane astro-lrzkfocr"><main data-pagefind-body class="astro-g5ptsecz" lang="en" dir="ltr"><div class="content-panel astro-a7po4psb"><div class="sl-container astro-a7po4psb"><h1 id="_top" class="astro-bebwqqxs">The terminal, from what a server is to vi</h1></div></div><div class="content-panel astro-a7po4psb"><div class="sl-container astro-a7po4psb"><starlight-image-zoom class="astro-uhbei7rv"><template class="astro-uhbei7rv"><dialog class="starlight-image-zoom-dialog astro-uhbei7rv"><button aria-label="Unzoom image" class="starlight-image-zoom-control astro-uhbei7rv"><svg aria-hidden="true" fill="currentColor" viewBox="0 0 24 24" class="astro-uhbei7rv"><use href="#starlight-image-zoom-icon-unzoom" class="astro-uhbei7rv"></use></svg></button><figure class="astro-uhbei7rv"></figure></dialog></template><svg xmlns="http://www.w3.org/2000/svg" style="display:none" class="astro-uhbei7rv"><symbol id="starlight-image-zoom-icon-zoom" viewBox="0 0 24 24" class="astro-uhbei7rv"><path d="M9.79 12.79 4 18.59V17a1 1 0 0 0-2 0v4a1 1 0 0 0 .08.38 1 1 0 0 0 .54.54A1 1 0 0 0 3 22h4a1 1 0 0 0 0-2H5.41l5.8-5.79a1 1 0 0 0-1.42-1.42ZM21.92 2.62a1 1 0 0 0-.54-.54A1 1 0 0 0 21 2h-4a1 1 0 0 0 0 2h1.59l-5.8 5.79a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0L20 5.41V7a1 1 0 0 0 2 0V3a1 1 0 0 0-.08-.38Z" class="astro-uhbei7rv"></path></symbol><symbol id="starlight-image-zoom-icon-unzoom" viewBox="0 0 24 24" class="astro-uhbei7rv"><path d="M21.71 2.29a1 1 0 0 0-1.42 0l-5.79 5.8V6.5a1 1 0 0 0-2 0v4a1 1 0 0 0 .08.38 1 1 0 0 0 .54.54 1 1 0 0 0 .38.08h4a1 1 0 0 0 0-2h-1.59l5.8-5.79a1 1 0 0 0 0-1.42ZM10.88 12.58a1 1 0 0 0-.38-.08h-4a1 1 0 0 0 0 2h1.59l-5.8 5.79a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l5.79-5.8v1.59a1 1 0 0 0 2 0v-4a1 1 0 0 0-.08-.38 1 1 0 0 0-.54-.54Z" class="astro-uhbei7rv"></path></symbol></svg></starlight-image-zoom><script type="module" src="/_astro/ImageZoom.astro_astro_type_script_index_0_lang.CNfBy0nv.js"></script><div class="sl-markdown-content"><figure class="sl-blog-cover astro-uvqvkfg3"><img src="/_astro/cover-dark.DTXQOHZU_1OkCNa.webp" alt="A terminal session checking the current directory and moving into another folder on a server" loading="eager" decoding="async" width="2400" height="1260" class="astro-uvqvkfg3 sl-blog-cover-image light:sl-hidden"><img src="/_astro/cover-light.VEuPIPQF_Z1wlxll.webp" alt="A terminal session checking the current directory and moving into another folder on a server" loading="eager" decoding="async" width="2400" height="1260" class="astro-uvqvkfg3 sl-blog-cover-image dark:sl-hidden"></figure><div class="sl-blog-metadata not-content astro-zrjirpgi"><div class="sl-blog-metadata-items astro-zrjirpgi"><time class="sl-blog-metadata-date astro-zrjirpgi" datetime="2026-09-22T10:00:00.000Z">Sep 22, 2026</time><span class="sl-blog-metadata-secondary sl-blog-metadata-reading-time astro-zrjirpgi"> - 11 min read</span></div><div class="sl-blog-metadata-authors astro-zrjirpgi"><a href="https://github.com/NabongS2" class="sl-blog-author astro-c6o6xw4v"><div class="sl-blog-author-details astro-c6o6xw4v"><div class="sl-blog-author-name astro-c6o6xw4v">nabong</div></div></a></div></div>
+<p>SSH into a server and you get one line:</p>
+<div class="expressive-code"><link rel="stylesheet" href="/_astro/ec.350jl.css"><script type="module" src="/_astro/ec.0vx5m.js"></script><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">dev@server:~$</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="dev@server:~$"><div></div></button></div></figure></div>
+<p>I knew <code dir="auto">ls</code> and <code dir="auto">cd</code> and still got stuck right here. I did not know where I was, or what the inside of this server looked like. Learning more commands was not going to fix that kind of stuck.</p>
+<p>So this starts before the command list. What a server is, where files go, and then the commands.</p>
+<p>Abbreviations are spelled out as they come up. Knowing <code dir="auto">rm</code> is remove is one less thing to memorise.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="what-a-server-is">What a server is</h2><a class="sl-anchor-link" href="#what-a-server-is"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “What a server is”</span></a></div>
+<p><strong>A computer with no screen and no keyboard.</strong> That is genuinely the only difference from the PC on your desk. It is powered on, an OS is running, programs are up — there is just no monitor attached.</p>
+<p>Which means you need another way in.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="connecting-over-ssh">Connecting over SSH</h3><a class="sl-anchor-link" href="#connecting-over-ssh"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Connecting over SSH”</span></a></div>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">ssh</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">dev@192.168.0.10</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="ssh dev@192.168.0.10"><div></div></button></div></figure></div>
+<p><code dir="auto">ssh</code> is <strong>s</strong>ecure <strong>sh</strong>ell, an encrypted shell. What the command does is start a shell on that other machine and pipe its input and output to your screen. Type <code dir="auto">ls</code> and you get that machine’s files.</p>
+<p>There are two ways to prove who you are:</p>
+<ul>
+<li><strong>Password</strong> — you type the account’s password</li>
+<li><strong>Key</strong> — you use a key pair made in advance. The public key is registered on the server and the private key stays on the machine you connect from</li>
+</ul>
+<p>Which program you connect with, and how to move files, are <a href="/en/blog/ssh-and-sftp/">covered separately</a>.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="closing-the-session-kills-the-programs">Closing the session kills the programs</h3><a class="sl-anchor-link" href="#closing-the-session-kills-the-programs"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Closing the session kills the programs”</span></a></div>
+<p>Connecting over SSH creates a <strong>session</strong>. Programs you start there hang off that session. Close the window, shut the laptop, lose the network, and the session dies — <strong>and so do the programs hanging off it.</strong></p>
+<p>Closing the window while watching logs costs nothing; <code dir="auto">tail</code> dies but the log file is untouched. This is the case that costs something:</p>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">java</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">-jar</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">myapp.jar</span><span style="--0:#D6DEEB;--1:#403F53">      </span><span style="--0:#919F9F;--1:#5F636F"># start the app</span></div></div><div class="ec-line"><div class="code"><span style="--0:#919F9F;--1:#5F636F"># close the window → the app dies with it</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="java -jar myapp.jar      # start the app"><div></div></button></div></figure></div>
+<p>So anything meant to keep running does not hang off a session. In the <a href="/en/blog/docker-basics/">Docker post</a> I described the <code dir="auto">-d</code> in <code dir="auto">docker run -d</code> as “run it in the background”. More precisely it is <strong>d</strong>etached — <strong>never attached to a session in the first place</strong>. That is why a container keeps running after you close the SSH window.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="where-you-are-and-paths">Where you are, and paths</h2><a class="sl-anchor-link" href="#where-you-are-and-paths"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Where you are, and paths”</span></a></div>
+<p>Windows Explorer always shows the path at the top, so you never have to ask where you are. A terminal has no such display, which is why asking is a command of its own.</p>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#C5E478;--1:#3B61B0">pwd</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="pwd"><div></div></button></div></figure></div>
+<p><code dir="auto">pwd</code> is <strong>p</strong>rint <strong>w</strong>orking <strong>d</strong>irectory.</p>
+<!--
+	starlight-image-zoom 은 마크다운의 img 와 Image 만 감싼다. 이 컴포넌트는
+	그 목록에 없어서 그냥 지나치므로, 확대 기능이 필요한 래퍼를 직접 두른다.
+	버튼은 키보드로도 열 수 있게 두는 플러그인 규약이고, 평소에는 화면에
+	보이지 않는다.
+--><starlight-image-zoom-zoomable><img src="/_astro/filesystem-tree-light.EQIAi9h8_Z1cciKt.webp" alt="Windows has a separate tree per drive while Linux branches everything from a single slash" loading="lazy" decoding="async" width="1800" height="1120" class="dark:sl-hidden"><button type="button" aria-label="Windows has a separate tree per drive while Linux branches everything from a single slash 확대"><svg aria-hidden="true" fill="currentColor" viewBox="0 0 24 24" width="24" height="24"><use href="#starlight-image-zoom-icon-zoom"></use></svg></button></starlight-image-zoom-zoomable><starlight-image-zoom-zoomable><img src="/_astro/filesystem-tree-dark.DkhMwyjb_2bdGSM.webp" alt="Windows has a separate tree per drive while Linux branches everything from a single slash" loading="lazy" decoding="async" width="1800" height="1120" class="light:sl-hidden"><button type="button" aria-label="Windows has a separate tree per drive while Linux branches everything from a single slash 확대"><svg aria-hidden="true" fill="currentColor" viewBox="0 0 24 24" width="24" height="24"><use href="#starlight-image-zoom-icon-zoom"></use></svg></button></starlight-image-zoom-zoomable>
+<div class="sl-heading-wrapper level-h3"><h3 id="reading-the-prompt">Reading the prompt</h3><a class="sl-anchor-link" href="#reading-the-prompt"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Reading the prompt”</span></a></div>
+<p>Most of the time you do not need <code dir="auto">pwd</code>. It is already written in front of the cursor.</p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">dev@server:/opt/myapp$</span></div></div><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">└┬┘ └─┬──┘ └───┬────┘│</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53"> </span></span><span style="--0:#d6deeb;--1:#403f53">│    │        │     └─ $ for a normal account, # for root</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53"> </span></span><span style="--0:#d6deeb;--1:#403f53">│    │        └─ where you are now</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53"> </span></span><span style="--0:#d6deeb;--1:#403f53">│    └─ the server you are on</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53"> </span></span><span style="--0:#d6deeb;--1:#403f53">└─ the account you logged in as</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="dev@server:/opt/myapp$└┬┘ └─┬──┘ └───┬────┘│ │    │        │     └─ $ for a normal account, # for root │    │        └─ where you are now │    └─ the server you are on └─ the account you logged in as"><div></div></button></div></figure></div>
+<p>A <code dir="auto">~</code> in the position field means your home directory. Typing <code dir="auto">/home/dev</code> every time gets old, so <code dir="auto">~</code> stands in for it.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="absolute-and-relative-paths">Absolute and relative paths</h3><a class="sl-anchor-link" href="#absolute-and-relative-paths"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Absolute and relative paths”</span></a></div>
+<table>
+<thead>
+<tr>
+<th>Written as</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">/opt/myapp/log</code></td>
+<td>An <strong>absolute path</strong>, written from the top <code dir="auto">/</code>. Points at the same place wherever you run it</td>
+</tr>
+<tr>
+<td><code dir="auto">log</code> or <code dir="auto">./log</code></td>
+<td>A <strong>relative path</strong>, from where you are. <code dir="auto">.</code> is the current folder</td>
+</tr>
+<tr>
+<td><code dir="auto">../config</code></td>
+<td><code dir="auto">..</code> is one level up. Go up, then into <code dir="auto">config</code></td>
+</tr>
+<tr>
+<td><code dir="auto">~/notes</code></td>
+<td><code dir="auto">notes</code> under your home</td>
+</tr>
+</tbody>
+</table>
+<p>Scripts are safer with absolute paths, since they have to point at the same place no matter where they are run from.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="the-directory-tree">The directory tree</h2><a class="sl-anchor-link" href="#the-directory-tree"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “The directory tree”</span></a></div>
+<p>Linux folder names are fixed by convention, so the same things sit in the same places from server to server.</p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>What is in it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">/home/dev</code></td>
+<td>The <code dir="auto">dev</code> account’s home. You land here when you log in</td>
+</tr>
+<tr>
+<td><code dir="auto">/etc</code></td>
+<td>System configuration files</td>
+</tr>
+<tr>
+<td><code dir="auto">/var/log</code></td>
+<td>Logs. <code dir="auto">/var</code> is <strong>var</strong>iable — things whose contents keep changing</td>
+</tr>
+<tr>
+<td><code dir="auto">/opt</code></td>
+<td><strong>opt</strong>ional. Software installed separately. A common home for apps you built yourself</td>
+</tr>
+<tr>
+<td><code dir="auto">/usr</code></td>
+<td>Software the distribution installed. <code dir="auto">/usr/bin</code> holds the commands</td>
+</tr>
+<tr>
+<td><code dir="auto">/tmp</code></td>
+<td>Temporary files. Gone after a reboot, so nothing important goes here</td>
+</tr>
+</tbody>
+</table>
+<p><code dir="auto">/</code> is the top of the tree; <code dir="auto">/root</code> is the root account’s home directory. Similar names, different places.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="pwd-ls-cd">pwd, ls, cd</h2><a class="sl-anchor-link" href="#pwd-ls-cd"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “pwd, ls, cd”</span></a></div>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#C5E478;--1:#3B61B0">pwd</span><span style="--0:#D6DEEB;--1:#403F53">                  </span><span style="--0:#919F9F;--1:#5F636F"># where am I</span></div></div><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">ls</span><span style="--0:#D6DEEB;--1:#403F53">                   </span><span style="--0:#919F9F;--1:#5F636F"># what is here</span></div></div><div class="ec-line"><div class="code"><span style="--0:#C5E478;--1:#3B61B0">cd</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">/opt/myapp</span><span style="--0:#D6DEEB;--1:#403F53">        </span><span style="--0:#919F9F;--1:#5F636F"># go there</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="pwd                  # where am Ils                   # what is herecd /opt/myapp        # go there"><div></div></button></div></figure></div>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Short for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">ls</code></td>
+<td><strong>l</strong>i<strong>s</strong>t</td>
+</tr>
+<tr>
+<td><code dir="auto">cd</code></td>
+<td><strong>c</strong>hange <strong>d</strong>irectory</td>
+</tr>
+</tbody>
+</table>
+<p><code dir="auto">ls</code> is usually run with options, and the options are abbreviations too.</p>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">ls</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">-l</span><span style="--0:#D6DEEB;--1:#403F53">                </span><span style="--0:#919F9F;--1:#5F636F"># long: one per line, with permissions, size and time</span></div></div><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">ls</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">-a</span><span style="--0:#D6DEEB;--1:#403F53">                </span><span style="--0:#919F9F;--1:#5F636F"># all: including hidden files (the ones starting with .)</span></div></div><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">ls</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">-h</span><span style="--0:#D6DEEB;--1:#403F53">                </span><span style="--0:#919F9F;--1:#5F636F"># human-readable: sizes as 1.2G</span></div></div><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">ls</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">-lah</span><span style="--0:#D6DEEB;--1:#403F53">              </span><span style="--0:#919F9F;--1:#5F636F"># they combine</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="ls -l                # long: one per line, with permissions, size and timels -a                # all: including hidden files (the ones starting with .)ls -h                # human-readable: sizes as 1.2Gls -lah              # they combine"><div></div></button></div></figure></div>
+<p><code dir="auto">cd</code> has a few shortcuts worth knowing.</p>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#C5E478;--1:#3B61B0">cd</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">..</span><span style="--0:#D6DEEB;--1:#403F53">                </span><span style="--0:#919F9F;--1:#5F636F"># one level up</span></div></div><div class="ec-line"><div class="code"><span style="--0:#C5E478;--1:#3B61B0">cd</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">~</span><span style="--0:#D6DEEB;--1:#403F53">                 </span><span style="--0:#919F9F;--1:#5F636F"># your home. plain cd does the same</span></div></div><div class="ec-line"><div class="code"><span style="--0:#C5E478;--1:#3B61B0">cd</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">-</span><span style="--0:#D6DEEB;--1:#403F53">                 </span><span style="--0:#919F9F;--1:#5F636F"># the directory you were in before. handy for going back and forth</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="cd ..                # one level upcd ~                 # your home. plain cd does the samecd -                 # the directory you were in before. handy for going back and forth"><div></div></button></div></figure></div>
+<div class="sl-heading-wrapper level-h3"><h3 id="tab-and-the-arrow-keys">Tab and the arrow keys</h3><a class="sl-anchor-link" href="#tab-and-the-arrow-keys"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Tab and the arrow keys”</span></a></div>
+<p>Two keys that never make it into a command list but get used constantly.</p>
+<p><strong>Tab</strong> completes a path from a partial one. Press it twice when several things match and you get the list.</p>
+<p><strong>Up arrow</strong> brings back the last command you ran. Keep pressing to walk further back. It is what you reach for when a long command needs one small change.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="working-with-files">Working with files</h2><a class="sl-anchor-link" href="#working-with-files"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Working with files”</span></a></div>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Short for</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">mkdir</code></td>
+<td><strong>m</strong>a<strong>k</strong>e <strong>dir</strong>ectory</td>
+<td>Creates a folder</td>
+</tr>
+<tr>
+<td><code dir="auto">touch</code></td>
+<td>touch</td>
+<td>Its actual job is updating a file’s timestamp. Point it at a file that does not exist and an empty one appears, which is the side effect people use it for</td>
+</tr>
+<tr>
+<td><code dir="auto">cp</code></td>
+<td><strong>c</strong>o<strong>p</strong>y</td>
+<td>Copy</td>
+</tr>
+<tr>
+<td><code dir="auto">mv</code></td>
+<td><strong>m</strong>o<strong>v</strong>e</td>
+<td>Move</td>
+</tr>
+<tr>
+<td><code dir="auto">rm</code></td>
+<td><strong>r</strong>e<strong>m</strong>ove</td>
+<td>Delete</td>
+</tr>
+</tbody>
+</table>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">mkdir</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">logs</span></div></div><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">mkdir</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">-p</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">a/b/c</span><span style="--0:#D6DEEB;--1:#403F53">       </span><span style="--0:#919F9F;--1:#5F636F"># parents: creates the intermediate folders too</span></div></div><div class="ec-line"><div class="code">
+</div></div><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">cp</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">app.jar</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">app.jar.bak</span></div></div><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">cp</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">-r</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">config</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">config.bak</span><span style="--0:#D6DEEB;--1:#403F53">   </span><span style="--0:#919F9F;--1:#5F636F"># recursive: folders are not copied without -r</span></div></div><div class="ec-line"><div class="code">
+</div></div><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">mv</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">old.txt</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">new.txt</span><span style="--0:#D6DEEB;--1:#403F53">        </span><span style="--0:#919F9F;--1:#5F636F"># rename</span></div></div><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">mv</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">old.txt</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">/tmp/</span><span style="--0:#D6DEEB;--1:#403F53">          </span><span style="--0:#919F9F;--1:#5F636F"># move</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="mkdir logsmkdir -p a/b/c       # parents: creates the intermediate folders toocp app.jar app.jar.bakcp -r config config.bak   # recursive: folders are not copied without -rmv old.txt new.txt        # renamemv old.txt /tmp/          # move"><div></div></button></div></figure></div>
+<p>One <code dir="auto">mv</code> does both renaming and moving. What identifies a file is its path plus its name — change the name and it is a rename, change the path and it is a move. Same operation, so one command.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="rm-does-not-ask">rm does not ask</h3><a class="sl-anchor-link" href="#rm-does-not-ask"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “rm does not ask”</span></a></div>
+<p>No recycle bin, no “are you sure”. It is done the moment you press enter.</p>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">rm</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">file.txt</span></div></div><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">rm</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">-r</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">logs/</span><span style="--0:#D6DEEB;--1:#403F53">          </span><span style="--0:#919F9F;--1:#5F636F"># recursive: the folder and everything in it</span></div></div><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">rm</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">-rf</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">logs/</span><span style="--0:#D6DEEB;--1:#403F53">         </span><span style="--0:#919F9F;--1:#5F636F"># force: without asking</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="rm file.txtrm -r logs/          # recursive: the folder and everything in itrm -rf logs/         # force: without asking"><div></div></button></div></figure></div>
+<p>Here is the usual shape of an accident with <code dir="auto">-rf</code>:</p>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#C5E478;--1:#3B61B0">DIR</span><span style="--0:#C792EA;--1:#8844AE">=</span><span style="--0:#ECC48D;--1:#3B61B0">/opt/myapp/tmp</span></div></div><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">rm</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">-rf</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">$DIR</span><span style="--0:#ECC48D;--1:#3B61B0">/</span><span style="--0:#D6DEEB;--1:#403F53">         </span><span style="--0:#919F9F;--1:#5F636F"># if $DIR is empty this becomes rm -rf /</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="DIR=/opt/myapp/tmprm -rf $DIR/         # if $DIR is empty this becomes rm -rf /"><div></div></button></div></figure></div>
+<p>Misspell the variable, or let a script run before it is set, and <code dir="auto">$DIR</code> expands to nothing — leaving <code dir="auto">rm -rf /</code>. Which is why scripts turn undefined variables into errors with <code dir="auto">set -u</code> and check the path is not empty before deleting.</p>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#C5E478;--1:#3B61B0">set</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">-euo</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">pipefail</span></div></div><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">[ </span><span style="--0:#C792EA;--1:#8844AE">-n</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">${</span><span style="--0:#C5E478;--1:#3B61B0">DIR</span><span style="--0:#7FDBCA;--1:#096E72">:-</span><span style="--0:#ECC48D;--1:#984E4D">}</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53"> ] </span><span style="--0:#7FDBCA;--1:#096E72">||</span><span style="--0:#D6DEEB;--1:#403F53"> { </span><span style="--0:#C5E478;--1:#3B61B0">echo</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">DIR is empty</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">; </span><span style="--0:#C5E478;--1:#3B61B0">exit</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">1</span><span style="--0:#D6DEEB;--1:#403F53">; }</span></div></div><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">rm</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">-rf</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">${</span><span style="--0:#C5E478;--1:#3B61B0">DIR</span><span style="--0:#ECC48D;--1:#984E4D">}</span><span style="--0:#D9F5DD;--1:#111111">"</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="set -euo pipefail[ -n &quot;${DIR:-}&quot; ] || { echo &quot;DIR is empty&quot;; exit 1; }rm -rf &quot;${DIR}&quot;"><div></div></button></div></figure></div>
+<div class="sl-heading-wrapper level-h2"><h2 id="looking-at-file-contents">Looking at file contents</h2><a class="sl-anchor-link" href="#looking-at-file-contents"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Looking at file contents”</span></a></div>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">cat</code></td>
+<td>A short file, all of it</td>
+</tr>
+<tr>
+<td><code dir="auto">head</code></td>
+<td>Just the start</td>
+</tr>
+<tr>
+<td><code dir="auto">tail</code></td>
+<td>Just the end</td>
+</tr>
+<tr>
+<td><code dir="auto">less</code></td>
+<td>A long file, one screen at a time</td>
+</tr>
+</tbody>
+</table>
+<p><code dir="auto">cat</code> is <strong>cat</strong>enate — it prints several files joined together. Give it one file and you get that one, which is how it came to be used for reading.</p>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">cat</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">app.yml</span><span style="--0:#D6DEEB;--1:#403F53">          </span><span style="--0:#919F9F;--1:#5F636F"># a short config file</span></div></div><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">head</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">-n</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">20</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">big.log</span><span style="--0:#D6DEEB;--1:#403F53">   </span><span style="--0:#919F9F;--1:#5F636F"># first 20 lines</span></div></div><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">tail</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">-n</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">100</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">big.log</span><span style="--0:#D6DEEB;--1:#403F53">  </span><span style="--0:#919F9F;--1:#5F636F"># last 100 lines</span></div></div><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">less</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">big.log</span><span style="--0:#D6DEEB;--1:#403F53">         </span><span style="--0:#919F9F;--1:#5F636F"># one screen at a time. q to quit</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="cat app.yml          # a short config filehead -n 20 big.log   # first 20 linestail -n 100 big.log  # last 100 linesless big.log         # one screen at a time. q to quit"><div></div></button></div></figure></div>
+<p><code dir="auto">cat</code> on a log file sends tens of thousands of lines past the screen. Long files go to <code dir="auto">less</code> or <code dir="auto">tail</code>. Inside <code dir="auto">less</code> the arrow keys scroll, <code dir="auto">/text</code> searches, and <code dir="auto">q</code> quits.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="vi">vi</h2><a class="sl-anchor-link" href="#vi"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “vi”</span></a></div>
+<p>For editing a file on a server. <code dir="auto">vi</code> is short for <strong>vi</strong>sual.</p>
+<p>vi has <strong>three modes</strong>. The same key does different things in each, so you need to know which one you are in.</p>
+<!--
+	starlight-image-zoom 은 마크다운의 img 와 Image 만 감싼다. 이 컴포넌트는
+	그 목록에 없어서 그냥 지나치므로, 확대 기능이 필요한 래퍼를 직접 두른다.
+	버튼은 키보드로도 열 수 있게 두는 플러그인 규약이고, 평소에는 화면에
+	보이지 않는다.
+--><starlight-image-zoom-zoomable><img src="/_astro/vi-modes-light.B4JWvOzS_ZpOCpL.webp" alt="A state diagram of which keys move between vi command mode, insert mode and colon mode" loading="lazy" decoding="async" width="1800" height="920" class="dark:sl-hidden"><button type="button" aria-label="A state diagram of which keys move between vi command mode, insert mode and colon mode 확대"><svg aria-hidden="true" fill="currentColor" viewBox="0 0 24 24" width="24" height="24"><use href="#starlight-image-zoom-icon-zoom"></use></svg></button></starlight-image-zoom-zoomable><starlight-image-zoom-zoomable><img src="/_astro/vi-modes-dark.jNQhcU91_Ze2OSz.webp" alt="A state diagram of which keys move between vi command mode, insert mode and colon mode" loading="lazy" decoding="async" width="1800" height="920" class="light:sl-hidden"><button type="button" aria-label="A state diagram of which keys move between vi command mode, insert mode and colon mode 확대"><svg aria-hidden="true" fill="currentColor" viewBox="0 0 24 24" width="24" height="24"><use href="#starlight-image-zoom-icon-zoom"></use></svg></button></starlight-image-zoom-zoomable>
+<p>It opens in <strong>command mode</strong>, where every key is a command and typing inserts nothing. Type a sentence in this state and each character runs as a command.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="starting-to-type">Starting to type</h3><a class="sl-anchor-link" href="#starting-to-type"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Starting to type”</span></a></div>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Short for</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">i</code></td>
+<td><strong>i</strong>nsert</td>
+<td>Start typing at the cursor</td>
+</tr>
+<tr>
+<td><code dir="auto">a</code></td>
+<td><strong>a</strong>ppend</td>
+<td>Start typing <strong>after</strong> the cursor</td>
+</tr>
+<tr>
+<td><code dir="auto">o</code></td>
+<td><strong>o</strong>pen line</td>
+<td>Open a blank line below and start typing</td>
+</tr>
+<tr>
+<td><code dir="auto">Esc</code></td>
+<td></td>
+<td>Stop typing, back to command mode</td>
+</tr>
+</tbody>
+</table>
+<div class="sl-heading-wrapper level-h3"><h3 id="saving-and-quitting">Saving and quitting</h3><a class="sl-anchor-link" href="#saving-and-quitting"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Saving and quitting”</span></a></div>
+<p>Press <code dir="auto">:</code> and a colon appears on the bottom line, where you type the command.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Short for</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">:w</code></td>
+<td><strong>w</strong>rite</td>
+<td>Save</td>
+</tr>
+<tr>
+<td><code dir="auto">:q</code></td>
+<td><strong>q</strong>uit</td>
+<td>Quit</td>
+</tr>
+<tr>
+<td><code dir="auto">:wq</code></td>
+<td>write + quit</td>
+<td>Save and quit. The one you use most</td>
+</tr>
+<tr>
+<td><code dir="auto">:q!</code></td>
+<td>forced quit</td>
+<td>Leave without saving. The way out when you have broken something</td>
+</tr>
+</tbody>
+</table>
+<div class="sl-heading-wrapper level-h3"><h3 id="working-by-lines-in-command-mode">Working by lines (in command mode)</h3><a class="sl-anchor-link" href="#working-by-lines-in-command-mode"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Working by lines (in command mode)”</span></a></div>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Short for</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">dd</code></td>
+<td><strong>d</strong>elete</td>
+<td>Cut the line the cursor is on. It goes to the clipboard</td>
+</tr>
+<tr>
+<td><code dir="auto">yy</code></td>
+<td><strong>y</strong>ank</td>
+<td>Copy the line the cursor is on</td>
+</tr>
+<tr>
+<td><code dir="auto">p</code></td>
+<td><strong>p</strong>ut</td>
+<td>Paste <strong>below</strong> the cursor</td>
+</tr>
+<tr>
+<td><code dir="auto">P</code></td>
+<td></td>
+<td>Capital pastes <strong>above</strong></td>
+</tr>
+<tr>
+<td><code dir="auto">u</code></td>
+<td><strong>u</strong>ndo</td>
+<td>Undo the last thing</td>
+</tr>
+<tr>
+<td><code dir="auto">Ctrl+r</code></td>
+<td><strong>r</strong>edo</td>
+<td>Redo what you undid</td>
+</tr>
+</tbody>
+</table>
+<p><code dir="auto">dd</code> is <code dir="auto">d</code> twice because <code dir="auto">d</code> is the delete command and a range follows it. <code dir="auto">d</code> + <code dir="auto">d</code> is “one line”, <code dir="auto">d</code> + <code dir="auto">3d</code> is “three lines”. <code dir="auto">yy</code> works the same way.</p>
+<p>Not sure which mode you are in? Press <code dir="auto">Esc</code> twice. You end up in command mode either way.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="nano">nano</h2><a class="sl-anchor-link" href="#nano"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “nano”</span></a></div>
+<p>Run something like <code dir="auto">crontab -e</code> on an Ubuntu or Debian server and nano opens instead of vi. It is the default editor on that side.</p>
+<p>nano has <strong>no modes.</strong> It opens ready to type, with the shortcuts always shown along the bottom. There is almost nothing to learn.</p>
+<p>There is exactly one trap. In <code dir="auto">^X Exit</code> along the bottom, <strong><code dir="auto">^</code> means Ctrl.</strong> That is where people go looking for a <code dir="auto">^</code> key.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">Ctrl+O</code></td>
+<td>Save (write <strong>O</strong>ut)</td>
+</tr>
+<tr>
+<td><code dir="auto">Ctrl+X</code></td>
+<td>Quit (e<strong>X</strong>it)</td>
+</tr>
+<tr>
+<td><code dir="auto">Ctrl+K</code></td>
+<td>Cut a line</td>
+</tr>
+<tr>
+<td><code dir="auto">Ctrl+U</code></td>
+<td>Paste</td>
+</tr>
+<tr>
+<td><code dir="auto">Ctrl+W</code></td>
+<td>Search (<strong>W</strong>here is)</td>
+</tr>
+</tbody>
+</table>
+<p>The editor a server definitely has is <code dir="auto">vi</code>. It is in the POSIX standard, so it survives even a minimal install, which is why the weight belongs on vi. Plenty of servers open nano first though, and knowing that <code dir="auto">^</code> is Ctrl is enough to not be stuck there.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="reading-logs-and-finding-files">Reading logs and finding files</h2><a class="sl-anchor-link" href="#reading-logs-and-finding-files"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Reading logs and finding files”</span></a></div>
+<p>These two are most of what you do once you are on a server.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="following-a-log-live">Following a log live</h3><a class="sl-anchor-link" href="#following-a-log-live"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Following a log live”</span></a></div>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">tail</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">-f</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">-n</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">100</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">app.log</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="tail -f -n 100 app.log"><div></div></button></div></figure></div>
+<ul>
+<li><code dir="auto">-f</code> — <strong>f</strong>ollow. Stays at the end of the file and shows new lines as they arrive</li>
+<li><code dir="auto">-n 100</code> — <strong>n</strong>umber. Starts from the last 100 lines, then follows</li>
+<li><code dir="auto">Ctrl+C</code> to get out</li>
+</ul>
+<p>Docker container logs take the same options. <code dir="auto">docker logs -f -n 100</code> looking identical is not a coincidence.</p>
+<p>One overlap to watch: <strong>the <code dir="auto">f</code> in <code dir="auto">tail -f</code> is follow, but the <code dir="auto">f</code> in <code dir="auto">rm -f</code> is force.</strong> Same letter, different meaning per command.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="searching-inside-files">Searching inside files</h3><a class="sl-anchor-link" href="#searching-inside-files"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Searching inside files”</span></a></div>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">grep</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">-rn</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">ConnectException</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">/opt/myapp/log</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="grep -rn &quot;ConnectException&quot; /opt/myapp/log"><div></div></button></div></figure></div>
+<p><code dir="auto">grep</code> is <strong>g</strong>lobally search a <strong>r</strong>egular <strong>e</strong>xpression and <strong>p</strong>rint.</p>
+<ul>
+<li><code dir="auto">-r</code> — <strong>r</strong>ecursive, into subfolders</li>
+<li><code dir="auto">-n</code> — <strong>n</strong>umber, which line it was on</li>
+<li><code dir="auto">-i</code> — <strong>i</strong>gnore case</li>
+<li><code dir="auto">--include="*.log"</code> — only certain extensions</li>
+</ul>
+<p>Piping is common too.</p>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">tail</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">-n</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">1000</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">app.log</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">|</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">grep</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">ERROR</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="tail -n 1000 app.log | grep ERROR"><div></div></button></div></figure></div>
+<p><code dir="auto">|</code> hands the output of the left command to the right one as input. That line means “of the last 1000 lines, only the ones containing ERROR”.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="accounts-and-permissions">Accounts and permissions</h2><a class="sl-anchor-link" href="#accounts-and-permissions"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Accounts and permissions”</span></a></div>
+<p>Linux has one account that can do anything: <code dir="auto">root</code>. Nothing stops it from deleting system files.</p>
+<p>So you do not work as root. You log in as a normal account and borrow the privilege when you need it, which limits how far a mistake spreads. The last character of the prompt tells you which side you are on.</p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">dev@server:~$      normal account</span></div></div><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">root@server:~#     root</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="dev@server:~$      normal accountroot@server:~#     root"><div></div></button></div></figure></div>
+<p>Touching a file you do not have permission for stops here:</p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">-bash: /etc/hosts: Permission denied</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="-bash: /etc/hosts: Permission denied"><div></div></button></div></figure></div>
+<p>That is when <code dir="auto">sudo</code> runs that one line as root. <strong>s</strong>ubstitute <strong>u</strong>ser <strong>do</strong> — run as another account, defaulting to root.</p>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">sudo</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">systemctl</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">restart</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">myapp</span></div></div><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">sudo</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">vi</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">/etc/hosts</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="sudo systemctl restart myappsudo vi /etc/hosts"><div></div></button></div></figure></div>
+<p>Stay logged in as root and every command is unlimited; nothing catches a mistyped <code dir="auto">rm -rf</code>. With <code dir="auto">sudo</code>, that one line runs as root and everything else stays on the normal account.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="three-groups-of-permissions-per-file">Three groups of permissions per file</h3><a class="sl-anchor-link" href="#three-groups-of-permissions-per-file"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Three groups of permissions per file”</span></a></div>
+<p>The first ten characters of <code dir="auto">ls -l</code> are the permissions.</p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">-rw-r--r--  1 dev  dev   1.2K  app.yml</span></div></div><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">drwxr-xr-x  2 root root  4.0K  config</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="-rw-r--r--  1 dev  dev   1.2K  app.ymldrwxr-xr-x  2 root root  4.0K  config"><div></div></button></div></figure></div>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">-rw-r--r--</span></div></div><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">│└┬┘└┬┘└┬┘</span></div></div><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">│ │  │  └─ other  everyone else</span></div></div><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">│ │  └─ group  anyone in the same group</span></div></div><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">│ └─ user  the owner</span></div></div><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">└─ type. - is a file, d a directory, l a link</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="-rw-r--r--│└┬┘└┬┘└┬┘│ │  │  └─ other  everyone else│ │  └─ group  anyone in the same group│ └─ user  the owner└─ type. - is a file, d a directory, l a link"><div></div></button></div></figure></div>
+<p>They come in groups of three.</p>
+<table>
+<thead>
+<tr>
+<th>Letter</th>
+<th>Short for</th>
+<th>On a file</th>
+<th>On a directory</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">r</code></td>
+<td><strong>r</strong>ead</td>
+<td>Can read the contents</td>
+<td>Can list what is inside</td>
+</tr>
+<tr>
+<td><code dir="auto">w</code></td>
+<td><strong>w</strong>rite</td>
+<td>Can change the contents</td>
+<td>Can create and delete files inside</td>
+</tr>
+<tr>
+<td><code dir="auto">x</code></td>
+<td>e<strong>x</strong>ecute</td>
+<td>Can run it</td>
+<td>Can enter the folder</td>
+</tr>
+</tbody>
+</table>
+<p>Read the example above and <code dir="auto">app.yml</code> can only be changed by its owner <code dir="auto">dev</code>, with everyone else limited to reading. <code dir="auto">config</code> is owned by <code dir="auto">root</code>, so the <code dir="auto">dev</code> account can go in and look but cannot create files there.</p>
+<p>There is a numeric form too: <code dir="auto">r</code> is 4, <code dir="auto">w</code> is 2, <code dir="auto">x</code> is 1, added up per group.</p>
+<table>
+<thead>
+<tr>
+<th>Number</th>
+<th>Letters</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">755</code></td>
+<td><code dir="auto">rwxr-xr-x</code></td>
+<td>Owner does everything, everyone else reads and runs. Common on executables and folders</td>
+</tr>
+<tr>
+<td><code dir="auto">644</code></td>
+<td><code dir="auto">rw-r--r--</code></td>
+<td>Owner writes, everyone else reads. The usual default for a plain file</td>
+</tr>
+<tr>
+<td><code dir="auto">600</code></td>
+<td><code dir="auto">rw-------</code></td>
+<td>Only the owner reads and writes. For files nobody else should see</td>
+</tr>
+</tbody>
+</table>
+<div class="sl-heading-wrapper level-h3"><h3 id="chmod">chmod</h3><a class="sl-anchor-link" href="#chmod"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “chmod”</span></a></div>
+<p><strong>ch</strong>ange <strong>mod</strong>e.</p>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">chmod</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">+x</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">docker_run.sh</span><span style="--0:#D6DEEB;--1:#403F53">        </span><span style="--0:#919F9F;--1:#5F636F"># add execute permission</span></div></div><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">chmod</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">600</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">~/.ssh/id_rsa</span><span style="--0:#D6DEEB;--1:#403F53">       </span><span style="--0:#919F9F;--1:#5F636F"># readable only by me</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="chmod +x docker_run.sh        # add execute permissionchmod 600 ~/.ssh/id_rsa       # readable only by me"><div></div></button></div></figure></div>
+<p>The first line is the earlier point in practice: a file does not run because of its extension, it runs because the execute permission is there. With it, <code dir="auto">./docker_run.sh</code> works; without it you hand the file to bash as <code dir="auto">bash docker_run.sh</code>.</p>
+<p>The second line is an SSH private key. If its permissions are open, <strong>ssh refuses to use the key.</strong></p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">Permissions 0644 for 'id_rsa' are too open.</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="Permissions 0644 for &#x27;id_rsa&#x27; are too open."><div></div></button></div></figure></div>
+<div class="sl-heading-wrapper level-h3"><h3 id="chown-and-docker-volumes">chown and Docker volumes</h3><a class="sl-anchor-link" href="#chown-and-docker-volumes"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “chown and Docker volumes”</span></a></div>
+<p><strong>ch</strong>ange <strong>own</strong>er.</p>
+<p>When an app running as root inside a container writes logs into a mounted host folder, those files come out <strong>owned by root on the host too.</strong></p>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">ls</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">-l</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">/opt/myapp/log</span></div></div><div class="ec-line"><div class="code"><span style="--0:#919F9F;--1:#5F636F"># -rw-r--r-- 1 root root 2.1M myapp.log</span></div></div><div class="ec-line"><div class="code">
+</div></div><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">rm</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">/opt/myapp/log/myapp.log</span></div></div><div class="ec-line"><div class="code"><span style="--0:#919F9F;--1:#5F636F"># rm: cannot remove ...: Permission denied</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="ls -l /opt/myapp/logrm /opt/myapp/log/myapp.log"><div></div></button></div></figure></div>
+<p>You can handle each case with <code dir="auto">sudo</code>, but the real fix is not running the container as root. Drop to an account with <code dir="auto">USER</code> in the image and the files are owned by that account from the start. This is where “don’t run as root” from the <a href="/en/blog/docker-basics/">Docker post</a> leads.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="the-commands-in-one-place">The commands, in one place</h2><a class="sl-anchor-link" href="#the-commands-in-one-place"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “The commands, in one place”</span></a></div>
+<table>
+<thead>
+<tr>
+<th>To do this</th>
+<th>Run</th>
+<th>Short for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Where am I</td>
+<td><code dir="auto">pwd</code></td>
+<td>print working directory</td>
+</tr>
+<tr>
+<td>List</td>
+<td><code dir="auto">ls -lah</code></td>
+<td>list / long, all, human</td>
+</tr>
+<tr>
+<td>Move</td>
+<td><code dir="auto">cd path</code></td>
+<td>change directory</td>
+</tr>
+<tr>
+<td>One level up</td>
+<td><code dir="auto">cd ..</code></td>
+<td></td>
+</tr>
+<tr>
+<td>Back to the last one</td>
+<td><code dir="auto">cd -</code></td>
+<td></td>
+</tr>
+<tr>
+<td>Make a folder</td>
+<td><code dir="auto">mkdir -p path</code></td>
+<td>make directory / parents</td>
+</tr>
+<tr>
+<td>Make an empty file</td>
+<td><code dir="auto">touch name</code></td>
+<td></td>
+</tr>
+<tr>
+<td>Copy</td>
+<td><code dir="auto">cp -r src dest</code></td>
+<td>copy / recursive</td>
+</tr>
+<tr>
+<td>Move or rename</td>
+<td><code dir="auto">mv src dest</code></td>
+<td>move</td>
+</tr>
+<tr>
+<td>Delete</td>
+<td><code dir="auto">rm -rf path</code></td>
+<td>remove / recursive, force</td>
+</tr>
+<tr>
+<td>Read a file</td>
+<td><code dir="auto">cat name</code></td>
+<td>catenate</td>
+</tr>
+<tr>
+<td>Start of a file</td>
+<td><code dir="auto">head -n 20 name</code></td>
+<td></td>
+</tr>
+<tr>
+<td>End of a file</td>
+<td><code dir="auto">tail -n 100 name</code></td>
+<td></td>
+</tr>
+<tr>
+<td>Follow a log</td>
+<td><code dir="auto">tail -f -n 100 name</code></td>
+<td>follow</td>
+</tr>
+<tr>
+<td>Page through</td>
+<td><code dir="auto">less name</code></td>
+<td></td>
+</tr>
+<tr>
+<td>Edit</td>
+<td><code dir="auto">vi name</code></td>
+<td>visual</td>
+</tr>
+<tr>
+<td>Search</td>
+<td><code dir="auto">grep -rn "text" path</code></td>
+<td>regular expression + print</td>
+</tr>
+<tr>
+<td>Run as admin</td>
+<td><code dir="auto">sudo command</code></td>
+<td>substitute user do</td>
+</tr>
+<tr>
+<td>See permissions</td>
+<td><code dir="auto">ls -l name</code></td>
+<td>long</td>
+</tr>
+<tr>
+<td>Add execute permission</td>
+<td><code dir="auto">chmod +x name</code></td>
+<td>change mode</td>
+</tr>
+<tr>
+<td>Change owner</td>
+<td><code dir="auto">sudo chown dev:dev name</code></td>
+<td>change owner</td>
+</tr>
+</tbody>
+</table><div class="sl-blog-post-footer astro-gx5dlkfr"><div class="sl-blog-tags astro-xesoswnh"><b class="sl-blog-tags-label astro-xesoswnh">Tags:</b><ul class="sl-blog-tags-list astro-xesoswnh"><li class="astro-xesoswnh"><a class="sl-blog-tag astro-xesoswnh" href="/en/blog/tags/infrastructure/">Infrastructure</a></li><li class="astro-xesoswnh"><a class="sl-blog-tag astro-xesoswnh" href="/en/blog/tags/linux/">Linux</a></li></ul></div><div class="sl-blog-pagination astro-nhmjxwsg" data-pagefind-ignore><div class="card-grid astro-7qmvx3iy"><div class="sl-link-card astro-zaaezwya"><span class="sl-flex stack astro-zaaezwya"><a href="/en/blog/blog-setup/" rel="prev" class="astro-nhmjxwsg astro-zaaezwya"><span class="title astro-zaaezwya">How this blog is put together</span></a></span><svg aria-hidden="true" class="icon rtl:flip astro-zaaezwya astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.333em;"><path d="M17.92 11.62a1.001 1.001 0 0 0-.21-.33l-5-5a1.003 1.003 0 1 0-1.42 1.42l3.3 3.29H7a1 1 0 0 0 0 2h7.59l-3.3 3.29a1.002 1.002 0 0 0 .325 1.639 1 1 0 0 0 1.095-.219l5-5a1 1 0 0 0 .21-.33 1 1 0 0 0 0-.76Z"/></svg></div><div class="sl-link-card astro-zaaezwya"><span class="sl-flex stack astro-zaaezwya"><a href="/en/blog/ssh-and-sftp/" rel="next" class="astro-nhmjxwsg astro-zaaezwya"><span class="title astro-zaaezwya">Connecting to a server and moving files</span></a></span><svg aria-hidden="true" class="icon rtl:flip astro-zaaezwya astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.333em;"><path d="M17.92 11.62a1.001 1.001 0 0 0-.21-.33l-5-5a1.003 1.003 0 1 0-1.42 1.42l3.3 3.29H7a1 1 0 0 0 0 2h7.59l-3.3 3.29a1.002 1.002 0 0 0 .325 1.639 1 1 0 0 0 1.095-.219l5-5a1 1 0 0 0 .21-.33 1 1 0 0 0 0-.76Z"/></svg></div></div></div></div></div><nav class="related astro-vrecybdq" aria-labelledby="related-heading"><h2 id="related-heading" class="astro-vrecybdq">Related posts</h2><div class="related-cards astro-vrecybdq"><div class="sl-link-card astro-zaaezwya"><span class="sl-flex stack astro-zaaezwya"><a href="/en/blog/ssh-and-sftp/" class="astro-vrecybdq astro-zaaezwya"><span class="title astro-zaaezwya">Connecting to a server and moving files</span></a><span class="description astro-zaaezwya">Connecting with the ssh that Windows already ships, why people use a dedicated client and which one I use, and moving files with scp and sftp.</span></span><svg aria-hidden="true" class="icon rtl:flip astro-zaaezwya astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.333em;"><path d="M17.92 11.62a1.001 1.001 0 0 0-.21-.33l-5-5a1.003 1.003 0 1 0-1.42 1.42l3.3 3.29H7a1 1 0 0 0 0 2h7.59l-3.3 3.29a1.002 1.002 0 0 0 .325 1.639 1 1 0 0 0 1.095-.219l5-5a1 1 0 0 0 .21-.33 1 1 0 0 0 0-.76Z"/></svg></div><div class="sl-link-card astro-zaaezwya"><span class="sl-flex stack astro-zaaezwya"><a href="/en/blog/nginx-basics/" class="astro-vrecybdq astro-zaaezwya"><span class="title astro-zaaezwya">Nginx, from static files to an API proxy</span></a><span class="description astro-zaaezwya">Once the frontend and backend are split, who serves the built frontend files and who forwards API requests, how that works in local development and on a server, and how to configure it with Nginx.</span></span><svg aria-hidden="true" class="icon rtl:flip astro-zaaezwya astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.333em;"><path d="M17.92 11.62a1.001 1.001 0 0 0-.21-.33l-5-5a1.003 1.003 0 1 0-1.42 1.42l3.3 3.29H7a1 1 0 0 0 0 2h7.59l-3.3 3.29a1.002 1.002 0 0 0 .325 1.639 1 1 0 0 0 1.095-.219l5-5a1 1 0 0 0 .21-.33 1 1 0 0 0 0-.76Z"/></svg></div><div class="sl-link-card astro-zaaezwya"><span class="sl-flex stack astro-zaaezwya"><a href="/en/blog/docker-basics/" class="astro-vrecybdq astro-zaaezwya"><span class="title astro-zaaezwya">Docker, from the idea to a working Dockerfile</span></a><span class="description astro-zaaezwya">How containers differ from virtual machines, how to write a Dockerfile for a Java app, and how to build it, run it, look inside it, and move it as a tar file.</span></span><svg aria-hidden="true" class="icon rtl:flip astro-zaaezwya astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.333em;"><path d="M17.92 11.62a1.001 1.001 0 0 0-.21-.33l-5-5a1.003 1.003 0 1 0-1.42 1.42l3.3 3.29H7a1 1 0 0 0 0 2h7.59l-3.3 3.29a1.002 1.002 0 0 0 .325 1.639 1 1 0 0 0 1.095-.219l5-5a1 1 0 0 0 .21-.33 1 1 0 0 0 0-.76Z"/></svg></div></div></nav><footer class="sl-flex astro-ddtxxk7k"><div class="meta sl-flex astro-ddtxxk7k"><p>Last updated: <time datetime="2026-09-30T01:11:21.000Z">Sep 30, 2026</time></p></div><div class="pagination-links print:hidden astro-b5raizh3" dir="ltr"></div></footer><section class="comments astro-nuen6n26" id="comments"><script>(function(){const attrs = {"data-repo":"NabongS2/NabongS2.github.io","data-repo-id":"R_kgDOUjEosw","data-category":"Announcements","data-category-id":"DIC_kwDOUjEos84DGMfG","data-mapping":"pathname","data-strict":"1","data-reactions-enabled":"1","data-emit-metadata":"0","data-input-position":"top","data-loading":"lazy","data-lang":"en"};
+
+				(() => {
+					/* Starlight always resolves its theme to one of these two on the
+					   root element, including when the reader has it on 자동. */
+					const theme = () =>
+						document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+
+					const script = document.createElement('script');
+					script.src = 'https://giscus.app/client.js';
+					script.crossOrigin = 'anonymous';
+					script.async = true;
+					for (const [name, value] of Object.entries(attrs)) script.setAttribute(name, value);
+					script.setAttribute('data-theme', theme());
+					document.currentScript.parentElement.append(script);
+
+					/* The iframe keeps its own copy of the theme, so a reader who
+					   flips the switch mid-page has to be told. */
+					let wanted = theme();
+					let loaded = false;
+
+					const send = () => {
+						if (!loaded) return;
+						const frame = document.querySelector('iframe.giscus-frame');
+						frame?.contentWindow?.postMessage(
+							{ giscus: { setConfig: { theme: wanted } } },
+							'https://giscus.app',
+						);
+					};
+
+					/* Until giscus.app has actually loaded, the frame is still on our
+					   own origin and the browser drops a message addressed to theirs.
+					   Their first message back is the signal that it's there — and it
+					   also catches a reader who flipped the theme while it loaded. */
+					addEventListener('message', (event) => {
+						if (loaded || event.origin !== 'https://giscus.app') return;
+						loaded = true;
+						send();
+					});
+
+					new MutationObserver(() => {
+						wanted = theme();
+						send();
+					}).observe(document.documentElement, {
+						attributes: true,
+						attributeFilter: ['data-theme'],
+					});
+				})();
+			})();</script></section><div class="scroll-buttons astro-nfluvhd2" data-scroll-buttons><button type="button" data-to="top" aria-label="Back to top" title="Back to top" hidden class="astro-nfluvhd2"><svg viewBox="0 0 24 24" aria-hidden="true" class="astro-nfluvhd2"><path d="M12 5l-7 7m7-7l7 7M12 5v14" class="astro-nfluvhd2"></path></svg></button><button type="button" data-to="bottom" aria-label="Go to bottom" title="Go to bottom" hidden class="astro-nfluvhd2"><svg viewBox="0 0 24 24" aria-hidden="true" class="astro-nfluvhd2"><path d="M12 19l-7-7m7 7l7-7M12 19V5" class="astro-nfluvhd2"></path></svg></button></div><script type="module">var e=document.querySelector(`[data-scroll-buttons]`),t=e?.querySelector(`[data-to="top"]`),n=e?.querySelector(`[data-to="bottom"]`);if(e&&t&&n){let e=matchMedia(`(prefers-reduced-motion: reduce)`).matches?`auto`:`smooth`,r=()=>window.innerHeight,i=()=>{let e=window.scrollY,i=document.documentElement.scrollHeight-window.innerHeight,a=i>r()*1.5;t.hidden=!a||e<r(),n.hidden=!a||e>i-r()};t.addEventListener(`click`,()=>window.scrollTo({top:0,behavior:e})),n.addEventListener(`click`,()=>window.scrollTo({top:document.documentElement.scrollHeight,behavior:e})),addEventListener(`scroll`,i,{passive:!0}),addEventListener(`resize`,i),i()}</script><div class="reading-progress astro-kw4rgypl" data-reading-progress aria-hidden="true"></div><script type="module">var e=document.querySelector(`[data-reading-progress]`),t=document.querySelector(`main .sl-markdown-content`);if(e&&t){document.body.append(e);let n=()=>{let n=t.getBoundingClientRect().top+window.scrollY,r=n+t.offsetHeight-window.innerHeight,i=r<=n?1:(window.scrollY-n)/(r-n);e.style.transform=`scaleX(${Math.min(1,Math.max(0,i))})`};addEventListener(`scroll`,n,{passive:!0}),addEventListener(`resize`,n),n()}</script><script type="module">var e=location.origin;for(let t of document.querySelectorAll(`.sl-markdown-content a[href^="http"]`))t.origin!==e&&(t.target=`_blank`,t.rel=`noopener noreferrer`);</script></div></div></main></div></div></div></div></body></html>
