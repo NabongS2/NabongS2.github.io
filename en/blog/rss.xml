@@ -2092,7 +2092,7 @@
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td&gt;The text on screen is in the HTML&lt;/td&gt;
-&lt;td&gt;SSR, or SSG below&lt;/td&gt;
+&lt;td&gt;SSR, or SSG (HTML built ahead of time, explained below)&lt;/td&gt;
 &lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
@@ -2149,7 +2149,7 @@
 &lt;div&gt;&lt;h3 id=&quot;moving-between-pages&quot;&gt;Moving between pages&lt;/h3&gt;&lt;/div&gt;
 &lt;p&gt;With CSR, once the JS has loaded, moving to another menu doesn’t fetch new HTML. The JS changes only the page and fetches only the data it needs from the API, so navigation is fast. An app that shows many screens by swapping content within one HTML page like this is called an SPA (Single Page Application).&lt;/p&gt;
 &lt;div&gt;&lt;h3 id=&quot;search-engines-and-link-previews&quot;&gt;Search engines and link previews&lt;/h3&gt;&lt;/div&gt;
-&lt;p&gt;Search engines, and the previews that appear when you paste a link into a messenger, read the HTML the server sent. With CSR the HTML is empty, so they sometimes can’t read the content, title or image. Google sometimes runs the JS to read the page, but places such as messenger previews usually read only the HTML.&lt;/p&gt;
+&lt;p&gt;Search engines, and the previews that appear when you paste a link into a messenger, read the HTML the server sent. With CSR the HTML is empty, so they sometimes can’t read the content, title or image. Google sometimes runs the JS to read the page, but messenger previews often read only the HTML.&lt;/p&gt;
 &lt;div&gt;&lt;h3 id=&quot;server-and-deployment&quot;&gt;Server and deployment&lt;/h3&gt;&lt;/div&gt;
 &lt;table&gt;
 &lt;thead&gt;
@@ -2298,7 +2298,7 @@
 &lt;/table&gt;
 &lt;p&gt;The numbers and names are defined by the HTTP specification (currently RFC 9110). So every server uses &lt;code dir=&quot;auto&quot;&gt;404&lt;/code&gt; with the same meaning: “what you asked for wasn’t found”. Programs look only at the number; the name is there for people.&lt;/p&gt;
 &lt;div&gt;&lt;h2 id=&quot;the-1xx-to-5xx-classes&quot;&gt;The 1xx to 5xx classes&lt;/h2&gt;&lt;/div&gt;
-&lt;p&gt;The first digit sorts status codes into five classes. Even for a code you’ve never seen, the first digit tells you whether it succeeded and where the problem is.&lt;/p&gt;
+&lt;p&gt;The first digit sorts status codes into five classes. Even for a code you’ve never seen, the first digit tells you whether it succeeded, or failed because of the request or the server.&lt;/p&gt;
 &lt;!--
 	starlight-image-zoom 은 마크다운의 img 와 Image 만 감싼다. 이 컴포넌트는
 	그 목록에 없어서 그냥 지나치므로, 확대 기능이 필요한 래퍼를 직접 두른다.
@@ -2382,17 +2382,17 @@
 &lt;tr&gt;
 &lt;td&gt;&lt;code dir=&quot;auto&quot;&gt;301&lt;/code&gt;&lt;/td&gt;
 &lt;td&gt;Moved Permanently&lt;/td&gt;
-&lt;td&gt;The address has changed for good; go to the new one. The http → https redirect in &lt;a href=&quot;https://nabongs2.github.io/en/blog/nginx-production/&quot;&gt;Nginx part 2&lt;/a&gt;&lt;/td&gt;
+&lt;td&gt;The address has changed permanently; the client should request the new one. The http → https redirect in &lt;a href=&quot;https://nabongs2.github.io/en/blog/nginx-production/&quot;&gt;Nginx part 2&lt;/a&gt;&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td&gt;&lt;code dir=&quot;auto&quot;&gt;302&lt;/code&gt;&lt;/td&gt;
 &lt;td&gt;Found&lt;/td&gt;
-&lt;td&gt;Go to another address, this time only. Sending a user who isn’t logged in to the login page&lt;/td&gt;
+&lt;td&gt;This request only is sent to another address. Sending a user who isn’t logged in to the login page&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td&gt;&lt;code dir=&quot;auto&quot;&gt;304&lt;/code&gt;&lt;/td&gt;
 &lt;td&gt;Not Modified&lt;/td&gt;
-&lt;td&gt;Nothing changed; use your stored copy. Not an error&lt;/td&gt;
+&lt;td&gt;Nothing changed, so the stored copy can be used. Not an error&lt;/td&gt;
 &lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
@@ -2473,7 +2473,7 @@
 &lt;/table&gt;
 &lt;div&gt;&lt;h2 id=&quot;similar-codes-compared&quot;&gt;Similar codes compared&lt;/h2&gt;&lt;/div&gt;
 &lt;div&gt;&lt;h3 id=&quot;401-and-403&quot;&gt;401 and 403&lt;/h3&gt;&lt;/div&gt;
-&lt;p&gt;Both mean “no”, but for different reasons.&lt;/p&gt;
+&lt;p&gt;Both reject the request, but for different reasons.&lt;/p&gt;
 &lt;table&gt;
 &lt;thead&gt;
 &lt;tr&gt;
@@ -2500,7 +2500,7 @@
 &lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
-&lt;p&gt;The name of &lt;code dir=&quot;auto&quot;&gt;401&lt;/code&gt; is Unauthorized, which is confusing; what it actually means is “not authenticated”. Lacking permission is &lt;code dir=&quot;auto&quot;&gt;403&lt;/code&gt;. That’s why frontends usually send the user to the login page on &lt;code dir=&quot;auto&quot;&gt;401&lt;/code&gt;, and show a “no permission” message on &lt;code dir=&quot;auto&quot;&gt;403&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;The name of &lt;code dir=&quot;auto&quot;&gt;401&lt;/code&gt; is Unauthorized, which is confusing; what it actually means is “not authenticated”. Lacking permission is &lt;code dir=&quot;auto&quot;&gt;403&lt;/code&gt;. That’s why a frontend can send the user to the login page on &lt;code dir=&quot;auto&quot;&gt;401&lt;/code&gt;, and show a “no permission” message on &lt;code dir=&quot;auto&quot;&gt;403&lt;/code&gt;.&lt;/p&gt;
 &lt;div&gt;&lt;h3 id=&quot;404-and-405&quot;&gt;404 and 405&lt;/h3&gt;&lt;/div&gt;
 &lt;p&gt;&lt;code dir=&quot;auto&quot;&gt;404&lt;/code&gt; means the address doesn’t exist; &lt;code dir=&quot;auto&quot;&gt;405&lt;/code&gt; means the address exists but the method, such as GET or POST, doesn’t match. A &lt;code dir=&quot;auto&quot;&gt;405&lt;/code&gt; means the address was right, so compare the frontend’s request method with the backend’s &lt;code dir=&quot;auto&quot;&gt;@GetMapping&lt;/code&gt; or &lt;code dir=&quot;auto&quot;&gt;@PostMapping&lt;/code&gt;.&lt;/p&gt;
 &lt;div&gt;&lt;h3 id=&quot;301-and-302&quot;&gt;301 and 302&lt;/h3&gt;&lt;/div&gt;
@@ -2604,7 +2604,7 @@
 &lt;p&gt;The &lt;code dir=&quot;auto&quot;&gt;Server: nginx&lt;/code&gt; response header can’t tell them apart. When Nginx passes a backend response on, it drops the backend’s &lt;code dir=&quot;auto&quot;&gt;Server&lt;/code&gt; header and adds its own, so responses the backend made also show &lt;code dir=&quot;auto&quot;&gt;Server: nginx&lt;/code&gt;.&lt;/p&gt;
 &lt;p&gt;Two &lt;code dir=&quot;auto&quot;&gt;404&lt;/code&gt; cases come up often. A &lt;code dir=&quot;auto&quot;&gt;404&lt;/code&gt; for a frontend file (&lt;code dir=&quot;auto&quot;&gt;/assets/index-3f9a1c2e.js&lt;/code&gt;) means the deployed &lt;code dir=&quot;auto&quot;&gt;dist&lt;/code&gt; and the browser’s &lt;code dir=&quot;auto&quot;&gt;index.html&lt;/code&gt; don’t match; a JSON &lt;code dir=&quot;auto&quot;&gt;404&lt;/code&gt; for an API (&lt;code dir=&quot;auto&quot;&gt;/api/...&lt;/code&gt;) means the address the frontend called differs from the backend’s path.&lt;/p&gt;
 &lt;div&gt;&lt;h3 id=&quot;browser-errors&quot;&gt;Browser errors&lt;/h3&gt;&lt;/div&gt;
-&lt;p&gt;An error stopped in the browser has no status code, or has one but the page’s code can’t read the response. The Status column in the Network tab shows something other than a number.&lt;/p&gt;
+&lt;p&gt;A request the browser blocked, or one that never reached the server, has no status code, or has one but the page’s code can’t read the response. The Status column in the Network tab shows something other than a number.&lt;/p&gt;
 &lt;table&gt;
 &lt;thead&gt;
 &lt;tr&gt;
@@ -2638,7 +2638,7 @@
 &lt;p&gt;It means the page opened on 5173 tried to read a response from 8000, and the browser blocked it because there was no sign that this was allowed. The backend responded normally, but the page treats it as a failure.&lt;/p&gt;
 &lt;div&gt;&lt;h4 id=&quot;the-same-origin-policy&quot;&gt;The same-origin policy&lt;/h4&gt;&lt;/div&gt;
 &lt;p&gt;The browser blocks the response for security.&lt;/p&gt;
-&lt;p&gt;Say you’re logged in to a bank site, &lt;code dir=&quot;auto&quot;&gt;bank.com&lt;/code&gt;, and open &lt;code dir=&quot;auto&quot;&gt;evil.com&lt;/code&gt; in another tab. If JS on &lt;code dir=&quot;auto&quot;&gt;evil.com&lt;/code&gt; runs &lt;code dir=&quot;auto&quot;&gt;fetch(&apos;https://bank.com/api/account&apos;)&lt;/code&gt;, the browser automatically attaches your login cookie to the request to &lt;code dir=&quot;auto&quot;&gt;bank.com&lt;/code&gt;. If JS on &lt;code dir=&quot;auto&quot;&gt;evil.com&lt;/code&gt; could read that response, your account details would go straight to it.&lt;/p&gt;
+&lt;p&gt;Say you’re logged in to a bank site, &lt;code dir=&quot;auto&quot;&gt;bank.example.com&lt;/code&gt;, and open &lt;code dir=&quot;auto&quot;&gt;evil.example.com&lt;/code&gt; in another tab. If JS on &lt;code dir=&quot;auto&quot;&gt;evil.example.com&lt;/code&gt; runs &lt;code dir=&quot;auto&quot;&gt;fetch(&apos;https://bank.example.com/api/account&apos;)&lt;/code&gt;, the browser automatically attaches your login cookie to the request to &lt;code dir=&quot;auto&quot;&gt;bank.example.com&lt;/code&gt;. If JS on &lt;code dir=&quot;auto&quot;&gt;evil.example.com&lt;/code&gt; could read that response, your account details would go straight to it.&lt;/p&gt;
 &lt;p&gt;So browsers have a basic rule: &lt;strong&gt;JS on a page can only read responses from the same origin as the page&lt;/strong&gt;. This rule is called the same-origin policy.&lt;/p&gt;
 &lt;div&gt;&lt;h4 id=&quot;cors&quot;&gt;CORS&lt;/h4&gt;&lt;/div&gt;
 &lt;p&gt;There are legitimate cases where a page needs to read a response from another origin. CORS (Cross-Origin Resource Sharing) is how the server explicitly allows that.&lt;/p&gt;
@@ -4390,11 +4390,11 @@
 &lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
-&lt;p&gt;Using it from Spring is covered in &lt;a href=&quot;https://nabongs2.github.io/en/blog/redis-java/&quot;&gt;Using Redis from Spring&lt;/a&gt;.&lt;/p&gt;</content:encoded><category>Data</category><category>Redis</category></item><item><title>Redis, from the idea to data types and commands</title><link>https://nabongs2.github.io/en/blog/redis-basics/</link><guid isPermaLink="true">https://nabongs2.github.io/en/blog/redis-basics/</guid><description>Almost everything about Redis follows from one fact — the data sits in memory. The five data types and the redis-cli commands that go with them.</description><pubDate>Wed, 23 Sep 2026 07:00:00 GMT</pubDate><content:encoded>&lt;div&gt;&lt;h2 id=&quot;what-redis-is&quot;&gt;What Redis is&lt;/h2&gt;&lt;/div&gt;
+&lt;p&gt;Using it from Spring is covered in &lt;a href=&quot;https://nabongs2.github.io/en/blog/redis-java/&quot;&gt;Using Redis from Spring&lt;/a&gt;.&lt;/p&gt;</content:encoded><category>Data</category><category>Redis</category></item><item><title>Redis, from the idea to data types and commands</title><link>https://nabongs2.github.io/en/blog/redis-basics/</link><guid isPermaLink="true">https://nabongs2.github.io/en/blog/redis-basics/</guid><description>What Redis is and why it is fast, its five data types, and the redis-cli commands that go with them.</description><pubDate>Wed, 23 Sep 2026 07:00:00 GMT</pubDate><content:encoded>&lt;div&gt;&lt;h2 id=&quot;redis-characteristics&quot;&gt;Redis characteristics&lt;/h2&gt;&lt;/div&gt;
 &lt;p&gt;A store you put a value into under a key and read back by that key. It keeps that data &lt;strong&gt;in memory, not on disk.&lt;/strong&gt;&lt;/p&gt;
 &lt;div&gt;&lt;figure&gt;&lt;figcaption&gt;&lt;/figcaption&gt;&lt;pre&gt;&lt;code&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;SET  session:a1b2c3  &quot;user=1000&quot;&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;GET  session:a1b2c3&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;→ &quot;user=1000&quot;&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;&lt;/div&gt;
 &lt;p&gt;The name is &lt;strong&gt;RE&lt;/strong&gt;mote &lt;strong&gt;DI&lt;/strong&gt;ctionary &lt;strong&gt;S&lt;/strong&gt;erver. Think of the &lt;code dir=&quot;auto&quot;&gt;Map&lt;/code&gt; you use inside a program, lifted out of the process so several servers can share it. Point three servers at the same Redis and all three share the same session.&lt;/p&gt;
-&lt;p&gt;Nearly every property follows from “it is in memory”.&lt;/p&gt;
+&lt;p&gt;Most of Redis’s characteristics come from storing data in memory instead of on disk.&lt;/p&gt;
 &lt;table&gt;
 &lt;thead&gt;
 &lt;tr&gt;
@@ -4418,7 +4418,7 @@
 &lt;/tbody&gt;
 &lt;/table&gt;
 &lt;div&gt;&lt;h2 id=&quot;how-it-differs-from-a-relational-database&quot;&gt;How it differs from a relational database&lt;/h2&gt;&lt;/div&gt;
-&lt;p&gt;Only the places where the habits you already have do not carry over.&lt;/p&gt;
+&lt;p&gt;Only the points that feel different if you are used to relational databases.&lt;/p&gt;
 &lt;table&gt;
 &lt;thead&gt;
 &lt;tr&gt;
@@ -5131,16 +5131,16 @@
 &lt;td&gt;&lt;code dir=&quot;auto&quot;&gt;docker system prune&lt;/code&gt;&lt;/td&gt;
 &lt;/tr&gt;
 &lt;/tbody&gt;
-&lt;/table&gt;</content:encoded><category>Infrastructure</category><category>Docker</category></item><item><title>Connecting to a server and moving files</title><link>https://nabongs2.github.io/en/blog/ssh-and-sftp/</link><guid isPermaLink="true">https://nabongs2.github.io/en/blog/ssh-and-sftp/</guid><description>You can start connecting without installing anything. What you need after that is somewhere to save connections, and a way to move files.</description><pubDate>Tue, 22 Sep 2026 11:00:00 GMT</pubDate><content:encoded>&lt;p&gt;What a server is and which commands you run inside it are in the &lt;a href=&quot;https://nabongs2.github.io/en/blog/terminal-basics/&quot;&gt;terminal post&lt;/a&gt;. This one covers what sits on either side of that: &lt;strong&gt;what you connect with&lt;/strong&gt;, and &lt;strong&gt;how files get in and out&lt;/strong&gt;.&lt;/p&gt;
-&lt;div&gt;&lt;h2 id=&quot;a-terminal-and-ssh-are-different-levels&quot;&gt;A terminal and ssh are different levels&lt;/h2&gt;&lt;/div&gt;
-&lt;p&gt;A &lt;strong&gt;terminal&lt;/strong&gt; is the window where you type commands. &lt;code dir=&quot;auto&quot;&gt;ssh&lt;/code&gt; is a command you run in that window.&lt;/p&gt;
-&lt;p&gt;Choosing a terminal and connecting to a server are two separate things. Without that split, “install a terminal” and “connect to the server” collapse into one vague task.&lt;/p&gt;
-&lt;div&gt;&lt;h2 id=&quot;windows-already-ships-ssh&quot;&gt;Windows already ships ssh&lt;/h2&gt;&lt;/div&gt;
+&lt;/table&gt;</content:encoded><category>Infrastructure</category><category>Docker</category></item><item><title>SSH connections and file transfer</title><link>https://nabongs2.github.io/en/blog/ssh-and-sftp/</link><guid isPermaLink="true">https://nabongs2.github.io/en/blog/ssh-and-sftp/</guid><description>How to connect to a server with the ssh built into Windows, save connection details in an SSH client, and move files with scp and sftp.</description><pubDate>Tue, 22 Sep 2026 11:00:00 GMT</pubDate><content:encoded>&lt;p&gt;What a server is and which commands you run inside it are in the &lt;a href=&quot;https://nabongs2.github.io/en/blog/terminal-basics/&quot;&gt;terminal post&lt;/a&gt;. This post looks at how to connect to a server over SSH and how to move files to and from it.&lt;/p&gt;
+&lt;div&gt;&lt;h2 id=&quot;terminals-and-ssh&quot;&gt;Terminals and SSH&lt;/h2&gt;&lt;/div&gt;
+&lt;p&gt;A &lt;strong&gt;terminal&lt;/strong&gt; is the window where you type commands. &lt;strong&gt;SSH&lt;/strong&gt; is a way to connect to another computer over the network and run commands there, with the traffic encrypted. &lt;code dir=&quot;auto&quot;&gt;ssh&lt;/code&gt; is the command that connects this way from a terminal.&lt;/p&gt;
+&lt;p&gt;Choosing a terminal and connecting to a server are two separate things. If you don’t separate them, it’s easy to think you have to install a new terminal program before you can connect. In fact the terminal and &lt;code dir=&quot;auto&quot;&gt;ssh&lt;/code&gt; that come with Windows are enough.&lt;/p&gt;
+&lt;div&gt;&lt;h2 id=&quot;the-ssh-client-built-into-windows&quot;&gt;The SSH client built into Windows&lt;/h2&gt;&lt;/div&gt;
 &lt;p&gt;Open PowerShell and type it.&lt;/p&gt;
 &lt;div&gt;&lt;figure&gt;&lt;figcaption&gt;&lt;span&gt;&lt;/span&gt;&lt;/figcaption&gt;&lt;pre&gt;&lt;code&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;ssh dev@192.168.0.10&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;&lt;/div&gt;
 &lt;p&gt;The OpenSSH client has been included since Windows 10 1809. mac and Linux have had it in the default terminal all along. &lt;strong&gt;You can start without installing anything.&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;Starting here is the better order the first time. It keeps picking a client separate from finding out whether you can connect at all.&lt;/p&gt;
-&lt;div&gt;&lt;h2 id=&quot;why-people-still-use-a-dedicated-client&quot;&gt;Why people still use a dedicated client&lt;/h2&gt;&lt;/div&gt;
+&lt;div&gt;&lt;h2 id=&quot;ssh-client-programs&quot;&gt;SSH client programs&lt;/h2&gt;&lt;/div&gt;
 &lt;p&gt;Four reasons.&lt;/p&gt;
 &lt;table&gt;
 &lt;thead&gt;
@@ -5171,12 +5171,12 @@
 &lt;p&gt;I use &lt;a href=&quot;https://termius.com&quot;&gt;Termius&lt;/a&gt;. The screen for registering connections is well done, and dragging files to and from a server is easy. There are Windows, mac and Linux builds, and it is usable for free.&lt;/p&gt;
 &lt;p&gt;Other options worth knowing:&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;&lt;strong&gt;XShell with XFtp&lt;/strong&gt; — widely used in Korea. The terminal and the file transfer are separate programs, and there is a free licence for home and school use&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;XShell with XFtp&lt;/strong&gt; — the terminal and the file transfer are separate programs, and there is a free licence for home and school use&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;MobaXterm&lt;/strong&gt; — opens an SFTP browser on the left alongside the SSH session&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;PuTTY&lt;/strong&gt; — the old standard. Fewer features, but small and available everywhere&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;VS Code Remote-SSH&lt;/strong&gt; — opens server files straight in the editor. The one to use if editing is the point&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;PuTTY&lt;/strong&gt; — a free SSH client that has been widely used for a long time. It has fewer features, but is light enough to run as a single executable without installing&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;VS Code Remote-SSH&lt;/strong&gt; — opens server files straight in the editor&lt;/li&gt;
 &lt;/ul&gt;
-&lt;div&gt;&lt;h3 id=&quot;the-fields-you-fill-in&quot;&gt;The fields you fill in&lt;/h3&gt;&lt;/div&gt;
+&lt;div&gt;&lt;h3 id=&quot;connection-fields&quot;&gt;Connection fields&lt;/h3&gt;&lt;/div&gt;
 &lt;p&gt;Menu names differ by client. The fields do not.&lt;/p&gt;
 &lt;table&gt;
 &lt;thead&gt;
@@ -5209,21 +5209,21 @@
 &lt;/tbody&gt;
 &lt;/table&gt;
 &lt;p&gt;Save it once and connecting is picking a row from a list. Past ten servers that alone pays for using a client.&lt;/p&gt;
-&lt;div&gt;&lt;h2 id=&quot;moving-files&quot;&gt;Moving files&lt;/h2&gt;&lt;/div&gt;
+&lt;div&gt;&lt;h2 id=&quot;file-transfer&quot;&gt;File transfer&lt;/h2&gt;&lt;/div&gt;
 &lt;p&gt;For pushing a jar up to a server or pulling a log down.&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;SFTP&lt;/strong&gt; is file transfer riding on SSH. It generally works with no extra setup once SSH does, because there is no separate service to run on the server.&lt;/p&gt;
 &lt;p&gt;It is not &lt;strong&gt;FTP&lt;/strong&gt;, despite the name. FTP has no encryption, and it needs its own service installed and running on the server.&lt;/p&gt;
-&lt;div&gt;&lt;h3 id=&quot;scp--copy-once-and-done&quot;&gt;scp — copy once and done&lt;/h3&gt;&lt;/div&gt;
+&lt;div&gt;&lt;h3 id=&quot;scp&quot;&gt;scp&lt;/h3&gt;&lt;/div&gt;
 &lt;p&gt;&lt;strong&gt;s&lt;/strong&gt;ecure &lt;strong&gt;c&lt;/strong&gt;o&lt;strong&gt;p&lt;/strong&gt;y.&lt;/p&gt;
 &lt;div&gt;&lt;figure&gt;&lt;figcaption&gt;&lt;span&gt;&lt;/span&gt;&lt;/figcaption&gt;&lt;pre&gt;&lt;code&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;# local → server&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;scp&lt;/span&gt;&lt;span&gt; &lt;/span&gt;&lt;span&gt;myapp.jar&lt;/span&gt;&lt;span&gt; &lt;/span&gt;&lt;span&gt;dev@192.168.0.10:/opt/myapp/&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;
 &lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;# server → local&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;scp&lt;/span&gt;&lt;span&gt; &lt;/span&gt;&lt;span&gt;dev@192.168.0.10:/opt/myapp/log/myapp.log&lt;/span&gt;&lt;span&gt; &lt;/span&gt;&lt;span&gt;.&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;
 &lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;# folders need -r&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;scp&lt;/span&gt;&lt;span&gt; &lt;/span&gt;&lt;span&gt;-r&lt;/span&gt;&lt;span&gt; &lt;/span&gt;&lt;span&gt;config&lt;/span&gt;&lt;span&gt; &lt;/span&gt;&lt;span&gt;dev@192.168.0.10:/opt/myapp/&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;&lt;/div&gt;
 &lt;p&gt;What follows the colon is the path on the server. Leave the colon out and it turns into a plain local copy, so it is worth a second look.&lt;/p&gt;
 &lt;p&gt;The &lt;code dir=&quot;auto&quot;&gt;.&lt;/code&gt; at the end means the current folder. It is the destination, so it cannot be left off.&lt;/p&gt;
-&lt;div&gt;&lt;h3 id=&quot;sftp--connect-and-move-around&quot;&gt;sftp — connect and move around&lt;/h3&gt;&lt;/div&gt;
+&lt;div&gt;&lt;h3 id=&quot;sftp&quot;&gt;sftp&lt;/h3&gt;&lt;/div&gt;
 &lt;div&gt;&lt;figure&gt;&lt;figcaption&gt;&lt;span&gt;&lt;/span&gt;&lt;/figcaption&gt;&lt;pre&gt;&lt;code&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;sftp&lt;/span&gt;&lt;span&gt; &lt;/span&gt;&lt;span&gt;dev@192.168.0.10&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;sftp&lt;/span&gt;&lt;span&gt;&gt; &lt;/span&gt;&lt;span&gt;ls&lt;/span&gt;&lt;span&gt;              &lt;/span&gt;&lt;span&gt;# list on the server&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;sftp&lt;/span&gt;&lt;span&gt;&gt; &lt;/span&gt;&lt;span&gt;lls&lt;/span&gt;&lt;span&gt;             &lt;/span&gt;&lt;span&gt;# list locally&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;sftp&lt;/span&gt;&lt;span&gt;&gt; &lt;/span&gt;&lt;span&gt;cd&lt;/span&gt;&lt;span&gt; &lt;/span&gt;&lt;span&gt;/opt/myapp&lt;/span&gt;&lt;span&gt;   &lt;/span&gt;&lt;span&gt;# move on the server&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;sftp&lt;/span&gt;&lt;span&gt;&gt; &lt;/span&gt;&lt;span&gt;lcd&lt;/span&gt;&lt;span&gt; &lt;/span&gt;&lt;span&gt;~/Downloads&lt;/span&gt;&lt;span&gt; &lt;/span&gt;&lt;span&gt;# move locally&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;sftp&lt;/span&gt;&lt;span&gt;&gt; &lt;/span&gt;&lt;span&gt;put&lt;/span&gt;&lt;span&gt; &lt;/span&gt;&lt;span&gt;myapp.jar&lt;/span&gt;&lt;span&gt;   &lt;/span&gt;&lt;span&gt;# upload&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;sftp&lt;/span&gt;&lt;span&gt;&gt; &lt;/span&gt;&lt;span&gt;get&lt;/span&gt;&lt;span&gt; &lt;/span&gt;&lt;span&gt;myapp.log&lt;/span&gt;&lt;span&gt;   &lt;/span&gt;&lt;span&gt;# download&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;sftp&lt;/span&gt;&lt;span&gt;&gt; &lt;/span&gt;&lt;span&gt;exit&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;&lt;/div&gt;
 &lt;p&gt;The commands with an &lt;code dir=&quot;auto&quot;&gt;l&lt;/code&gt; in front act on your own machine — &lt;code dir=&quot;auto&quot;&gt;l&lt;/code&gt; for &lt;strong&gt;l&lt;/strong&gt;ocal. When you lose track of which side you are looking at, run &lt;code dir=&quot;auto&quot;&gt;pwd&lt;/code&gt; and &lt;code dir=&quot;auto&quot;&gt;lpwd&lt;/code&gt; one after the other.&lt;/p&gt;
-&lt;div&gt;&lt;h3 id=&quot;which-one-to-use&quot;&gt;Which one to use&lt;/h3&gt;&lt;/div&gt;
+&lt;div&gt;&lt;h3 id=&quot;comparing-transfer-methods&quot;&gt;Comparing transfer methods&lt;/h3&gt;&lt;/div&gt;
 &lt;table&gt;
 &lt;thead&gt;
 &lt;tr&gt;
@@ -5242,7 +5242,7 @@
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td&gt;Large files, repeatedly&lt;/td&gt;
-&lt;td&gt;&lt;code dir=&quot;auto&quot;&gt;rsync&lt;/code&gt;. Sends only what changed&lt;/td&gt;
+&lt;td&gt;&lt;code dir=&quot;auto&quot;&gt;rsync&lt;/code&gt;, a tool that compares source and target and sends only what changed&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td&gt;Moving files within the server&lt;/td&gt;
@@ -5250,7 +5250,7 @@
 &lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
-&lt;div&gt;&lt;h2 id=&quot;when-permissions-get-in-the-way&quot;&gt;When permissions get in the way&lt;/h2&gt;&lt;/div&gt;
+&lt;div&gt;&lt;h2 id=&quot;permission-errors&quot;&gt;Permission errors&lt;/h2&gt;&lt;/div&gt;
 &lt;p&gt;If an uploaded file does not appear, or you cannot delete it, it is usually permissions.&lt;/p&gt;
 &lt;div&gt;&lt;figure&gt;&lt;figcaption&gt;&lt;/figcaption&gt;&lt;pre&gt;&lt;code&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;scp: /opt/myapp/myapp.jar: Permission denied&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;&lt;/div&gt;
 &lt;p&gt;&lt;code dir=&quot;auto&quot;&gt;scp&lt;/code&gt; and &lt;code dir=&quot;auto&quot;&gt;sftp&lt;/code&gt; write files &lt;strong&gt;as the account you connected with.&lt;/strong&gt; Connect as &lt;code dir=&quot;auto&quot;&gt;dev&lt;/code&gt; and files only land where &lt;code dir=&quot;auto&quot;&gt;dev&lt;/code&gt; can write. If the folder is owned by root, you are blocked.&lt;/p&gt;
@@ -5258,7 +5258,7 @@
 &lt;div&gt;&lt;figure&gt;&lt;figcaption&gt;&lt;span&gt;&lt;/span&gt;&lt;/figcaption&gt;&lt;pre&gt;&lt;code&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;# upload somewhere you can write&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;scp&lt;/span&gt;&lt;span&gt; &lt;/span&gt;&lt;span&gt;myapp.jar&lt;/span&gt;&lt;span&gt; &lt;/span&gt;&lt;span&gt;dev@192.168.0.10:~/&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;
 &lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;# connect and move it&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;ssh&lt;/span&gt;&lt;span&gt; &lt;/span&gt;&lt;span&gt;dev@192.168.0.10&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;sudo&lt;/span&gt;&lt;span&gt; &lt;/span&gt;&lt;span&gt;mv&lt;/span&gt;&lt;span&gt; &lt;/span&gt;&lt;span&gt;~/myapp.jar&lt;/span&gt;&lt;span&gt; &lt;/span&gt;&lt;span&gt;/opt/myapp/&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;&lt;/div&gt;
 &lt;p&gt;Reading the permission string is covered in &lt;a href=&quot;https://nabongs2.github.io/en/blog/terminal-basics/#accounts-and-permissions&quot;&gt;accounts and permissions&lt;/a&gt; in the terminal post.&lt;/p&gt;
-&lt;div&gt;&lt;h2 id=&quot;the-commands-in-one-place&quot;&gt;The commands, in one place&lt;/h2&gt;&lt;/div&gt;
+&lt;div&gt;&lt;h2 id=&quot;command-summary&quot;&gt;Command summary&lt;/h2&gt;&lt;/div&gt;
 &lt;table&gt;
 &lt;thead&gt;
 &lt;tr&gt;
@@ -5893,7 +5893,7 @@
 &lt;td&gt;change owner&lt;/td&gt;
 &lt;/tr&gt;
 &lt;/tbody&gt;
-&lt;/table&gt;</content:encoded><category>Infrastructure</category><category>Linux</category></item><item><title>How this blog is put together</title><link>https://nabongs2.github.io/en/blog/blog-setup/</link><guid isPermaLink="true">https://nabongs2.github.io/en/blog/blog-setup/</guid><description>The pieces that make up this blog, built with Astro and Starlight, and how posts are written and published to GitHub Pages.</description><pubDate>Mon, 21 Sep 2026 10:00:00 GMT</pubDate><content:encoded>&lt;p&gt;This blog is written in both Korean and English. This post covers the tools it’s built with and how posts are written and published.&lt;/p&gt;
+&lt;/table&gt;</content:encoded><category>Infrastructure</category><category>Linux</category></item><item><title>Blog structure and deployment</title><link>https://nabongs2.github.io/en/blog/blog-setup/</link><guid isPermaLink="true">https://nabongs2.github.io/en/blog/blog-setup/</guid><description>The pieces that make up this blog, built with Astro and Starlight, and how posts are written and published to GitHub Pages.</description><pubDate>Mon, 21 Sep 2026 10:00:00 GMT</pubDate><content:encoded>&lt;p&gt;This blog is written in both Korean and English. This post covers the tools it’s built with and how posts are written and published.&lt;/p&gt;
 &lt;div&gt;&lt;h2 id=&quot;the-pieces&quot;&gt;The pieces&lt;/h2&gt;&lt;/div&gt;
 &lt;table&gt;
 &lt;thead&gt;
@@ -5936,7 +5936,7 @@
 &lt;p&gt;&lt;code dir=&quot;auto&quot;&gt;hreflang&lt;/code&gt; tells search engines that the Korean and English pages are the same post in different languages. Without it, the two pages can be treated as duplicate content. A sitemap is generated at build time as well.&lt;/p&gt;
 &lt;p&gt;On top of that, the pages are static HTML. This post can be read in full without running any JavaScript. What a search engine downloads is a finished document, not an empty &lt;code dir=&quot;auto&quot;&gt;&amp;#x3C;div&gt;&lt;/code&gt;.&lt;/p&gt;
 &lt;p&gt;This only means the &lt;strong&gt;conditions are in place&lt;/strong&gt; for being found; it doesn’t mean ranking near the top of results. That’s something to check once posts have built up and the site is registered with search engines.&lt;/p&gt;
-&lt;div&gt;&lt;h2 id=&quot;korean-and-english&quot;&gt;Korean and English&lt;/h2&gt;&lt;/div&gt;
+&lt;div&gt;&lt;h2 id=&quot;multilingual-structure&quot;&gt;Multilingual structure&lt;/h2&gt;&lt;/div&gt;
 &lt;p&gt;Korean posts live at the root and English posts under &lt;code dir=&quot;auto&quot;&gt;/en/&lt;/code&gt;.&lt;/p&gt;
 &lt;div&gt;&lt;figure&gt;&lt;figcaption&gt;&lt;/figcaption&gt;&lt;pre&gt;&lt;code&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;src/content/docs/&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;├── blog/&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;│   └── blog-setup.md      → /blog/blog-setup/&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;└── en/blog/&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;&lt;span&gt;    &lt;/span&gt;&lt;/span&gt;&lt;span&gt;└── blog-setup.md      → /en/blog/blog-setup/&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;&lt;/div&gt;
 &lt;p&gt;Files with the same name are paired as translations of each other. Switching language while reading a post takes you to the same post in the other language.&lt;/p&gt;
@@ -5944,7 +5944,7 @@
 &lt;div&gt;&lt;h2 id=&quot;categories-and-series&quot;&gt;Categories and series&lt;/h2&gt;&lt;/div&gt;
 &lt;p&gt;Categories are set with tags. Each post lists its top-level category and subcategory as tags.&lt;/p&gt;
 &lt;div&gt;&lt;figure&gt;&lt;figcaption&gt;&lt;/figcaption&gt;&lt;pre&gt;&lt;code&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;tags&lt;/span&gt;&lt;span&gt;:&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;  &lt;/span&gt;&lt;span&gt;-&lt;/span&gt;&lt;span&gt; &lt;/span&gt;&lt;span&gt;Infrastructure&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;  &lt;/span&gt;&lt;span&gt;-&lt;/span&gt;&lt;span&gt; &lt;/span&gt;&lt;span&gt;Docker&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;&lt;/div&gt;
-&lt;p&gt;In the sidebar, posts are grouped under their top-level category following the tree written in &lt;code dir=&quot;auto&quot;&gt;src/categories.ts&lt;/code&gt;. Tags that aren’t in the tree collect in an &lt;strong&gt;Other&lt;/strong&gt; group; a post landing there is the cue to give it a place in the tree.&lt;/p&gt;
+&lt;p&gt;In the sidebar, posts are grouped under their top-level category following the tree written in &lt;code dir=&quot;auto&quot;&gt;src/categories.ts&lt;/code&gt;. Tags that aren’t in the tree collect in an &lt;strong&gt;Other&lt;/strong&gt; group; when a post lands there, its tag needs to be added to the tree in &lt;code dir=&quot;auto&quot;&gt;src/categories.ts&lt;/code&gt;.&lt;/p&gt;
 &lt;p&gt;Posts meant to be read in order are grouped as a series in &lt;code dir=&quot;auto&quot;&gt;src/series.ts&lt;/code&gt;.&lt;/p&gt;
 &lt;div&gt;&lt;figure&gt;&lt;figcaption&gt;&lt;/figcaption&gt;&lt;pre&gt;&lt;code&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;{&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;&lt;span&gt;  &lt;/span&gt;&lt;/span&gt;&lt;span&gt;label&lt;/span&gt;&lt;span&gt;:&lt;/span&gt;&lt;span&gt; &lt;/span&gt;&lt;span&gt;{&lt;/span&gt;&lt;span&gt; ko&lt;/span&gt;&lt;span&gt;:&lt;/span&gt;&lt;span&gt; &lt;/span&gt;&lt;span&gt;&apos;Nginx&apos;&lt;/span&gt;&lt;span&gt;,&lt;/span&gt;&lt;span&gt; en&lt;/span&gt;&lt;span&gt;:&lt;/span&gt;&lt;span&gt; &lt;/span&gt;&lt;span&gt;&apos;Nginx&apos;&lt;/span&gt;&lt;span&gt; &lt;/span&gt;&lt;span&gt;},&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;&lt;span&gt;  &lt;/span&gt;&lt;/span&gt;&lt;span&gt;posts&lt;/span&gt;&lt;span&gt;:&lt;/span&gt;&lt;span&gt; [&lt;/span&gt;&lt;span&gt;&apos;blog/nginx-basics&apos;&lt;/span&gt;&lt;span&gt;,&lt;/span&gt;&lt;span&gt; &lt;/span&gt;&lt;span&gt;&apos;blog/nginx-production&apos;&lt;/span&gt;&lt;span&gt;,&lt;/span&gt;&lt;span&gt; &lt;/span&gt;&lt;span&gt;&apos;blog/nginx-logs&apos;&lt;/span&gt;&lt;span&gt;]&lt;/span&gt;&lt;span&gt;,&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;&lt;span&gt;}&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;&lt;/div&gt;
 &lt;p&gt;Posts in a series get the series list at the top and previous/next part links at the bottom. Only this list changes; the post files themselves don’t.&lt;/p&gt;
