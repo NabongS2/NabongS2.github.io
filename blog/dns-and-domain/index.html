@@ -1,0 +1,790 @@
+<!DOCTYPE html><html lang="ko" dir="ltr" data-theme="dark" data-has-toc data-has-sidebar class="astro-g5ptsecz"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>DNS 와 도메인 | 나봉 개발 블로그</title><link rel="canonical" href="https://nabongs2.github.io/blog/dns-and-domain/"/><link rel="alternate" hreflang="ko" href="https://nabongs2.github.io/blog/dns-and-domain/"/><link rel="alternate" hreflang="en" href="https://nabongs2.github.io/en/blog/dns-and-domain/"/><link rel="alternate" hreflang="x-default" href="https://nabongs2.github.io/blog/dns-and-domain/"/><link rel="sitemap" href="/sitemap-index.xml"/><script>try{if(localStorage.getItem('sidebar-collapsed')==='1')document.documentElement.dataset.sidebarCollapsed=''}catch(e){}</script><link href="https://nabongs2.github.io/blog/rss.xml" rel="alternate" title="Blog" type="application/rss+xml"/><link rel="shortcut icon" href="/favicon.svg" type="image/svg+xml"/><meta name="generator" content="Astro v7.3.3"/><meta name="generator" content="Starlight v0.42.2"/><meta property="og:title" content="DNS 와 도메인"/><meta property="og:type" content="article"/><meta property="og:url" content="https://nabongs2.github.io/blog/dns-and-domain/"/><meta property="og:locale" content="ko"/><meta property="og:description" content="도메인의 구조, 도메인을 IP 로 바꾸는 DNS 조회 과정과 캐시, A·CNAME 같은 레코드, PC 와 서버의 리졸버 설정, hosts 파일, 내부 DNS 와 Docker 의 이름 조회, nslookup·dig 확인 명령, 도메인 접속 문제 확인 순서를 정리했습니다."/><meta property="og:site_name" content="나봉 개발 블로그"/><meta name="twitter:card" content="summary_large_image"/><meta name="description" content="도메인의 구조, 도메인을 IP 로 바꾸는 DNS 조회 과정과 캐시, A·CNAME 같은 레코드, PC 와 서버의 리졸버 설정, hosts 파일, 내부 DNS 와 Docker 의 이름 조회, nslookup·dig 확인 명령, 도메인 접속 문제 확인 순서를 정리했습니다."/><script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","datePublished":"2026-10-28T12:00:00.000Z","headline":"DNS 와 도메인","inLanguage":"ko","isPartOf":{"@id":"https://nabongs2.github.io/blog/#blog","@type":"Blog","name":"블로그","url":"https://nabongs2.github.io/blog/"},"mainEntityOfPage":"https://nabongs2.github.io/blog/dns-and-domain/","url":"https://nabongs2.github.io/blog/dns-and-domain/","author":[{"@type":"Person","@id":"https://nabongs2.github.io/blog/authors/nabong/#author","name":"nabong","url":"https://github.com/NabongS2"}],"description":"도메인의 구조, 도메인을 IP 로 바꾸는 DNS 조회 과정과 캐시, A·CNAME 같은 레코드, PC 와 서버의 리졸버 설정, hosts 파일, 내부 DNS 와 Docker 의 이름 조회, nslookup·dig 확인 명령, 도메인 접속 문제 확인 순서를 정리했습니다.","image":"https://nabongs2.github.io/_astro/cover-dns-light.BYgHHQtG.png","keywords":["CS","네트워크"]},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"블로그","item":"https://nabongs2.github.io/blog/"},{"@type":"ListItem","position":2,"name":"DNS 와 도메인"}]}]}</script><meta property="og:image" content="https://nabongs2.github.io/_astro/cover-dns-light.BYgHHQtG_SbMoA.png"/><meta name="twitter:image" content="https://nabongs2.github.io/_astro/cover-dns-light.BYgHHQtG_SbMoA.png"/><meta property="og:image:alt" content="도메인 api.example.com 을 DNS 가 IP 주소 203.0.113.20 으로 바꿔 주는 것을 보여주는 표지"/><meta property="og:image:width" content="1200"/><meta property="og:image:height" content="630"/><script>
+	window.StarlightThemeProvider = (() => {
+		const storedTheme =
+			typeof localStorage !== 'undefined' && localStorage.getItem('starlight-theme');
+		const theme =
+			storedTheme ||
+			(window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+		document.documentElement.dataset.theme = theme === 'light' ? 'light' : 'dark';
+		return {
+			updatePickers(theme = storedTheme || 'auto') {
+				document.querySelectorAll('starlight-theme-select').forEach((picker) => {
+					const select = picker.querySelector('select');
+					if (select) select.value = theme;
+					/** @type {HTMLTemplateElement | null} */
+					const tmpl = document.querySelector(`#theme-icons`);
+					const newIcon = tmpl && tmpl.content.querySelector('.' + theme);
+					if (newIcon) {
+						const oldIcon = picker.querySelector('svg.label-icon');
+						if (oldIcon) {
+							oldIcon.replaceChildren(...newIcon.cloneNode(true).childNodes);
+						}
+					}
+				});
+			},
+		};
+	})();
+</script><template id="theme-icons"><svg aria-hidden="true" class="light astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M5 12a1 1 0 0 0-1-1H3a1 1 0 0 0 0 2h1a1 1 0 0 0 1-1Zm.64 5-.71.71a1 1 0 0 0 0 1.41 1 1 0 0 0 1.41 0l.71-.71A1 1 0 0 0 5.64 17ZM12 5a1 1 0 0 0 1-1V3a1 1 0 0 0-2 0v1a1 1 0 0 0 1 1Zm5.66 2.34a1 1 0 0 0 .7-.29l.71-.71a1 1 0 1 0-1.41-1.41l-.66.71a1 1 0 0 0 0 1.41 1 1 0 0 0 .66.29Zm-12-.29a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.71-.71a1.004 1.004 0 1 0-1.43 1.41l.73.71ZM21 11h-1a1 1 0 0 0 0 2h1a1 1 0 0 0 0-2Zm-2.64 6A1 1 0 0 0 17 18.36l.71.71a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.76-.66ZM12 6.5a5.5 5.5 0 1 0 5.5 5.5A5.51 5.51 0 0 0 12 6.5Zm0 9a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Zm0 3.5a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 0-1-1Z"/></svg><svg aria-hidden="true" class="dark astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.64 13a1 1 0 0 0-1.05-.14 8.049 8.049 0 0 1-3.37.73 8.15 8.15 0 0 1-8.14-8.1 8.59 8.59 0 0 1 .25-2A1 1 0 0 0 8 2.36a10.14 10.14 0 1 0 14 11.69 1 1 0 0 0-.36-1.05Zm-9.5 6.69A8.14 8.14 0 0 1 7.08 5.22v.27a10.15 10.15 0 0 0 10.14 10.14 9.784 9.784 0 0 0 2.1-.22 8.11 8.11 0 0 1-7.18 4.32v-.04Z"/></svg><svg aria-hidden="true" class="auto astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg></template><link rel="stylesheet" href="/_astro/print.ehPL0gv-.css" media="print"><link rel="stylesheet" href="/_astro/middleware.Ve8gaIO-.css"><style>@layer starlight.components{.card:where(.astro-oag6qnet){--sl-card-border:var(--sl-color-purple);--sl-card-bg:var(--sl-color-purple-low);border:1px solid var(--sl-color-gray-5);background-color:var(--sl-color-black);flex-direction:column;gap:clamp(.5rem,.125rem + 1vw,1rem);padding:clamp(1rem,.125rem + 3vw,2.5rem)}.card:where(.astro-oag6qnet):nth-child(4n+1){--sl-card-border:var(--sl-color-orange);--sl-card-bg:var(--sl-color-orange-low)}.card:where(.astro-oag6qnet):nth-child(4n+3){--sl-card-border:var(--sl-color-green);--sl-card-bg:var(--sl-color-green-low)}.card:where(.astro-oag6qnet):nth-child(4n+4){--sl-card-border:var(--sl-color-red);--sl-card-bg:var(--sl-color-red-low)}.card:where(.astro-oag6qnet):nth-child(4n+5){--sl-card-border:var(--sl-color-blue);--sl-card-bg:var(--sl-color-blue-low)}.title:where(.astro-oag6qnet){font-weight:600;font-size:var(--sl-text-h4);color:var(--sl-color-white);line-height:var(--sl-line-height-headings);align-items:center;gap:1rem}.card:where(.astro-oag6qnet) .icon:where(.astro-oag6qnet){border:1px solid var(--sl-card-border);background-color:var(--sl-card-bg);border-radius:.25rem;flex-shrink:0;padding:.2em}.card:where(.astro-oag6qnet) .body:where(.astro-oag6qnet){font-size:clamp(var(--sl-text-sm), calc(.5rem + 1vw), var(--sl-text-body));margin:0}}.home-category:where(.astro-swwetth3){border:1px solid var(--nb-chip-border);background:var(--nb-chip-bg);color:var(--nb-chip-text);font-size:var(--sl-text-xs);border-radius:999px;align-items:center;gap:.35rem;padding:.1rem .65rem;text-decoration:none;display:inline-flex}.home-category:where(.astro-swwetth3):hover{border-color:var(--sl-color-accent)}.home-category-count:where(.astro-swwetth3){color:var(--sl-color-gray-3)}.home-series:where(.astro-wdm2kzqn){margin-top:3rem}.home-series-heading:where(.astro-wdm2kzqn){font-size:var(--sl-text-2xl);margin-bottom:1.5rem}.home-series-list:where(.astro-wdm2kzqn){grid-template-columns:repeat(auto-fill,minmax(min(100%,18rem),1fr));gap:1rem;margin:0;padding:0;list-style:none;display:grid}.home-series-card:where(.astro-wdm2kzqn){border:1px solid var(--nb-border);border-inline-start:3px solid var(--sl-color-accent);border-radius:var(--nb-radius);background:var(--nb-surface);margin:0;padding:1rem 1.25rem}.home-series-name:where(.astro-wdm2kzqn){color:var(--sl-color-white);margin:0 0 .6rem;font-weight:600}.home-series-count:where(.astro-wdm2kzqn){font-size:var(--sl-text-xs);color:var(--sl-color-gray-3);margin-inline-start:.5rem;font-weight:400}.home-series-parts:where(.astro-wdm2kzqn){font-size:var(--sl-text-sm);margin:0;padding-inline-start:1.4rem}.home-series-parts:where(.astro-wdm2kzqn) li:where(.astro-wdm2kzqn){margin:.3rem 0}
+@layer starlight.components{svg:where(.astro-hkc32dio){color:var(--sl-icon-color);font-size:var(--sl-icon-size,1em);width:1em;height:1em}:root{--sl-badge-default-border:var(--sl-color-accent);--sl-badge-default-bg:var(--sl-color-accent-low);--sl-badge-default-text:#fff;--sl-badge-note-border:var(--sl-color-blue);--sl-badge-note-bg:var(--sl-color-blue-low);--sl-badge-note-text:#fff;--sl-badge-danger-border:var(--sl-color-red);--sl-badge-danger-bg:var(--sl-color-red-low);--sl-badge-danger-text:#fff;--sl-badge-success-border:var(--sl-color-green);--sl-badge-success-bg:var(--sl-color-green-low);--sl-badge-success-text:#fff;--sl-badge-caution-border:var(--sl-color-orange);--sl-badge-caution-bg:var(--sl-color-orange-low);--sl-badge-caution-text:#fff;--sl-badge-tip-border:var(--sl-color-purple);--sl-badge-tip-bg:var(--sl-color-purple-low);--sl-badge-tip-text:#fff}[data-theme=light]:root{--sl-badge-default-bg:var(--sl-color-accent-high);--sl-badge-note-bg:var(--sl-color-blue-high);--sl-badge-danger-bg:var(--sl-color-red-high);--sl-badge-success-bg:var(--sl-color-green-high);--sl-badge-caution-bg:var(--sl-color-orange-high);--sl-badge-tip-bg:var(--sl-color-purple-high)}.sl-badge:where(.astro-f4zorn72){border:1px solid var(--sl-color-border-badge);font-family:var(--sl-font-system-mono);color:var(--sl-color-text-badge);background-color:var(--sl-color-bg-badge);overflow-wrap:anywhere;border-radius:.25rem;line-height:normal;display:inline-block}.sidebar-content .sl-badge:where(.astro-f4zorn72){line-height:1;font-size:var(--sl-text-xs);padding:.125rem .375rem}.sidebar-content a[aria-current=page]>.sl-badge:where(.astro-f4zorn72){--sl-color-bg-badge:transparent;--sl-color-border-badge:currentColor;color:inherit}.default:where(.astro-f4zorn72){--sl-color-bg-badge:var(--sl-badge-default-bg);--sl-color-border-badge:var(--sl-badge-default-border);--sl-color-text-badge:var(--sl-badge-default-text)}.note:where(.astro-f4zorn72){--sl-color-bg-badge:var(--sl-badge-note-bg);--sl-color-border-badge:var(--sl-badge-note-border);--sl-color-text-badge:var(--sl-badge-note-text)}.danger:where(.astro-f4zorn72){--sl-color-bg-badge:var(--sl-badge-danger-bg);--sl-color-border-badge:var(--sl-badge-danger-border);--sl-color-text-badge:var(--sl-badge-danger-text)}.success:where(.astro-f4zorn72){--sl-color-bg-badge:var(--sl-badge-success-bg);--sl-color-border-badge:var(--sl-badge-success-border);--sl-color-text-badge:var(--sl-badge-success-text)}.tip:where(.astro-f4zorn72){--sl-color-bg-badge:var(--sl-badge-tip-bg);--sl-color-border-badge:var(--sl-badge-tip-border);--sl-color-text-badge:var(--sl-badge-tip-text)}.caution:where(.astro-f4zorn72){--sl-color-bg-badge:var(--sl-badge-caution-bg);--sl-color-border-badge:var(--sl-badge-caution-border);--sl-color-text-badge:var(--sl-badge-caution-text)}.small:where(.astro-f4zorn72){font-size:var(--sl-text-xs);padding:.125rem .25rem}.medium:where(.astro-f4zorn72){font-size:var(--sl-text-sm);padding:.175rem .35rem}.large:where(.astro-f4zorn72){font-size:var(--sl-text-base);padding:.225rem .45rem}.sl-markdown-content :is(h1,h2,h3,h4,h5,h6) .sl-badge:where(.astro-f4zorn72){vertical-align:middle}.card-grid:where(.astro-7qmvx3iy){grid-template-columns:100%;gap:1rem;display:grid}.card-grid:where(.astro-7qmvx3iy)>*{margin-top:0!important}@media (width>=50rem){.card-grid:where(.astro-7qmvx3iy){grid-template-columns:1fr 1fr;gap:1.5rem}.stagger:where(.astro-7qmvx3iy){--stagger-height:5rem;padding-bottom:var(--stagger-height)}.stagger:where(.astro-7qmvx3iy)>:nth-child(2n){transform:translateY(var(--stagger-height))}}}
+</style><script type="module" src="/_astro/page.Dwipeu-R.js"></script></head><body class="astro-g5ptsecz"><a class="sl-skip-link astro-qb7clj6f" href="#_top">콘텐츠로 이동</a><div class="page sl-flex astro-yntsjkba"><header class="header astro-yntsjkba"><div class="header astro-by6fddyj"><div class="title-wrapper sl-flex astro-by6fddyj"><a href="/" class="site-title sl-flex astro-hen6hmfb" aria-label="나봉 개발 블로그"><svg class="mark astro-hen6hmfb" width="34" height="34" viewBox="0 0 40 40" fill="none" aria-hidden="true"><rect width="40" height="40" rx="9" class="astro-hen6hmfb"></rect><path d="M14 14L20 20L14 26" class="astro-hen6hmfb"></path><line x1="22" y1="26" x2="28" y2="26" class="astro-hen6hmfb"></line></svg><span class="name astro-hen6hmfb" translate="no" aria-hidden="true">nabong<span class="parens astro-hen6hmfb">()</span></span></a></div><div class="sl-flex print:hidden astro-by6fddyj"><site-search class="astro-by6fddyj astro-b5kgnn7o" data-translations="{&quot;placeholder&quot;:&quot;검색&quot;}"><button data-open-modal disabled aria-label="검색" aria-keyshortcuts="Control+K" class="astro-b5kgnn7o"><svg aria-hidden="true" class="astro-b5kgnn7o astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.71 20.29 18 16.61A9 9 0 1 0 16.61 18l3.68 3.68a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.39ZM11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"/></svg><span class="sl-hidden md:sl-block astro-b5kgnn7o" aria-hidden="true">검색</span><kbd class="sl-hidden md:sl-flex astro-b5kgnn7o" style="display: none;"><kbd class="astro-b5kgnn7o">Ctrl</kbd><kbd class="astro-b5kgnn7o">K</kbd></kbd></button><dialog style="padding:0" aria-label="검색" class="astro-b5kgnn7o"><div class="dialog-frame sl-flex astro-b5kgnn7o"><button data-close-modal class="sl-flex md:sl-hidden astro-b5kgnn7o">취소</button><div class="search-container astro-b5kgnn7o"><div id="starlight__search" class="astro-b5kgnn7o"></div></div></div></dialog></site-search><script>
+	(() => {
+		const openBtn = document.querySelector('button[data-open-modal]');
+		const shortcut = openBtn?.querySelector('kbd');
+		if (!openBtn || !(shortcut instanceof HTMLElement)) return;
+		const platformKey = shortcut.querySelector('kbd');
+		if (platformKey && /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform)) {
+			platformKey.textContent = '⌘';
+			openBtn.setAttribute('aria-keyshortcuts', 'Meta+K');
+		}
+		shortcut.style.display = '';
+	})();
+</script><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.DZqJ8Bdf.js"></script></div><div class="sl-hidden md:sl-flex print:hidden right-group astro-by6fddyj"><div class="sl-flex social-icons astro-by6fddyj"><a href="https://github.com/NabongS2" rel="me" class="sl-flex astro-n2mnl6yq"><span class="sr-only astro-n2mnl6yq">GitHub</span><svg aria-hidden="true" class="astro-n2mnl6yq astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a><a href="https://nabongs2.github.io/blog/rss.xml" rel="me" class="sl-flex astro-n2mnl6yq"><span class="sr-only astro-n2mnl6yq">RSS</span><svg aria-hidden="true" class="astro-n2mnl6yq astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M2.88 16.88a3 3 0 0 0 0 4.24 3 3 0 0 0 4.24 0 3 3 0 0 0-4.24-4.24Zm2.83 2.83a1 1 0 0 1-1.42-1.42 1 1 0 0 1 1.42 0 1 1 0 0 1 0 1.42ZM5 12a1 1 0 0 0 0 2 5 5 0 0 1 5 5 1 1 0 0 0 2 0 7 7 0 0 0-7-7Zm0-4a1 1 0 0 0 0 2 9 9 0 0 1 9 9 1 1 0 0 0 2 0 11.08 11.08 0 0 0-3.22-7.78A11.08 11.08 0 0 0 5 8Zm10.61.39A15.11 15.11 0 0 0 5 4a1 1 0 0 0 0 2 13 13 0 0 1 13 13 1 1 0 0 0 2 0 15.11 15.11 0 0 0-4.39-10.61Z"/></svg></a></div><div class="sl-blog-header-links astro-2zgbb2in"><a class="sl-blog-header-link astro-2zgbb2in" href="/blog/">블로그</a></div><starlight-theme-select><label style="--sl-select-width: 6.25em" class="astro-2z5xp7gb"><span class="sr-only astro-2z5xp7gb">테마 선택</span><svg aria-hidden="true" class="icon label-icon astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg><select autocomplete="off" class="astro-2z5xp7gb"><option value="dark" class="astro-2z5xp7gb">어두운 테마</option><option value="light" class="astro-2z5xp7gb">밝은 테마</option><option value="auto" selected class="astro-2z5xp7gb">자동</option></select><svg aria-hidden="true" class="icon caret astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg></label></starlight-theme-select><script>
+	StarlightThemeProvider.updatePickers();
+</script><script type="module">var e=`starlight-theme`,t=e=>e===`auto`||e===`dark`||e===`light`?e:`auto`,n=()=>t(typeof localStorage<`u`&&localStorage.getItem(e));function r(t){typeof localStorage<`u`&&localStorage.setItem(e,t===`light`||t===`dark`?t:``)}var i=()=>matchMedia(`(prefers-color-scheme: light)`).matches?`light`:`dark`;function a(e){StarlightThemeProvider.updatePickers(e),document.documentElement.dataset.theme=e===`auto`?i():e,r(e)}matchMedia(`(prefers-color-scheme: light)`).addEventListener(`change`,()=>{n()===`auto`&&a(`auto`)});var o=class extends HTMLElement{constructor(){super(),a(n()),this.querySelector(`select`)?.addEventListener(`change`,e=>{e.currentTarget instanceof HTMLSelectElement&&a(t(e.currentTarget.value))})}};customElements.define(`starlight-theme-select`,o);</script><starlight-lang-select><label style="--sl-select-width: 7em" class="astro-2z5xp7gb"><span class="sr-only astro-2z5xp7gb">언어 선택</span><svg aria-hidden="true" class="icon label-icon astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path fill-rule="evenodd" d="M8.516 3a.94.94 0 0 0-.941.94v1.15H2.94a.94.94 0 1 0 0 1.882h7.362a7.422 7.422 0 0 1-1.787 3.958 7.42 7.42 0 0 1-1.422-2.425.94.94 0 1 0-1.774.627 9.303 9.303 0 0 0 1.785 3.043 7.422 7.422 0 0 1-4.164 1.278.94.94 0 1 0 0 1.881 9.303 9.303 0 0 0 5.575-1.855 9.303 9.303 0 0 0 4.11 1.74l-.763 1.525a.968.968 0 0 0-.016.034l-1.385 2.77a.94.94 0 1 0 1.683.841l1.133-2.267h5.806l1.134 2.267a.94.94 0 0 0 1.683-.841l-1.385-2.769a.95.95 0 0 0-.018-.036l-3.476-6.951a.94.94 0 0 0-1.682 0l-1.82 3.639a7.423 7.423 0 0 1-3.593-1.256 9.303 9.303 0 0 0 2.27-5.203h1.894a.94.94 0 0 0 0-1.881H9.456V3.94A.94.94 0 0 0 8.516 3Zm6.426 11.794a1.068 1.068 0 0 1-.02.039l-.703 1.407h3.924l-1.962-3.924-1.24 2.478Z" clip-rule="evenodd"/></svg><select autocomplete="off" class="astro-2z5xp7gb"><option value="/blog/dns-and-domain/" class="astro-2z5xp7gb">한국어</option><option value="/en/blog/dns-and-domain/" class="astro-2z5xp7gb">English</option></select><svg aria-hidden="true" class="icon caret astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg></label></starlight-lang-select><script type="module">var e=class extends HTMLElement{constructor(){super();let e=this.querySelector(`select`);e&&(e.addEventListener(`change`,e=>{e.currentTarget instanceof HTMLSelectElement&&(window.location.pathname=e.currentTarget.value)}),window.addEventListener(`pageshow`,t=>{if(!t.persisted)return;let n=e.querySelector(`option[selected]`)?.index;n!==e.selectedIndex&&(e.selectedIndex=n??0)}))}};customElements.define(`starlight-lang-select`,e);</script></div></div></header><nav class="sidebar print:hidden astro-yntsjkba" aria-label="메인"><button popovertarget="starlight__sidebar" class="sl-menu-button sl-flex md:sl-hidden print:hidden astro-r2osgdlg"><svg aria-hidden="true" class="open-menu astro-r2osgdlg astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M3 8h18a1 1 0 1 0 0-2H3a1 1 0 0 0 0 2Zm18 8H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Zm0-5H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Z"/></svg><svg aria-hidden="true" class="close-menu astro-r2osgdlg astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="m13.41 12 6.3-6.29a1.004 1.004 0 1 0-1.42-1.42L12 10.59l-6.29-6.3a1.004 1.004 0 0 0-1.42 1.42l6.3 6.29-6.3 6.29a1 1 0 0 0 0 1.42.998.998 0 0 0 1.42 0l6.29-6.3 6.29 6.3a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.42L13.41 12Z"/></svg><span class="sr-only astro-r2osgdlg">메뉴</span></button><script type="module">var e=class extends HTMLElement{constructor(){super();let e=matchMedia(`(min-width: 50em)`),t=()=>{this.popover=e.matches?null:`auto`};t(),e.addEventListener(`change`,()=>t()),this.addEventListener(`toggle`,({newState:e})=>this.trapFocus(e===`open`))}trapFocus(e){document.querySelectorAll(`.main-frame, .sl-skip-link`).forEach(t=>{t.toggleAttribute(`inert`,e)})}};customElements.define(`sl-sidebar-pane`,e);</script><sl-sidebar-pane popover id="starlight__sidebar" class="sidebar-pane astro-yntsjkba"><div class="sidebar-content sl-flex astro-yntsjkba"><sl-sidebar-state-persist data-hash="0d79wok" class="astro-ipdry5cl"><script aria-hidden="true">
+		(() => {
+			try {
+				if (!matchMedia('(min-width: 50em)').matches) return;
+				/** @type {HTMLElement | null} */
+				const target = document.querySelector('sl-sidebar-state-persist');
+				const state = JSON.parse(sessionStorage.getItem('sl-sidebar-state') || '0');
+				if (!target || !state || target.dataset.hash !== state.hash) return;
+				window._starlightScrollRestore = state.scroll;
+				customElements.define(
+					'sl-sidebar-restore',
+					class SidebarRestore extends HTMLElement {
+						connectedCallback() {
+							try {
+								const idx = parseInt(this.dataset.index || '');
+								const details = this.closest('details');
+								if (details && typeof state.open[idx] === 'boolean') details.open = state.open[idx];
+							} catch {}
+						}
+					}
+				);
+			} catch {}
+		})();
+	</script><ul class="top-level astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/blog/" class="large astro-rmhv4bp6"><span class="astro-rmhv4bp6">전체 글</span></a></li><li class="astro-rmhv4bp6"><details open class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">최근 글</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="0"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/blog/https-certificate/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">HTTPS 와 인증서</span></a></li><li class="astro-rmhv4bp6"><a href="/blog/dns-and-domain/" aria-current="page" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">DNS 와 도메인</span></a></li><li class="astro-rmhv4bp6"><a href="/blog/vpn/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">VPN</span></a></li><li class="astro-rmhv4bp6"><a href="/blog/nat-port-forwarding/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">NAT 와 포트포워딩</span></a></li><li class="astro-rmhv4bp6"><a href="/blog/ip-and-port/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">IP 주소와 포트</span></a></li><li class="astro-rmhv4bp6"><a href="/blog/network-layers/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">네트워크 계층</span></a></li><li class="astro-rmhv4bp6"><a href="/blog/access-refresh-token/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">액세스 토큰과 리프레시 토큰</span></a></li><li class="astro-rmhv4bp6"><a href="/blog/session-token/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">세션과 토큰</span></a></li><li class="astro-rmhv4bp6"><a href="/blog/browser-storage/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">쿠키, localStorage, sessionStorage</span></a></li><li class="astro-rmhv4bp6"><a href="/blog/zustand-react-query/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Zustand 와 React Query</span></a></li></ul></details></li><li class="astro-rmhv4bp6"><details open class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">카테고리</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="1"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><details class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">프론트엔드 (2)</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="2"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/blog/tags/react/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">React (2)</span></a></li><li class="astro-rmhv4bp6"><a href="/blog/tags/상태-관리/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">상태 관리 (1)</span></a></li></ul></details></li><li class="astro-rmhv4bp6"><details class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">데이터 (3)</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="3"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/blog/tags/redis/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Redis (3)</span></a></li></ul></details></li><li class="astro-rmhv4bp6"><details class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">인프라 (6)</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="4"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/blog/tags/docker/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Docker (1)</span></a></li><li class="astro-rmhv4bp6"><a href="/blog/tags/nginx/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Nginx (3)</span></a></li><li class="astro-rmhv4bp6"><a href="/blog/tags/linux/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Linux (2)</span></a></li></ul></details></li><li class="astro-rmhv4bp6"><details class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">CS (13)</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="5"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/blog/tags/웹/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">웹 (6)</span></a></li><li class="astro-rmhv4bp6"><a href="/blog/tags/네트워크/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">네트워크 (6)</span></a></li><li class="astro-rmhv4bp6"><a href="/blog/tags/프로그래밍/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">프로그래밍 (1)</span></a></li></ul></details></li><li class="astro-rmhv4bp6"><details class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">생각 (1)</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="6"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/blog/tags/회고/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">회고 (1)</span></a></li></ul></details></li></ul></details></li><li class="astro-rmhv4bp6"><a href="/blog/rss.xml" class="large astro-rmhv4bp6"><span class="astro-rmhv4bp6">RSS</span></a></li></ul><script aria-hidden="true">
+		(() => {
+			const scroller = document.getElementById('starlight__sidebar');
+			if (!window._starlightScrollRestore || !scroller) return;
+			scroller.scrollTop = window._starlightScrollRestore;
+			delete window._starlightScrollRestore;
+		})();
+	</script></sl-sidebar-state-persist><div class="md:sl-hidden"><div class="mobile-preferences sl-flex astro-p4azlveh"><div class="social-icons astro-p4azlveh"><a href="https://github.com/NabongS2" rel="me" class="sl-flex astro-n2mnl6yq"><span class="sr-only astro-n2mnl6yq">GitHub</span><svg aria-hidden="true" class="astro-n2mnl6yq astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a><a href="https://nabongs2.github.io/blog/rss.xml" rel="me" class="sl-flex astro-n2mnl6yq"><span class="sr-only astro-n2mnl6yq">RSS</span><svg aria-hidden="true" class="astro-n2mnl6yq astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M2.88 16.88a3 3 0 0 0 0 4.24 3 3 0 0 0 4.24 0 3 3 0 0 0-4.24-4.24Zm2.83 2.83a1 1 0 0 1-1.42-1.42 1 1 0 0 1 1.42 0 1 1 0 0 1 0 1.42ZM5 12a1 1 0 0 0 0 2 5 5 0 0 1 5 5 1 1 0 0 0 2 0 7 7 0 0 0-7-7Zm0-4a1 1 0 0 0 0 2 9 9 0 0 1 9 9 1 1 0 0 0 2 0 11.08 11.08 0 0 0-3.22-7.78A11.08 11.08 0 0 0 5 8Zm10.61.39A15.11 15.11 0 0 0 5 4a1 1 0 0 0 0 2 13 13 0 0 1 13 13 1 1 0 0 0 2 0 15.11 15.11 0 0 0-4.39-10.61Z"/></svg></a></div><div class="sl-blog-header-links astro-2zgbb2in"><a class="sl-blog-header-link astro-2zgbb2in" href="/blog/">블로그</a></div><starlight-theme-select><label style="--sl-select-width: 6.25em" class="astro-2z5xp7gb"><span class="sr-only astro-2z5xp7gb">테마 선택</span><svg aria-hidden="true" class="icon label-icon astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg><select autocomplete="off" class="astro-2z5xp7gb"><option value="dark" class="astro-2z5xp7gb">어두운 테마</option><option value="light" class="astro-2z5xp7gb">밝은 테마</option><option value="auto" selected class="astro-2z5xp7gb">자동</option></select><svg aria-hidden="true" class="icon caret astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg></label></starlight-theme-select><script>
+	StarlightThemeProvider.updatePickers();
+</script><starlight-lang-select><label style="--sl-select-width: 7em" class="astro-2z5xp7gb"><span class="sr-only astro-2z5xp7gb">언어 선택</span><svg aria-hidden="true" class="icon label-icon astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path fill-rule="evenodd" d="M8.516 3a.94.94 0 0 0-.941.94v1.15H2.94a.94.94 0 1 0 0 1.882h7.362a7.422 7.422 0 0 1-1.787 3.958 7.42 7.42 0 0 1-1.422-2.425.94.94 0 1 0-1.774.627 9.303 9.303 0 0 0 1.785 3.043 7.422 7.422 0 0 1-4.164 1.278.94.94 0 1 0 0 1.881 9.303 9.303 0 0 0 5.575-1.855 9.303 9.303 0 0 0 4.11 1.74l-.763 1.525a.968.968 0 0 0-.016.034l-1.385 2.77a.94.94 0 1 0 1.683.841l1.133-2.267h5.806l1.134 2.267a.94.94 0 0 0 1.683-.841l-1.385-2.769a.95.95 0 0 0-.018-.036l-3.476-6.951a.94.94 0 0 0-1.682 0l-1.82 3.639a7.423 7.423 0 0 1-3.593-1.256 9.303 9.303 0 0 0 2.27-5.203h1.894a.94.94 0 0 0 0-1.881H9.456V3.94A.94.94 0 0 0 8.516 3Zm6.426 11.794a1.068 1.068 0 0 1-.02.039l-.703 1.407h3.924l-1.962-3.924-1.24 2.478Z" clip-rule="evenodd"/></svg><select autocomplete="off" class="astro-2z5xp7gb"><option value="/blog/dns-and-domain/" class="astro-2z5xp7gb">한국어</option><option value="/en/blog/dns-and-domain/" class="astro-2z5xp7gb">English</option></select><svg aria-hidden="true" class="icon caret astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg></label></starlight-lang-select></div></div></div></sl-sidebar-pane></nav><div class="main-frame astro-yntsjkba"><script type="module">var e=document.getElementById(`starlight__sidebar`),t=e?.querySelector(`sl-sidebar-state-persist`),n=`sl-sidebar-state`,r=()=>{let r=[],i=t?.dataset.hash||``;try{let e=sessionStorage.getItem(n),t=JSON.parse(e||`{}`);Array.isArray(t.open)&&t.hash===i&&(r=t.open)}catch{}return{hash:i,open:r,scroll:e?.scrollTop||0}},i=e=>{try{sessionStorage.setItem(n,JSON.stringify(e))}catch{}},a=()=>i(r()),o=(e,t)=>{let n=r();n.open[t]=e,i(n)};t?.addEventListener(`click`,e=>{if(!(e.target instanceof Element))return;let t=e.target.closest(`summary`)?.closest(`details`);if(!t)return;let n=t.querySelector(`sl-sidebar-restore`),r=parseInt(n?.dataset.index||``);isNaN(r)||o(!t.open,r)}),addEventListener(`visibilitychange`,()=>{document.visibilityState===`hidden`&&a()});</script><div class="lg:sl-flex astro-lrzkfocr"><aside class="right-sidebar-container print:hidden astro-lrzkfocr"><div class="right-sidebar astro-lrzkfocr"><div class="lg:sl-hidden astro-qok35upx"><mobile-starlight-toc data-min-h="2" data-max-h="3" class="astro-66cqc7ze"><nav aria-labelledby="starlight__on-this-page--mobile" class="astro-66cqc7ze"><details id="starlight__mobile-toc" class="astro-66cqc7ze"><summary id="starlight__on-this-page--mobile" class="sl-flex astro-66cqc7ze"><span class="toggle sl-flex astro-66cqc7ze">목차<svg aria-hidden="true" class="caret astro-66cqc7ze astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></span><span class="display-current astro-66cqc7ze"></span></summary><div class="dropdown astro-66cqc7ze"><ul class="isMobile astro-jugkfwgx" style="--depth: 0;"><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#_top" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">개요</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#도메인과-dns" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">도메인과 DNS</span></a><ul class="isMobile astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#도메인의-구조" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">도메인의 구조</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#서브도메인과-경로" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">서브도메인과 경로</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#레코드" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">레코드</span></a><ul class="isMobile astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#cname" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">CNAME</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#네임서버" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">네임서버</span></a><ul class="isMobile astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#도메인-등록과-네임서버" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">도메인 등록과 네임서버</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#리졸버와-네임서버" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">리졸버와 네임서버</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#조회-과정" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">조회 과정</span></a><ul class="isMobile astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#캐시와-ttl" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">캐시와 TTL</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#hosts-파일" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">hosts 파일</span></a><ul class="isMobile astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#hosts-파일을-쓰는-상황" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">hosts 파일을 쓰는 상황</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#리졸버-설정" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">리졸버 설정</span></a><ul class="isMobile astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#넣을-수-있는-리졸버" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">넣을 수 있는 리졸버</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#설정-파일의-nameserver" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">설정 파일의 nameserver</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#리눅스-서버의-리졸버" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">리눅스 서버의 리졸버</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#내부-dns" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">내부 DNS</span></a><ul class="isMobile astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#docker-네트워크의-이름-조회" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Docker 네트워크의 이름 조회</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#조회-결과-확인" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">조회 결과 확인</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#도메인-접속-문제-확인-순서" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">도메인 접속 문제 확인 순서</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#명령어-요약" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">명령어 요약</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#comments" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">댓글</span></a></li></ul></div></details></nav></mobile-starlight-toc><script type="module" src="/_astro/MobileTableOfContents.astro_astro_type_script_index_0_lang.BcSo_yiZ.js"></script></div><div class="right-sidebar-panel sl-hidden lg:sl-block astro-qok35upx"><div class="sl-container astro-qok35upx"><starlight-toc data-min-h="2" data-max-h="3"><nav aria-labelledby="starlight__on-this-page"><h2 id="starlight__on-this-page">목차</h2><ul class="astro-jugkfwgx" style="--depth: 0;"><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#_top" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">개요</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#도메인과-dns" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">도메인과 DNS</span></a><ul class="astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#도메인의-구조" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">도메인의 구조</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#서브도메인과-경로" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">서브도메인과 경로</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#레코드" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">레코드</span></a><ul class="astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#cname" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">CNAME</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#네임서버" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">네임서버</span></a><ul class="astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#도메인-등록과-네임서버" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">도메인 등록과 네임서버</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#리졸버와-네임서버" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">리졸버와 네임서버</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#조회-과정" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">조회 과정</span></a><ul class="astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#캐시와-ttl" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">캐시와 TTL</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#hosts-파일" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">hosts 파일</span></a><ul class="astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#hosts-파일을-쓰는-상황" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">hosts 파일을 쓰는 상황</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#리졸버-설정" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">리졸버 설정</span></a><ul class="astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#넣을-수-있는-리졸버" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">넣을 수 있는 리졸버</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#설정-파일의-nameserver" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">설정 파일의 nameserver</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#리눅스-서버의-리졸버" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">리눅스 서버의 리졸버</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#내부-dns" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">내부 DNS</span></a><ul class="astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#docker-네트워크의-이름-조회" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Docker 네트워크의 이름 조회</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#조회-결과-확인" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">조회 결과 확인</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#도메인-접속-문제-확인-순서" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">도메인 접속 문제 확인 순서</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#명령어-요약" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">명령어 요약</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#comments" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">댓글</span></a></li></ul></nav></starlight-toc><script type="module" src="/_astro/TableOfContents.astro_astro_type_script_index_0_lang.Csloo1VZ.js"></script></div></div></div></aside><div class="main-pane astro-lrzkfocr"><main data-pagefind-body class="astro-g5ptsecz" lang="ko" dir="ltr"><div class="content-panel astro-a7po4psb"><div class="sl-container astro-a7po4psb"><a class="back-to-list not-content top astro-vw3nbasd" href="/blog/"><span aria-hidden="true" class="astro-vw3nbasd">←</span>전체 글</a><h1 id="_top" class="astro-bebwqqxs">DNS 와 도메인</h1></div></div><div class="content-panel astro-a7po4psb"><div class="sl-container astro-a7po4psb"><starlight-image-zoom class="astro-uhbei7rv"><template class="astro-uhbei7rv"><dialog class="starlight-image-zoom-dialog astro-uhbei7rv"><button aria-label="Unzoom image" class="starlight-image-zoom-control astro-uhbei7rv"><svg aria-hidden="true" fill="currentColor" viewBox="0 0 24 24" class="astro-uhbei7rv"><use href="#starlight-image-zoom-icon-unzoom" class="astro-uhbei7rv"></use></svg></button><figure class="astro-uhbei7rv"></figure></dialog></template><svg xmlns="http://www.w3.org/2000/svg" style="display:none" class="astro-uhbei7rv"><symbol id="starlight-image-zoom-icon-zoom" viewBox="0 0 24 24" class="astro-uhbei7rv"><path d="M9.79 12.79 4 18.59V17a1 1 0 0 0-2 0v4a1 1 0 0 0 .08.38 1 1 0 0 0 .54.54A1 1 0 0 0 3 22h4a1 1 0 0 0 0-2H5.41l5.8-5.79a1 1 0 0 0-1.42-1.42ZM21.92 2.62a1 1 0 0 0-.54-.54A1 1 0 0 0 21 2h-4a1 1 0 0 0 0 2h1.59l-5.8 5.79a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0L20 5.41V7a1 1 0 0 0 2 0V3a1 1 0 0 0-.08-.38Z" class="astro-uhbei7rv"></path></symbol><symbol id="starlight-image-zoom-icon-unzoom" viewBox="0 0 24 24" class="astro-uhbei7rv"><path d="M21.71 2.29a1 1 0 0 0-1.42 0l-5.79 5.8V6.5a1 1 0 0 0-2 0v4a1 1 0 0 0 .08.38 1 1 0 0 0 .54.54 1 1 0 0 0 .38.08h4a1 1 0 0 0 0-2h-1.59l5.8-5.79a1 1 0 0 0 0-1.42ZM10.88 12.58a1 1 0 0 0-.38-.08h-4a1 1 0 0 0 0 2h1.59l-5.8 5.79a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l5.79-5.8v1.59a1 1 0 0 0 2 0v-4a1 1 0 0 0-.08-.38 1 1 0 0 0-.54-.54Z" class="astro-uhbei7rv"></path></symbol></svg></starlight-image-zoom><script type="module" src="/_astro/ImageZoom.astro_astro_type_script_index_0_lang.CNfBy0nv.js"></script><div class="sl-markdown-content"><figure class="sl-blog-cover astro-uvqvkfg3"><img src="/_astro/cover-dns-dark.DJ9aOgYS_YwnoK.webp" alt="도메인 api.example.com 을 DNS 가 IP 주소 203.0.113.20 으로 바꿔 주는 것을 보여주는 표지" loading="eager" decoding="async" width="2400" height="1260" class="astro-uvqvkfg3 sl-blog-cover-image light:sl-hidden"><img src="/_astro/cover-dns-light.BYgHHQtG_1gmzSR.webp" alt="도메인 api.example.com 을 DNS 가 IP 주소 203.0.113.20 으로 바꿔 주는 것을 보여주는 표지" loading="eager" decoding="async" width="2400" height="1260" class="astro-uvqvkfg3 sl-blog-cover-image dark:sl-hidden"></figure><div class="sl-blog-metadata not-content astro-zrjirpgi"><div class="sl-blog-metadata-items astro-zrjirpgi"><time class="sl-blog-metadata-date astro-zrjirpgi" datetime="2026-10-28T12:00:00.000Z">2026년 10월 28일</time><span class="sl-blog-metadata-secondary sl-blog-metadata-reading-time astro-zrjirpgi"> · 읽는 데 13분</span></div><div class="sl-blog-metadata-authors astro-zrjirpgi"><a href="https://github.com/NabongS2" class="sl-blog-author astro-c6o6xw4v"><div class="sl-blog-author-details astro-c6o6xw4v"><div class="sl-blog-author-name astro-c6o6xw4v">nabong</div></div></a></div></div><nav class="series astro-x3pxgsip" aria-label="시리즈"><p class="series-heading astro-x3pxgsip"><span class="series-word astro-x3pxgsip">시리즈</span>네트워크 기초</p><ol class="series-parts astro-x3pxgsip"><li class="series-part astro-x3pxgsip"><a href="/blog/network-layers/" class="astro-x3pxgsip">네트워크 계층</a></li><li class="series-part astro-x3pxgsip"><a href="/blog/ip-and-port/" class="astro-x3pxgsip">IP 주소와 포트</a></li><li class="series-part astro-x3pxgsip"><a href="/blog/nat-port-forwarding/" class="astro-x3pxgsip">NAT 와 포트포워딩</a></li><li class="series-part astro-x3pxgsip"><a href="/blog/vpn/" class="astro-x3pxgsip">VPN</a></li><li class="series-part astro-x3pxgsip" aria-current="page"><span class="astro-x3pxgsip">DNS 와 도메인</span></li><li class="series-part astro-x3pxgsip"><a href="/blog/https-certificate/" class="astro-x3pxgsip">HTTPS 와 인증서</a></li></ol></nav>
+<p>앞 글들에서는 <code dir="auto">192.168.0.20</code> 처럼 IP 로 접속했습니다. 실제로는 <code dir="auto">example.com</code> 같은 도메인으로 접속하는 경우가 많고, 브라우저는 접속하기 전에 도메인을 IP 로 바꿉니다. 이 글에서는 그 과정인 DNS 와 레코드, hosts 파일, 내부 DNS, 조회 결과를 확인하는 방법을 알아봅니다. <a href="/blog/network-layers/">네트워크 계층</a>으로 보면 DNS 는 응용 계층의 프로토콜이고, UDP 53 번 포트를 씁니다(응답이 크면 TCP 53 번).</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="도메인과-dns">도메인과 DNS</h2><a class="sl-anchor-link" href="#도메인과-dns"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “도메인과 DNS”</span></a></div>
+<p><strong>도메인</strong>은 사람이 기억하기 쉽게 IP 주소에 붙인 이름입니다. <strong>DNS</strong>(Domain Name System)는 도메인을 IP 주소로 바꿔 주는 시스템입니다.</p>
+<p>브라우저에 <code dir="auto">https://api.example.com</code> 을 입력하면, 브라우저는 먼저 DNS 에 <code dir="auto">api.example.com</code> 의 IP 를 묻고, 받은 IP(<code dir="auto">203.0.113.20</code>)로 접속합니다. 서버를 다른 IP 로 옮겨도 DNS 의 값만 바꾸면 사용자는 같은 도메인으로 접속할 수 있습니다.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="도메인의-구조">도메인의 구조</h3><a class="sl-anchor-link" href="#도메인의-구조"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “도메인의 구조”</span></a></div>
+<p>도메인은 점으로 나뉘고, 오른쪽으로 갈수록 넓은 범위입니다.</p>
+<table>
+<thead>
+<tr>
+<th>부분</th>
+<th>이름</th>
+<th>정하는 곳</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">.com</code></td>
+<td>최상위 도메인(TLD)</td>
+<td>국제 기관이 정합니다. <code dir="auto">.com</code>, <code dir="auto">.org</code>, <code dir="auto">.kr</code> 등</td>
+</tr>
+<tr>
+<td><code dir="auto">example</code></td>
+<td>등록한 도메인</td>
+<td>도메인 등록 업체에서 구매해 등록합니다</td>
+</tr>
+<tr>
+<td><code dir="auto">api</code></td>
+<td>서브도메인</td>
+<td>도메인 주인이 DNS 에 레코드를 추가해 만듭니다</td>
+</tr>
+</tbody>
+</table>
+<p><code dir="auto">example.com</code> 을 등록하면 <code dir="auto">api.example.com</code>, <code dir="auto">www.example.com</code>, <code dir="auto">dev.example.com</code> 처럼 그 아래 이름은 따로 등록하지 않고 만들 수 있습니다.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="서브도메인과-경로">서브도메인과 경로</h3><a class="sl-anchor-link" href="#서브도메인과-경로"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “서브도메인과 경로”</span></a></div>
+<p>서브도메인은 도메인 앞에 붙는 이름이고, 도메인 뒤의 <code dir="auto">/users/12</code> 같은 부분은 경로입니다. 둘은 처리하는 곳이 다릅니다.</p>
+<table>
+<thead>
+<tr>
+<th>부분</th>
+<th><code dir="auto">https://api.example.com/users/12</code> 에서</th>
+<th>처리하는 곳</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>서브도메인과 도메인</td>
+<td><code dir="auto">api.example.com</code></td>
+<td>DNS 가 IP 로 바꿉니다. 서브도메인마다 다른 IP 로 보낼 수 있습니다</td>
+</tr>
+<tr>
+<td>경로</td>
+<td><code dir="auto">/users/12</code></td>
+<td>DNS 는 경로를 보지 않습니다. 그 IP 의 서버(Nginx, 백엔드)가 받아서 나눕니다</td>
+</tr>
+</tbody>
+</table>
+<p>그래서 프론트엔드와 백엔드를 나누는 주소도 두 가지로 만들 수 있습니다.</p>
+<table>
+<thead>
+<tr>
+<th>방식</th>
+<th>주소</th>
+<th>특징</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>경로로 나누기</td>
+<td><code dir="auto">example.com</code>, <code dir="auto">example.com/api</code></td>
+<td><a href="/blog/nginx-basics/#%ED%95%9C-%EC%A3%BC%EC%86%8C%EC%99%80-%EA%B2%BD%EB%A1%9C-%EB%B6%84%EB%A6%AC">Nginx 글</a>의 방식입니다. 주소가 하나라 CORS 설정이 필요 없습니다</td>
+</tr>
+<tr>
+<td>서브도메인으로 나누기</td>
+<td><code dir="auto">example.com</code>, <code dir="auto">api.example.com</code></td>
+<td>DNS 에서 서로 다른 서버로 보낼 수 있습니다. 호스트가 달라 origin 이 다르므로 백엔드에 <a href="/blog/http-status-codes/#cors-%EC%98%A4%EB%A5%98">CORS</a> 설정이 필요합니다</td>
+</tr>
+</tbody>
+</table>
+<div class="sl-heading-wrapper level-h2"><h2 id="레코드">레코드</h2><a class="sl-anchor-link" href="#레코드"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “레코드”</span></a></div>
+<p>DNS 에 도메인마다 적어 두는 한 줄 한 줄을 <strong>레코드</strong>라고 합니다. 레코드는 아래에서 볼 네임서버에 저장됩니다.</p>
+<div class="expressive-code"><link rel="stylesheet" href="/_astro/ec.gzf8s.css"><script type="module" src="/_astro/ec.0vx5m.js"></script><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#cdd6f4;--1:#4c4f69">example.com.       3600  A      203.0.113.10</span></div></div><div class="ec-line"><div class="code"><span style="--0:#cdd6f4;--1:#4c4f69">api.example.com.   300   A      203.0.113.20</span></div></div><div class="ec-line"><div class="code"><span style="--0:#cdd6f4;--1:#4c4f69">www.example.com.   3600  CNAME  example.com.</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="example.com.       3600  A      203.0.113.10api.example.com.   300   A      203.0.113.20www.example.com.   3600  CNAME  example.com."><div></div></button></div></figure></div>
+<p>왼쪽부터 이름, TTL(이 결과를 캐시에 둘 수 있는 시간, 초), 레코드 종류, 값입니다. TTL 은 아래 “캐시와 TTL” 에서 다룹니다.</p>
+<table>
+<thead>
+<tr>
+<th>종류</th>
+<th>값</th>
+<th>쓰는 곳</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">A</code></td>
+<td>IPv4 주소</td>
+<td>도메인을 IP 로 연결</td>
+</tr>
+<tr>
+<td><code dir="auto">AAAA</code></td>
+<td>IPv6 주소</td>
+<td>도메인을 IPv6 주소로 연결</td>
+</tr>
+<tr>
+<td><code dir="auto">CNAME</code></td>
+<td>다른 도메인</td>
+<td>별칭. 위 예에서 <code dir="auto">www.example.com</code> 은 <code dir="auto">example.com</code> 의 IP 를 따릅니다</td>
+</tr>
+<tr>
+<td><code dir="auto">MX</code></td>
+<td>메일 서버 도메인</td>
+<td>이 도메인으로 오는 메일을 받을 서버</td>
+</tr>
+<tr>
+<td><code dir="auto">TXT</code></td>
+<td>텍스트</td>
+<td>도메인 소유 확인, 메일 발신 인증</td>
+</tr>
+<tr>
+<td><code dir="auto">NS</code></td>
+<td>네임서버 도메인</td>
+<td>이 도메인을 맡은 권한 있는 네임서버</td>
+</tr>
+</tbody>
+</table>
+<div class="sl-heading-wrapper level-h3"><h3 id="cname">CNAME</h3><a class="sl-anchor-link" href="#cname"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “CNAME”</span></a></div>
+<p><code dir="auto">A</code> 레코드는 IP 를 바로 돌려주고, <code dir="auto">CNAME</code> 레코드는 다른 도메인 이름을 돌려줍니다.</p>
+<table>
+<thead>
+<tr>
+<th>레코드</th>
+<th>조회한 이름</th>
+<th>돌아오는 값</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">A</code></td>
+<td><code dir="auto">example.com</code></td>
+<td><code dir="auto">203.0.113.10</code> (IP)</td>
+</tr>
+<tr>
+<td><code dir="auto">CNAME</code></td>
+<td><code dir="auto">www.example.com</code></td>
+<td><code dir="auto">example.com</code> (다른 도메인)</td>
+</tr>
+</tbody>
+</table>
+<p>그래서 <code dir="auto">www.example.com</code> 의 IP 를 알아내려면 조회가 두 번 일어납니다.</p>
+<ol>
+<li><code dir="auto">www.example.com</code> 을 조회하면 IP 대신 <code dir="auto">CNAME</code> 으로 <code dir="auto">example.com</code> 이 돌아옵니다. <code dir="auto">www.example.com</code> 은 <code dir="auto">example.com</code> 의 다른 이름이라는 뜻입니다.</li>
+<li>이어서 <code dir="auto">example.com</code> 을 조회해 <code dir="auto">A</code> 레코드의 <code dir="auto">203.0.113.10</code> 을 받습니다.</li>
+<li>브라우저는 마지막에 받은 <code dir="auto">203.0.113.10</code> 으로 접속합니다.</li>
+</ol>
+<!--
+	starlight-image-zoom 은 마크다운의 img 와 Image 만 감싼다. 이 컴포넌트는
+	그 목록에 없어서 그냥 지나치므로, 확대 기능이 필요한 래퍼를 직접 두른다.
+	버튼은 키보드로도 열 수 있게 두는 플러그인 규약이고, 평소에는 화면에
+	보이지 않는다.
+--><starlight-image-zoom-zoomable><img src="/_astro/cname-lookup-light.CctTCxfX_Z2dOGKb.webp" alt="브라우저가 www.example.com 을 조회하면 DNS 가 CNAME 으로 example.com 을 돌려주고, 이어서 example.com 의 A 레코드를 조회해 203.0.113.10 을 브라우저에 돌려주며, 브라우저는 그 IP 의 서버로 접속하는 CNAME 조회 과정" loading="lazy" decoding="async" width="1800" height="900" class="dark:sl-hidden"><button type="button" aria-label="브라우저가 www.example.com 을 조회하면 DNS 가 CNAME 으로 example.com 을 돌려주고, 이어서 example.com 의 A 레코드를 조회해 203.0.113.10 을 브라우저에 돌려주며, 브라우저는 그 IP 의 서버로 접속하는 CNAME 조회 과정 확대"><svg aria-hidden="true" fill="currentColor" viewBox="0 0 24 24" width="24" height="24"><use href="#starlight-image-zoom-icon-zoom"></use></svg></button></starlight-image-zoom-zoomable><starlight-image-zoom-zoomable><img src="/_astro/cname-lookup-dark.BI83OTQV_109zBN.webp" alt="브라우저가 www.example.com 을 조회하면 DNS 가 CNAME 으로 example.com 을 돌려주고, 이어서 example.com 의 A 레코드를 조회해 203.0.113.10 을 브라우저에 돌려주며, 브라우저는 그 IP 의 서버로 접속하는 CNAME 조회 과정" loading="lazy" decoding="async" width="1800" height="900" class="light:sl-hidden"><button type="button" aria-label="브라우저가 www.example.com 을 조회하면 DNS 가 CNAME 으로 example.com 을 돌려주고, 이어서 example.com 의 A 레코드를 조회해 203.0.113.10 을 브라우저에 돌려주며, 브라우저는 그 IP 의 서버로 접속하는 CNAME 조회 과정 확대"><svg aria-hidden="true" fill="currentColor" viewBox="0 0 24 24" width="24" height="24"><use href="#starlight-image-zoom-icon-zoom"></use></svg></button></starlight-image-zoom-zoomable>
+<p>두 번째 조회는 DNS 가 이어서 처리하므로 브라우저는 IP 하나만 받습니다.</p>
+<p><code dir="auto">CNAME</code> 을 쓰는 이유는 IP 를 한 곳에서만 관리하기 위해서입니다. 서버 IP 가 <code dir="auto">203.0.113.10</code> 에서 <code dir="auto">203.0.113.50</code> 으로 바뀐 경우를 예로 들면 다음과 같습니다.</p>
+<table>
+<thead>
+<tr>
+<th><code dir="auto">www</code> 레코드 설정</th>
+<th>IP 가 바뀔 때 고칠 레코드</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">A</code> 레코드로 IP 를 직접 적은 경우</td>
+<td><code dir="auto">example.com</code>, <code dir="auto">www.example.com</code> 두 개</td>
+</tr>
+<tr>
+<td><code dir="auto">CNAME</code> 으로 <code dir="auto">example.com</code> 에 연결한 경우</td>
+<td><code dir="auto">example.com</code> 하나. <code dir="auto">www.example.com</code> 은 따라서 바뀝니다</td>
+</tr>
+</tbody>
+</table>
+<p>클라우드 배포 서비스가 “<code dir="auto">blog.example.com</code> 을 <code dir="auto">CNAME</code> 으로 <code dir="auto">myapp.host.example</code> 에 연결하라”고 안내하는 것도 같은 원리입니다. <code dir="auto">myapp.host.example</code> 의 <code dir="auto">A</code> 레코드는 서비스 회사가 관리하므로, 서비스 쪽 IP 가 바뀌어도 내 DNS 의 레코드는 그대로 둡니다.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="네임서버">네임서버</h2><a class="sl-anchor-link" href="#네임서버"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “네임서버”</span></a></div>
+<p><strong>네임서버</strong>(name server)는 도메인의 레코드를 저장해 두고, “이 도메인의 IP 는 무엇인가” 라는 질문에 답하는 DNS 서버입니다.</p>
+<p>인터넷의 모든 도메인 정보를 서버 한 대가 가지고 있지는 않습니다. 도메인 구조처럼 계층으로 나뉘어, 각 네임서버는 자기가 맡은 범위만 알고 그 아래는 다음 네임서버에 맡깁니다. 이것을 위임(delegation)이라고 합니다.</p>
+<table>
+<thead>
+<tr>
+<th>네임서버</th>
+<th>알고 있는 것</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>루트 네임서버</td>
+<td>각 최상위 도메인(<code dir="auto">.com</code>, <code dir="auto">.kr</code> 등)을 맡은 네임서버의 주소</td>
+</tr>
+<tr>
+<td>TLD 네임서버 (<code dir="auto">.com</code>)</td>
+<td><code dir="auto">.com</code> 아래 각 도메인(<code dir="auto">example.com</code> 등)을 맡은 네임서버의 주소</td>
+</tr>
+<tr>
+<td>권한 있는 네임서버 (<code dir="auto">example.com</code>)</td>
+<td><code dir="auto">example.com</code> 과 그 서브도메인의 실제 레코드</td>
+</tr>
+</tbody>
+</table>
+<p>“권한 있는(authoritative)” 은 그 도메인의 레코드를 직접 가지고 있어서, 다른 곳에 묻지 않고 답할 수 있다는 뜻입니다.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="도메인-등록과-네임서버">도메인 등록과 네임서버</h3><a class="sl-anchor-link" href="#도메인-등록과-네임서버"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “도메인 등록과 네임서버”</span></a></div>
+<p>도메인을 등록하면 그 도메인의 권한 있는 네임서버를 지정합니다. 등록 업체가 기본으로 주는 네임서버를 쓰거나, Cloudflare, AWS Route 53 같은 DNS 서비스의 네임서버로 바꿀 수 있습니다. 지정한 네임서버는 TLD 네임서버에 <code dir="auto">NS</code> 레코드로 등록됩니다.</p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#cdd6f4;--1:#4c4f69">example.com.   NS   ns1.dns-provider.example.</span></div></div><div class="ec-line"><div class="code"><span style="--0:#cdd6f4;--1:#4c4f69">example.com.   NS   ns2.dns-provider.example.</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="example.com.   NS   ns1.dns-provider.example.example.com.   NS   ns2.dns-provider.example."><div></div></button></div></figure></div>
+<p>이후 <code dir="auto">A</code>, <code dir="auto">CNAME</code> 같은 레코드는 지정한 네임서버의 관리 화면에서 추가하고 고칩니다. 네임서버를 두 대 이상 지정하는 것은, 한 대가 멈춰도 다른 한 대가 조회에 답할 수 있게 하기 위해서입니다.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="리졸버와-네임서버">리졸버와 네임서버</h3><a class="sl-anchor-link" href="#리졸버와-네임서버"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “리졸버와 네임서버”</span></a></div>
+<p>DNS 서버에는 답하는 쪽인 네임서버 말고, 대신 조회해 주는 쪽인 <strong>리졸버</strong>(resolver)도 있습니다.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>리졸버</th>
+<th>권한 있는 네임서버</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>하는 일</td>
+<td>내 PC 대신 여러 네임서버에 차례로 물어 최종 IP 를 찾고, 결과를 캐시에 둡니다</td>
+<td>자기가 맡은 도메인의 레코드로 답합니다</td>
+</tr>
+<tr>
+<td>예</td>
+<td>인터넷 업체의 DNS, <code dir="auto">8.8.8.8</code>(Google), <code dir="auto">1.1.1.1</code>(Cloudflare), 회사 내부 DNS</td>
+<td>도메인에 지정한 DNS 서비스의 네임서버</td>
+</tr>
+<tr>
+<td>PC 네트워크 설정의 “DNS 서버” 칸</td>
+<td>여기에 적는 것이 리졸버입니다</td>
+<td>적지 않습니다</td>
+</tr>
+</tbody>
+</table>
+<div class="sl-heading-wrapper level-h2"><h2 id="조회-과정">조회 과정</h2><a class="sl-anchor-link" href="#조회-과정"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “조회 과정”</span></a></div>
+<p><code dir="auto">api.example.com</code> 을 처음 조회할 때는 다음 순서로 진행됩니다.</p>
+<ol>
+<li>내 PC 가 hosts 파일과 자기 캐시를 확인합니다. 결과가 있으면 조회를 마칩니다.</li>
+<li>없으면 네트워크 설정에 적힌 리졸버에 묻습니다.</li>
+<li>리졸버가 루트 네임서버에 묻고, <code dir="auto">.com</code> 을 맡은 TLD 네임서버 주소를 받습니다.</li>
+<li>리졸버가 TLD 네임서버에 묻고, <code dir="auto">example.com</code> 의 권한 있는 네임서버 주소를 받습니다.</li>
+<li>리졸버가 권한 있는 네임서버에 묻고, <code dir="auto">api.example.com</code> 의 IP <code dir="auto">203.0.113.20</code> 을 받습니다.</li>
+<li>리졸버가 결과를 캐시에 저장하고 내 PC 에 알려 줍니다.</li>
+</ol>
+<div class="sl-heading-wrapper level-h3"><h3 id="캐시와-ttl">캐시와 TTL</h3><a class="sl-anchor-link" href="#캐시와-ttl"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “캐시와 TTL”</span></a></div>
+<p>DNS 응답에는 <strong>TTL</strong>(Time To Live, 유효 시간)이 포함되어 있습니다. 리졸버와 PC 는 TTL 동안 결과를 캐시에 두고, 같은 도메인을 다시 물으면 3~5단계 없이 바로 답합니다.</p>
+<p>그래서 레코드의 IP 를 바꿔도 바로 모든 사용자에게 반영되지 않습니다. 이전 값을 캐시에 둔 리졸버와 PC 는 TTL 이 지날 때까지 옛 IP 로 접속합니다. 서버를 옮기기 전에 TTL 을 짧게 줄여 두면, 바꾼 값이 더 빨리 반영됩니다.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="hosts-파일">hosts 파일</h2><a class="sl-anchor-link" href="#hosts-파일"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “hosts 파일”</span></a></div>
+<p>개발과 확인 작업을 하다 보면 도메인 이름으로 접속해야 하는데, DNS 에 레코드를 만들 수 없거나 아직 만들면 안 되는 경우가 있습니다. 이때 쓰는 것이 hosts 파일입니다.</p>
+<p><strong>hosts 파일</strong>은 PC 안에 도메인과 IP 의 짝을 직접 적어 두는 파일입니다. 위 조회 과정의 1단계처럼, PC 는 리졸버에 묻기 전에 이 파일을 먼저 확인합니다. 여기에 적힌 이름은 DNS 조회 없이 적어 둔 IP 로 바로 연결됩니다.</p>
+<table>
+<thead>
+<tr>
+<th>OS</th>
+<th>위치</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Windows</td>
+<td><code dir="auto">C:\Windows\System32\drivers\etc\hosts</code> (관리자 권한으로 편집)</td>
+</tr>
+<tr>
+<td>Linux, mac</td>
+<td><code dir="auto">/etc/hosts</code></td>
+</tr>
+</tbody>
+</table>
+<p>한 줄에 IP 와 도메인을 하나씩 적습니다.</p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#cdd6f4;--1:#4c4f69">192.168.0.20    admin.example.test</span></div></div><div class="ec-line"><div class="code"><span style="--0:#cdd6f4;--1:#4c4f69">192.168.0.20    api.example.test</span></div></div><div class="ec-line"><div class="code"><span style="--0:#cdd6f4;--1:#4c4f69">203.0.113.30    example.com</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="192.168.0.20    admin.example.test192.168.0.20    api.example.test203.0.113.30    example.com"><div></div></button></div></figure></div>
+<div class="sl-heading-wrapper level-h3"><h3 id="hosts-파일을-쓰는-상황">hosts 파일을 쓰는 상황</h3><a class="sl-anchor-link" href="#hosts-파일을-쓰는-상황"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “hosts 파일을 쓰는 상황”</span></a></div>
+<table>
+<thead>
+<tr>
+<th>상황</th>
+<th>IP 로 접속할 수 없는 이유</th>
+<th>적는 내용</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>한 서버의 여러 서비스를 이름으로 나눌 때</td>
+<td>Nginx 는 <code dir="auto">server_name</code> 으로 요청에 담긴 도메인 이름을 보고 <a href="/blog/nginx-basics/#server-%EC%99%80-location"><code dir="auto">server</code> 설정 묶음</a>을 고릅니다. IP 로 접속하면 어느 서비스로 보낼지 이름으로 나눌 수 없습니다</td>
+<td>위 예시의 첫째·둘째 줄처럼, 같은 IP 에 서비스마다 다른 이름</td>
+</tr>
+<tr>
+<td>HTTPS 인증서를 확인할 때</td>
+<td>인증서는 도메인 이름을 기준으로 발급됩니다. IP 로 접속하면 인증서의 이름과 맞지 않아 브라우저가 경고합니다</td>
+<td>인증서에 적힌 도메인과 개발 서버 IP</td>
+</tr>
+<tr>
+<td>서버를 옮기기 전에 새 서버를 확인할 때</td>
+<td>DNS 레코드를 바꾸면 모든 사용자가 새 서버로 접속하고, 문제가 생겨도 TTL 동안은 옛 값으로 되돌리기 어렵습니다</td>
+<td>위 예시의 셋째 줄처럼, 운영 도메인과 새 서버 IP. 내 PC 에서만 새 서버로 접속합니다</td>
+</tr>
+<tr>
+<td>아래 “내부 DNS” 가 없는 팀에서 서버에 이름을 붙일 때</td>
+<td>IP 는 외우기 어렵고, 서버 IP 가 바뀌면 그 IP 를 적어 둔 설정을 모두 고쳐야 합니다</td>
+<td><code dir="auto">192.168.0.30    db.example.test</code> 처럼 서버마다 이름</td>
+</tr>
+</tbody>
+</table>
+<p>hosts 파일은 DNS 보다 먼저 적용되므로, 확인이 끝난 뒤 지우지 않으면 내 PC 만 계속 그 IP 로 접속합니다. “다른 사람은 정상인데 내 PC 만 옛 서버로 접속된다”면 hosts 파일을 먼저 확인합니다.</p>
+<p><code dir="auto">.test</code> 는 테스트용으로 예약된 최상위 도메인이라, 인터넷의 실제 도메인과 겹치지 않습니다.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="리졸버-설정">리졸버 설정</h2><a class="sl-anchor-link" href="#리졸버-설정"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “리졸버 설정”</span></a></div>
+<p>조회 과정 2단계의 “네트워크 설정에 적힌 리졸버”는 PC 와 서버마다 따로 정합니다. 이 값이 비어 있으면 IP 로는 통신이 되는데 도메인 조회만 모두 실패합니다.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="넣을-수-있는-리졸버">넣을 수 있는 리졸버</h3><a class="sl-anchor-link" href="#넣을-수-있는-리졸버"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “넣을 수 있는 리졸버”</span></a></div>
+<table>
+<thead>
+<tr>
+<th>종류</th>
+<th>예</th>
+<th>특징</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>공유기</td>
+<td><code dir="auto">192.168.0.1</code></td>
+<td>많은 공유기가 리졸버 역할을 겸하고, 받은 질문을 통신사 DNS 로 넘깁니다</td>
+</tr>
+<tr>
+<td>회사 내부 DNS</td>
+<td>회사가 정한 내부 IP</td>
+<td>인터넷 도메인과 함께 아래 “내부 DNS” 의 내부 이름까지 답합니다</td>
+</tr>
+<tr>
+<td>통신사 DNS</td>
+<td>통신사가 안내한 주소</td>
+<td>인터넷에 연결할 때 자동으로 받는 경우가 많습니다</td>
+</tr>
+<tr>
+<td>공용 DNS</td>
+<td><code dir="auto">8.8.8.8</code>(Google), <code dir="auto">1.1.1.1</code>(Cloudflare)</td>
+<td>어느 네트워크에서나 쓸 수 있습니다. 내부 이름은 모르고, 외부 DNS 를 막은 회사 네트워크에서는 응답하지 않습니다</td>
+</tr>
+</tbody>
+</table>
+<p>리졸버는 보통 두 개 이상 적습니다. 첫 번째 리졸버가 응답하지 않으면 두 번째 리졸버로 조회를 이어 가기 때문입니다.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="설정-파일의-nameserver">설정 파일의 nameserver</h3><a class="sl-anchor-link" href="#설정-파일의-nameserver"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “설정 파일의 nameserver”</span></a></div>
+<p>설정 파일에서는 리졸버를 <code dir="auto">nameserver</code> 라는 이름으로 적는 경우가 많습니다. 리눅스와 여러 도구가 “물어볼 DNS 서버”를 관례적으로 이렇게 불러 왔기 때문입니다. 설정 파일의 <code dir="auto">nameserver</code> 는 위 “네임서버” 절의 권한 있는 네임서버가 아니라, 이 PC 나 서버가 물어볼 <strong>리졸버</strong>를 뜻합니다.</p>
+<table>
+<thead>
+<tr>
+<th>적는 곳</th>
+<th>값의 예</th>
+<th>뜻</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>서버의 <code dir="auto">/etc/resolv.conf</code> 의 <code dir="auto">nameserver</code>, netplan 의 <code dir="auto">nameservers</code></td>
+<td><code dir="auto">8.8.8.8</code></td>
+<td>이 서버가 물어볼 리졸버</td>
+</tr>
+<tr>
+<td>도메인의 <code dir="auto">NS</code> 레코드</td>
+<td><code dir="auto">ns1.dns-provider.example.</code></td>
+<td>이 도메인의 레코드를 가진 권한 있는 네임서버</td>
+</tr>
+</tbody>
+</table>
+<div class="sl-heading-wrapper level-h3"><h3 id="리눅스-서버의-리졸버">리눅스 서버의 리졸버</h3><a class="sl-anchor-link" href="#리눅스-서버의-리졸버"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “리눅스 서버의 리졸버”</span></a></div>
+<p>Ubuntu 같은 리눅스 서버에서는 서버 안에서 실행되는 <strong>systemd-resolved</strong> 라는 프로그램이 리졸버 역할을 합니다. 서버의 프로그램은 이 프로그램에 묻고, systemd-resolved 는 위 표의 공유기나 <code dir="auto">8.8.8.8</code> 처럼 서버 밖에 있는 리졸버에 다시 묻습니다. 아래에서는 서버 안의 systemd-resolved 와 구분해 이 리졸버를 <strong>바깥 리졸버</strong>라고 부릅니다.</p>
+<p>바깥 리졸버의 주소는 systemd-resolved 가 스스로 정하지 않고, 네트워크 설정을 거쳐 전달받습니다. 이 설정에는 netplan 과 렌더러가 관여합니다.</p>
+<table>
+<thead>
+<tr>
+<th>이름</th>
+<th>하는 일</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>netplan</strong></td>
+<td>Ubuntu 에서 IP, 게이트웨이, 리졸버 같은 네트워크 설정을 적는 YAML 파일(<code dir="auto">/etc/netplan/*.yaml</code>)과, 그 파일을 렌더러에 넘겨주는 도구입니다. 직접 네트워크 카드를 설정하지는 않습니다</td>
+</tr>
+<tr>
+<td><strong>렌더러</strong>(renderer)</td>
+<td>netplan 의 설정을 받아 실제로 네트워크 카드에 IP 와 게이트웨이를 설정하고, 리졸버 목록을 systemd-resolved 에 전달하는 프로그램입니다. netplan 파일의 <code dir="auto">renderer:</code> 항목으로 정합니다</td>
+</tr>
+</tbody>
+</table>
+<p>렌더러는 두 가지가 있고, 하는 일은 같습니다.</p>
+<table>
+<thead>
+<tr>
+<th>렌더러</th>
+<th>기본으로 쓰는 곳</th>
+<th>특징</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">networkd</code> (systemd-networkd)</td>
+<td>Ubuntu Server</td>
+<td>설정 파일만 읽고 적용합니다. 설정이 잘 바뀌지 않는 서버에 맞습니다</td>
+</tr>
+<tr>
+<td><code dir="auto">NetworkManager</code></td>
+<td>Ubuntu Desktop</td>
+<td>Wi-Fi 선택, VPN 연결, 화면의 네트워크 메뉴, <code dir="auto">nmcli</code> 명령처럼 연결을 수시로 바꾸는 기능이 있습니다</td>
+</tr>
+</tbody>
+</table>
+<p>두 렌더러는 설정 형식이 서로 다릅니다. netplan 은 사용자가 그 차이를 몰라도 되도록, 한 가지 YAML 형식으로 적으면 정한 렌더러의 형식으로 바꿔 넘겨줍니다. 렌더러가 어느 쪽이든 리졸버 역할은 systemd-resolved 가 그대로 맡습니다.</p>
+<p>설정은 다음 순서로 전달됩니다.</p>
+<table>
+<thead>
+<tr>
+<th>순서</th>
+<th>위치</th>
+<th>하는 일</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>netplan 설정 파일</td>
+<td><code dir="auto">nameservers</code> 아래에 바깥 리졸버를 적어 둡니다</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code dir="auto">netplan apply</code></td>
+<td>파일 내용을 렌더러의 설정 형식으로 바꿔 넘깁니다</td>
+</tr>
+<tr>
+<td>3</td>
+<td>렌더러 (<code dir="auto">networkd</code> 또는 <code dir="auto">NetworkManager</code>)</td>
+<td>네트워크 카드에 설정을 적용하고, 바깥 리졸버 목록을 systemd-resolved 에 전달합니다</td>
+</tr>
+<tr>
+<td>4</td>
+<td>systemd-resolved</td>
+<td>전달받은 바깥 리졸버 목록을 가지고 조회를 넘깁니다</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code dir="auto">/etc/resolv.conf</code></td>
+<td><code dir="auto">nameserver 127.0.0.53</code> 이 적혀 있습니다. 127.0.0.53 은 서버 자신 안의 systemd-resolved 를 가리키고, 서버의 프로그램은 이 주소로 묻습니다</td>
+</tr>
+</tbody>
+</table>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="yaml"><code><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--1:#1A57D1">network</span><span style="--0:#94E2D5;--1:#116B70">:</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#89B4FA;--1:#1A57D1">renderer</span><span style="--0:#94E2D5;--1:#116B70">:</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">networkd</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#89B4FA;--1:#1A57D1">ethernets</span><span style="--0:#94E2D5;--1:#116B70">:</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#89B4FA;--1:#1A57D1">eth0</span><span style="--0:#94E2D5;--1:#116B70">:</span></div></div><div class="ec-line"><div class="code"><span class="indent">      </span><span style="--0:#89B4FA;--1:#1A57D1">addresses</span><span style="--0:#94E2D5;--1:#116B70">:</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#9399B2;--1:#5D5F6E">[</span><span style="--0:#A6E3A1;--1:#2C6E1E">192.168.0.20/24</span><span style="--0:#9399B2;--1:#5D5F6E">]</span></div></div><div class="ec-line"><div class="code"><span class="indent">      </span><span style="--0:#89B4FA;--1:#1A57D1">routes</span><span style="--0:#94E2D5;--1:#116B70">:</span></div></div><div class="ec-line"><div class="code"><span class="indent">        </span><span style="--0:#9399B2;--1:#5D5F6E">-</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#89B4FA;--1:#1A57D1">to</span><span style="--0:#94E2D5;--1:#116B70">:</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">default</span></div></div><div class="ec-line"><div class="code"><span class="indent">          </span><span style="--0:#89B4FA;--1:#1A57D1">via</span><span style="--0:#94E2D5;--1:#116B70">:</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#FAB387;--1:#A54107">192.168.0.1</span></div></div><div class="ec-line"><div class="code"><span class="indent">      </span><span style="--0:#89B4FA;--1:#1A57D1">nameservers</span><span style="--0:#94E2D5;--1:#116B70">:</span></div></div><div class="ec-line"><div class="code"><span class="indent">        </span><span style="--0:#89B4FA;--1:#1A57D1">addresses</span><span style="--0:#94E2D5;--1:#116B70">:</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#9399B2;--1:#5D5F6E">[</span><span style="--0:#FAB387;--1:#A54107">192.168.0.1</span><span style="--0:#9399B2;--1:#5D5F6E">,</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#FAB387;--1:#A54107">8.8.8.8</span><span style="--0:#9399B2;--1:#5D5F6E">]</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="network:  renderer: networkd  ethernets:    eth0:      addresses: [192.168.0.20/24]      routes:        - to: default          via: 192.168.0.1      nameservers:        addresses: [192.168.0.1, 8.8.8.8]"><div></div></button></div></figure></div>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>뜻</th>
+<th>비어 있을 때</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">renderer</code></td>
+<td>설정을 적용할 렌더러</td>
+<td>기본값 <code dir="auto">networkd</code> 를 씁니다</td>
+</tr>
+<tr>
+<td><code dir="auto">addresses</code> (맨 위)</td>
+<td>이 서버의 IP. <code dir="auto">/24</code> 는 앞 세 자리 <code dir="auto">192.168.0</code> 이 같은 주소를 같은 대역으로 본다는 뜻입니다</td>
+<td>네트워크에 연결되지 않습니다</td>
+</tr>
+<tr>
+<td><code dir="auto">routes</code> 의 <code dir="auto">to: default</code> 와 <code dir="auto">via</code></td>
+<td>두 줄이 규칙 하나입니다. <code dir="auto">to: default</code> 는 따로 경로를 정하지 않은 나머지 목적지 전부(인터넷과 다른 대역)이고, <code dir="auto">via</code> 는 그 패킷을 넘겨줄 <strong>게이트웨이</strong>(같은 대역 안의 공유기나 라우터 주소)입니다. 예시는 “나머지 목적지로 가는 패킷은 전부 <code dir="auto">192.168.0.1</code> 에게 넘긴다”는 뜻입니다</td>
+<td>같은 대역 밖으로 나가지 못해 IP 로도 인터넷에 도달하지 않습니다</td>
+</tr>
+<tr>
+<td><code dir="auto">nameservers</code> 의 <code dir="auto">addresses</code></td>
+<td>도메인을 물어볼 리졸버</td>
+<td>IP 로는 통신이 되고 도메인 조회만 실패합니다</td>
+</tr>
+</tbody>
+</table>
+<p>예시에서 <code dir="auto">via</code> 와 <code dir="auto">nameservers</code> 에 같은 <code dir="auto">192.168.0.1</code> 이 들어간 것은 공유기 한 대가 게이트웨이와 리졸버 역할을 함께 하기 때문입니다.</p>
+<p>설정 파일에 리졸버가 적혀 있어도, 적용되지 않았으면 systemd-resolved 의 목록은 비어 있습니다. 실제로 쓰는 값은 <code dir="auto">resolvectl status</code> 로 확인합니다.</p>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">resolvectl</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">status</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#94E2D5;--1:#116B70">|</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">grep</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-A3</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">"DNS Server"</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="resolvectl status | grep -A3 &quot;DNS Server&quot;"><div></div></button></div></figure></div>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#cdd6f4;--1:#4c4f69">Current DNS Server: 192.168.0.1</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#cdd6f4;--1:#4c4f69">       </span></span><span style="--0:#cdd6f4;--1:#4c4f69">DNS Servers: 192.168.0.1 8.8.8.8</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="Current DNS Server: 192.168.0.1       DNS Servers: 192.168.0.1 8.8.8.8"><div></div></button></div></figure></div>
+<p>이 명령의 출력이 비어 있으면 systemd-resolved 가 질문을 넘길 곳이 없어 모든 도메인 조회가 실패합니다. 설정 파일의 <code dir="auto">nameservers</code> 를 확인하고 <code dir="auto">sudo netplan apply</code> 로 다시 적용한 뒤, 같은 명령으로 목록이 채워졌는지 확인합니다. <code dir="auto">netplan apply</code> 는 네트워크를 다시 적용하므로 SSH 접속이 잠깐 끊길 수 있습니다.</p>
+<p>다시 적용해도 목록이 비어 있으면, 설정을 받은 렌더러와 실제로 네트워크 카드를 관리하는 렌더러가 다른 경우입니다. 예를 들어 netplan 은 <code dir="auto">renderer: networkd</code> 로 설정을 넘기는데 카드는 NetworkManager 가 관리하고 있으면, networkd 가 받은 리졸버 목록은 그 카드에 적용되지 않습니다. <code dir="auto">nmcli device status</code> 에서 카드가 <code dir="auto">connected</code> 이면 NetworkManager 가, <code dir="auto">unmanaged</code> 이면 networkd 가 관리하는 것입니다. NetworkManager 가 설치되지 않은 서버에는 이 명령이 없고, networkd 가 관리합니다. 리졸버 설정은 실제로 카드를 관리하는 렌더러 쪽에 적습니다.</p>
+<p>위 설정은 직접 설치한 서버처럼 사람이 고정 IP 를 직접 적는 서버에 해당합니다. 클라우드에서 만든 서버는 IP 와 리졸버를 자동으로 받으므로, 보통 netplan 을 직접 고치지 않습니다.</p>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>직접 설치한 서버</th>
+<th>클라우드 서버 (AWS, GCP, Azure 등)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>IP, 게이트웨이, 리졸버</td>
+<td>설치할 때 사람이 적습니다</td>
+<td>서버가 시작될 때 <strong>DHCP</strong>(네트워크에 연결된 기기에 IP, 게이트웨이, 리졸버를 자동으로 할당하는 방식)로 받습니다</td>
+</tr>
+<tr>
+<td>netplan 파일</td>
+<td>설치 프로그램이 만들거나 사람이 적습니다</td>
+<td><strong>cloud-init</strong>(클라우드 서버가 처음 시작될 때 네트워크, 계정, SSH 키를 설정하는 프로그램)이 만듭니다</td>
+</tr>
+<tr>
+<td>리졸버를 바꾸는 곳</td>
+<td>netplan 파일</td>
+<td>클라우드 콘솔의 네트워크(VPC) 설정. cloud-init 이 만든 파일은 다시 만들어질 수 있어, 직접 고친 내용이 사라질 수 있습니다</td>
+</tr>
+</tbody>
+</table>
+<p>어느 쪽이든 <code dir="auto">resolvectl status</code> 로 리졸버를 확인하는 방법과, 아래 “Docker 네트워크의 이름 조회” 에서 볼 컨테이너의 리졸버 동작은 같습니다.</p>
+<p>Windows PC 는 <code dir="auto">ipconfig /all</code> 의 “DNS 서버” 항목에서 쓰고 있는 리졸버를 확인합니다.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="내부-dns">내부 DNS</h2><a class="sl-anchor-link" href="#내부-dns"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “내부 DNS”</span></a></div>
+<p>회사는 내부 네트워크 안에서만 쓰는 DNS 서버를 두기도 합니다. 내부 DNS 에는 <code dir="auto">db.corp.example.test</code> → <code dir="auto">192.168.0.30</code> 처럼 내부 서버의 이름이 들어 있고, 인터넷에서는 이 이름을 조회할 수 없습니다.</p>
+<table>
+<thead>
+<tr>
+<th>상황</th>
+<th>내부 이름 조회</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>사무실 내부 네트워크</td>
+<td>조회됩니다. 네트워크 설정이 내부 DNS 를 리졸버로 씁니다</td>
+</tr>
+<tr>
+<td>집에서 <a href="/blog/vpn/">VPN</a> 접속</td>
+<td>VPN 이 내부 DNS 를 리졸버로 지정해 주면 조회됩니다</td>
+</tr>
+<tr>
+<td>집에서 VPN 없이</td>
+<td>조회되지 않습니다. 인터넷의 리졸버는 내부 이름을 모릅니다</td>
+</tr>
+</tbody>
+</table>
+<p>VPN 에 접속했는데 IP 로는 접속되고 내부 이름으로는 접속되지 않는다면, VPN 이 DNS 설정을 넘겨주지 않은 경우입니다. <code dir="auto">ipconfig /all</code> 에서 VPN 어댑터의 DNS 서버 항목을 확인합니다.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="docker-네트워크의-이름-조회">Docker 네트워크의 이름 조회</h3><a class="sl-anchor-link" href="#docker-네트워크의-이름-조회"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “Docker 네트워크의 이름 조회”</span></a></div>
+<p><a href="/blog/ip-and-port/#%EC%BB%A8%ED%85%8C%EC%9D%B4%EB%84%88%EC%9D%98-localhost">IP 주소와 포트</a>에서 같은 도커 네트워크의 컨테이너는 <code dir="auto">api:8000</code> 처럼 이름으로 접속할 수 있다고 했습니다. 이것도 DNS 입니다. Docker 는 사용자가 만든 네트워크마다 내장 DNS 서버(<code dir="auto">127.0.0.11</code>)를 두고, 컨테이너 이름을 그 컨테이너의 IP 로 알려 줍니다.</p>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">docker</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">exec</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">app</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">cat</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">/etc/resolv.conf</span><span style="--0:#CDD6F4;--1:#4C4F69">     </span><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># nameserver 127.0.0.11</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">docker</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">exec</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">app</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">getent</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">hosts</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">api</span><span style="--0:#CDD6F4;--1:#4C4F69">         </span><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># 172.18.0.3   api</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="docker exec app cat /etc/resolv.conf     # nameserver 127.0.0.11docker exec app getent hosts api         # 172.18.0.3   api"><div></div></button></div></figure></div>
+<p>기본 <code dir="auto">bridge</code> 네트워크에는 이 이름 조회가 없어서, <code dir="auto">docker network create</code> 로 만든 네트워크에서만 컨테이너 이름으로 접속할 수 있습니다.</p>
+<p>컨테이너 이름이 아닌 인터넷 도메인은 서버의 리졸버 설정을 따릅니다. 컨테이너 안에서는 서버의 <code dir="auto">127.0.0.53</code> 에 접근할 수 없으므로, Docker 는 위 “리눅스 서버의 리졸버” 에서 systemd-resolved 가 쓰는 바깥 리졸버 목록을 가져와 씁니다.</p>
+<table>
+<thead>
+<tr>
+<th>서버의 리졸버 설정</th>
+<th>컨테이너가 쓰는 리졸버</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>systemd-resolved 에 바깥 리졸버가 있음</td>
+<td>그 리졸버</td>
+</tr>
+<tr>
+<td>바깥 리졸버가 비어 있음</td>
+<td>Docker 의 기본값 <code dir="auto">8.8.8.8</code>, <code dir="auto">8.8.4.4</code></td>
+</tr>
+</tbody>
+</table>
+<p>그래서 서버의 리졸버 설정이 비어 있으면 <code dir="auto">docker pull</code> 이 이미지 저장소의 도메인을 조회하지 못하고, 빌드 중 <code dir="auto">RUN apt-get</code> 같은 단계는 <code dir="auto">8.8.8.8</code> 로 묻게 됩니다. 외부 DNS 를 막은 회사 네트워크에서는 이 단계도 실패합니다. 이때는 서버의 리졸버 설정을 먼저 채우고, 컨테이너에 특정 리졸버를 지정해야 하면 <code dir="auto">docker run --dns 192.168.0.1</code> 이나 Docker 설정 파일(<code dir="auto">/etc/docker/daemon.json</code>)의 <code dir="auto">"dns"</code> 항목을 씁니다.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="조회-결과-확인">조회 결과 확인</h2><a class="sl-anchor-link" href="#조회-결과-확인"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “조회 결과 확인”</span></a></div>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">nslookup</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">api.example.com</span><span style="--0:#CDD6F4;--1:#4C4F69">                  </span><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># Windows, mac, Linux</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">dig</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">api.example.com</span><span style="--0:#CDD6F4;--1:#4C4F69">                       </span><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># mac, Linux</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">dig</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">+short</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">api.example.com</span><span style="--0:#CDD6F4;--1:#4C4F69">                </span><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># IP 만</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">dig</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">api.example.com</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">@8.8.8.8</span><span style="--0:#CDD6F4;--1:#4C4F69">              </span><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># 특정 리졸버에 직접 묻기</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">Resolve-DnsName</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">api.example.com</span><span style="--0:#CDD6F4;--1:#4C4F69">           </span><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># Windows PowerShell</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="nslookup api.example.com                  # Windows, mac, Linuxdig api.example.com                       # mac, Linuxdig +short api.example.com                # IP 만dig api.example.com @8.8.8.8              # 특정 리졸버에 직접 묻기Resolve-DnsName api.example.com           # Windows PowerShell"><div></div></button></div></figure></div>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#cdd6f4;--1:#4c4f69">Server:     192.168.0.1</span></div></div><div class="ec-line"><div class="code"><span style="--0:#cdd6f4;--1:#4c4f69">Address:    192.168.0.1#53</span></div></div><div class="ec-line"><div class="code">
+</div></div><div class="ec-line"><div class="code"><span style="--0:#cdd6f4;--1:#4c4f69">Non-authoritative answer:</span></div></div><div class="ec-line"><div class="code"><span style="--0:#cdd6f4;--1:#4c4f69">Name:   api.example.com</span></div></div><div class="ec-line"><div class="code"><span style="--0:#cdd6f4;--1:#4c4f69">Address: 203.0.113.20</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="Server:     192.168.0.1Address:    192.168.0.1#53Non-authoritative answer:Name:   api.example.comAddress: 203.0.113.20"><div></div></button></div></figure></div>
+<table>
+<thead>
+<tr>
+<th>줄</th>
+<th>뜻</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">Server</code></td>
+<td>이번 조회에 쓴 리졸버</td>
+</tr>
+<tr>
+<td><code dir="auto">Non-authoritative answer</code></td>
+<td>권한 있는 네임서버가 아니라 리졸버가 캐시나 대신 조회한 결과로 답했다는 뜻</td>
+</tr>
+<tr>
+<td><code dir="auto">Address</code></td>
+<td>조회된 IP</td>
+</tr>
+</tbody>
+</table>
+<p><code dir="auto">CNAME</code> 이 설정된 도메인을 <code dir="auto">dig +short</code> 로 조회하면 <code dir="auto">CNAME</code> 의 값과 마지막 IP 가 차례로 출력됩니다. 위 “CNAME” 에서 본 두 번의 조회를 결과로 확인할 수 있습니다.</p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#cdd6f4;--1:#4c4f69">$ dig +short www.example.com</span></div></div><div class="ec-line"><div class="code"><span style="--0:#cdd6f4;--1:#4c4f69">example.com.</span></div></div><div class="ec-line"><div class="code"><span style="--0:#cdd6f4;--1:#4c4f69">203.0.113.10</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="$ dig +short www.example.comexample.com.203.0.113.10"><div></div></button></div></figure></div>
+<p><code dir="auto">nslookup</code> 과 <code dir="auto">dig</code> 는 DNS 서버에 직접 묻기 때문에 hosts 파일을 확인하지 않습니다. hosts 파일에 적은 값이 <code dir="auto">nslookup</code> 에 표시되지 않는 것은 정상입니다. hosts 파일까지 반영한 결과는 <code dir="auto">ping</code> 이 표시하는 IP 로 확인합니다.</p>
+<p>내 PC 의 DNS 캐시는 다음 명령으로 지웁니다.</p>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">ipconfig</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">/flushdns</span><span style="--0:#CDD6F4;--1:#4C4F69">                                              </span><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># Windows</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">sudo</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">dscacheutil</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-flushcache</span><span style="--0:#9399B2;--1:#5D5F6E">;</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">sudo</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">killall</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-HUP</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">mDNSResponder</span><span style="--0:#CDD6F4;--1:#4C4F69">   </span><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># mac</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">resolvectl</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">flush-caches</span><span style="--0:#CDD6F4;--1:#4C4F69">                                         </span><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># Linux (systemd-resolved)</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="ipconfig /flushdns                                              # Windowssudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder   # macresolvectl flush-caches                                         # Linux (systemd-resolved)"><div></div></button></div></figure></div>
+<div class="sl-heading-wrapper level-h2"><h2 id="도메인-접속-문제-확인-순서">도메인 접속 문제 확인 순서</h2><a class="sl-anchor-link" href="#도메인-접속-문제-확인-순서"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “도메인 접속 문제 확인 순서”</span></a></div>
+<table>
+<thead>
+<tr>
+<th>증상</th>
+<th>확인할 것</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>브라우저에 <code dir="auto">DNS_PROBE_FINISHED_NXDOMAIN</code></td>
+<td>그 이름의 레코드가 없습니다. 도메인 오타, 레코드 등록 여부를 <code dir="auto">nslookup</code> 으로 확인</td>
+</tr>
+<tr>
+<td>IP 로는 접속되는데 도메인으로는 접속되지 않음</td>
+<td>DNS 문제입니다. <code dir="auto">nslookup</code> 결과가 그 IP 인지 확인</td>
+</tr>
+<tr>
+<td>서버에서 모든 도메인 조회가 실패함 (<code dir="auto">docker pull</code> 실패, <code dir="auto">Temporary failure in name resolution</code>)</td>
+<td><code dir="auto">ping 8.8.8.8</code> 이 성공하고 <code dir="auto">dig 도메인 @8.8.8.8</code> 도 성공하면, 인터넷 연결은 정상이고 서버의 리졸버 설정이 빠진 것입니다. <code dir="auto">resolvectl status</code> 의 DNS 서버 목록을 확인</td>
+</tr>
+<tr>
+<td>레코드를 바꿨는데 옛 서버로 접속됨</td>
+<td>TTL 동안의 캐시입니다. <code dir="auto">dig @8.8.8.8</code> 로 새 값이 반영됐는지 확인하고, 내 PC 캐시를 지웁니다</td>
+</tr>
+<tr>
+<td>내 PC 만 다른 서버로 접속됨</td>
+<td>hosts 파일에 그 도메인이 적혀 있는지 확인</td>
+</tr>
+<tr>
+<td>VPN 접속 후 내부 이름이 조회되지 않음</td>
+<td>VPN 어댑터의 DNS 서버 설정 확인</td>
+</tr>
+</tbody>
+</table>
+<div class="sl-heading-wrapper level-h2"><h2 id="명령어-요약">명령어 요약</h2><a class="sl-anchor-link" href="#명령어-요약"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “명령어 요약”</span></a></div>
+<table>
+<thead>
+<tr>
+<th>작업</th>
+<th>명령</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>도메인의 IP 조회</td>
+<td><code dir="auto">nslookup 도메인</code>, <code dir="auto">dig +short 도메인</code></td>
+</tr>
+<tr>
+<td>특정 리졸버로 조회</td>
+<td><code dir="auto">dig 도메인 @8.8.8.8</code></td>
+</tr>
+<tr>
+<td>레코드 종류를 지정해 조회</td>
+<td><code dir="auto">dig 도메인 CNAME</code>, <code dir="auto">nslookup -type=MX 도메인</code></td>
+</tr>
+<tr>
+<td>쓰고 있는 리졸버 확인</td>
+<td><code dir="auto">ipconfig /all</code> (Windows), <code dir="auto">resolvectl status</code> (Linux)</td>
+</tr>
+<tr>
+<td>hosts 파일 편집</td>
+<td>Windows <code dir="auto">C:\Windows\System32\drivers\etc\hosts</code>, Linux·mac <code dir="auto">/etc/hosts</code></td>
+</tr>
+<tr>
+<td>DNS 캐시 지우기</td>
+<td><code dir="auto">ipconfig /flushdns</code> (Windows), <code dir="auto">resolvectl flush-caches</code> (Linux)</td>
+</tr>
+<tr>
+<td>컨테이너 안에서 이름 조회</td>
+<td><code dir="auto">docker exec 컨테이너 getent hosts 이름</code></td>
+</tr>
+</tbody>
+</table><nav class="series-pager not-content astro-3exwosfk" aria-label="시리즈 네트워크 기초"><p class="series-pager-heading astro-3exwosfk"><span class="series-word astro-3exwosfk">시리즈</span>네트워크 기초 · 5/6</p><div class="series-pager-links astro-3exwosfk"><a class="series-pager-link astro-3exwosfk" href="/blog/vpn/" rel="prev"><span class="series-pager-dir astro-3exwosfk">← 이전 편</span><span class="series-pager-title astro-3exwosfk">VPN</span></a><a class="series-pager-link series-pager-next astro-3exwosfk" href="/blog/https-certificate/" rel="next"><span class="series-pager-dir astro-3exwosfk">다음 편 →</span><span class="series-pager-title astro-3exwosfk">HTTPS 와 인증서</span></a></div></nav><div class="sl-blog-post-footer astro-gx5dlkfr"><div class="sl-blog-tags astro-xesoswnh"><b class="sl-blog-tags-label astro-xesoswnh">태그:</b><ul class="sl-blog-tags-list astro-xesoswnh"><li class="astro-xesoswnh"><a class="sl-blog-tag astro-xesoswnh" href="/blog/tags/cs/">CS</a></li><li class="astro-xesoswnh"><a class="sl-blog-tag astro-xesoswnh" href="/blog/tags/네트워크/">네트워크</a></li></ul></div><div class="sl-blog-pagination astro-nhmjxwsg" data-pagefind-ignore><div class="card-grid astro-7qmvx3iy"><div class="sl-link-card astro-zaaezwya"><span class="sl-flex stack astro-zaaezwya"><a href="/blog/vpn/" rel="prev" class="astro-nhmjxwsg astro-zaaezwya"><span class="title astro-zaaezwya">VPN</span></a></span><svg aria-hidden="true" class="icon rtl:flip astro-zaaezwya astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.333em;"><path d="M17.92 11.62a1.001 1.001 0 0 0-.21-.33l-5-5a1.003 1.003 0 1 0-1.42 1.42l3.3 3.29H7a1 1 0 0 0 0 2h7.59l-3.3 3.29a1.002 1.002 0 0 0 .325 1.639 1 1 0 0 0 1.095-.219l5-5a1 1 0 0 0 .21-.33 1 1 0 0 0 0-.76Z"/></svg></div><div class="sl-link-card astro-zaaezwya"><span class="sl-flex stack astro-zaaezwya"><a href="/blog/https-certificate/" rel="next" class="astro-nhmjxwsg astro-zaaezwya"><span class="title astro-zaaezwya">HTTPS 와 인증서</span></a></span><svg aria-hidden="true" class="icon rtl:flip astro-zaaezwya astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.333em;"><path d="M17.92 11.62a1.001 1.001 0 0 0-.21-.33l-5-5a1.003 1.003 0 1 0-1.42 1.42l3.3 3.29H7a1 1 0 0 0 0 2h7.59l-3.3 3.29a1.002 1.002 0 0 0 .325 1.639 1 1 0 0 0 1.095-.219l5-5a1 1 0 0 0 .21-.33 1 1 0 0 0 0-.76Z"/></svg></div></div></div></div></div><a class="back-to-list not-content bottom astro-vw3nbasd" href="/blog/"><span aria-hidden="true" class="astro-vw3nbasd">←</span>전체 글</a><nav class="related astro-vrecybdq" aria-labelledby="related-heading"><h2 id="related-heading" class="astro-vrecybdq">함께 읽을 글</h2><div class="related-cards astro-vrecybdq"><div class="sl-link-card astro-zaaezwya"><span class="sl-flex stack astro-zaaezwya"><a href="/blog/access-refresh-token/" class="astro-vrecybdq astro-zaaezwya"><span class="title astro-zaaezwya">액세스 토큰과 리프레시 토큰</span></a><span class="description astro-zaaezwya">토큰을 둘로 나누는 이유, 액세스 토큰과 리프레시 토큰의 유효 기간, 토큰을 보내는 방법과 저장 위치를 XSS·CSRF 기준으로 비교, 401 을 받았을 때 토큰을 갱신하는 흐름, 리프레시 토큰 회전, 로그아웃을 Spring 과 axios 예시로 정리했습니다.</span></span><svg aria-hidden="true" class="icon rtl:flip astro-zaaezwya astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.333em;"><path d="M17.92 11.62a1.001 1.001 0 0 0-.21-.33l-5-5a1.003 1.003 0 1 0-1.42 1.42l3.3 3.29H7a1 1 0 0 0 0 2h7.59l-3.3 3.29a1.002 1.002 0 0 0 .325 1.639 1 1 0 0 0 1.095-.219l5-5a1 1 0 0 0 .21-.33 1 1 0 0 0 0-.76Z"/></svg></div><div class="sl-link-card astro-zaaezwya"><span class="sl-flex stack astro-zaaezwya"><a href="/blog/session-token/" class="astro-vrecybdq astro-zaaezwya"><span class="title astro-zaaezwya">세션과 토큰</span></a><span class="description astro-zaaezwya">인증과 인가의 차이, HTTP 가 상태를 저장하지 않는다는 뜻, 세션 방식과 토큰 방식의 로그인 흐름, JWT 의 헤더·페이로드·서명 구조, Spring 으로 세션과 JWT 를 다루는 코드, 두 방식의 비교를 정리했습니다.</span></span><svg aria-hidden="true" class="icon rtl:flip astro-zaaezwya astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.333em;"><path d="M17.92 11.62a1.001 1.001 0 0 0-.21-.33l-5-5a1.003 1.003 0 1 0-1.42 1.42l3.3 3.29H7a1 1 0 0 0 0 2h7.59l-3.3 3.29a1.002 1.002 0 0 0 .325 1.639 1 1 0 0 0 1.095-.219l5-5a1 1 0 0 0 .21-.33 1 1 0 0 0 0-.76Z"/></svg></div><div class="sl-link-card astro-zaaezwya"><span class="sl-flex stack astro-zaaezwya"><a href="/blog/browser-storage/" class="astro-vrecybdq astro-zaaezwya"><span class="title astro-zaaezwya">쿠키, localStorage, sessionStorage</span></a><span class="description astro-zaaezwya">브라우저에 값을 저장하는 쿠키, localStorage, sessionStorage 의 사용법, 남아 있는 기간과 공유 범위, 쿠키가 요청마다 서버로 보내지는 과정, HttpOnly·Secure·SameSite 속성, 다른 주소의 API 로 쿠키를 보내는 설정을 정리했습니다.</span></span><svg aria-hidden="true" class="icon rtl:flip astro-zaaezwya astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.333em;"><path d="M17.92 11.62a1.001 1.001 0 0 0-.21-.33l-5-5a1.003 1.003 0 1 0-1.42 1.42l3.3 3.29H7a1 1 0 0 0 0 2h7.59l-3.3 3.29a1.002 1.002 0 0 0 .325 1.639 1 1 0 0 0 1.095-.219l5-5a1 1 0 0 0 .21-.33 1 1 0 0 0 0-.76Z"/></svg></div></div></nav><footer class="sl-flex astro-ddtxxk7k"><div class="meta sl-flex astro-ddtxxk7k"><p>마지막 업데이트: <time datetime="2026-11-13T00:50:53.000Z">2026. 11. 13.</time></p></div><div class="pagination-links print:hidden astro-b5raizh3" dir="ltr"></div></footer><section class="comments astro-nuen6n26" id="comments"><script>(function(){const attrs = {"data-repo":"NabongS2/NabongS2.github.io","data-repo-id":"R_kgDOU0DWKg","data-category":"Announcements","data-category-id":"DIC_kwDOU0DWKs4DISNZ","data-mapping":"pathname","data-strict":"1","data-reactions-enabled":"1","data-emit-metadata":"0","data-input-position":"top","data-loading":"lazy","data-lang":"ko"};
+
+				(() => {
+					/* Starlight always resolves its theme to one of these two on the
+					   root element, including when the reader has it on 자동. */
+					const theme = () =>
+						document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+
+					const script = document.createElement('script');
+					script.src = 'https://giscus.app/client.js';
+					script.crossOrigin = 'anonymous';
+					script.async = true;
+					for (const [name, value] of Object.entries(attrs)) script.setAttribute(name, value);
+					script.setAttribute('data-theme', theme());
+					document.currentScript.parentElement.append(script);
+
+					/* The iframe keeps its own copy of the theme, so a reader who
+					   flips the switch mid-page has to be told. */
+					let wanted = theme();
+					let loaded = false;
+
+					const send = () => {
+						if (!loaded) return;
+						const frame = document.querySelector('iframe.giscus-frame');
+						frame?.contentWindow?.postMessage(
+							{ giscus: { setConfig: { theme: wanted } } },
+							'https://giscus.app',
+						);
+					};
+
+					/* Until giscus.app has actually loaded, the frame is still on our
+					   own origin and the browser drops a message addressed to theirs.
+					   Their first message back is the signal that it's there — and it
+					   also catches a reader who flipped the theme while it loaded. */
+					addEventListener('message', (event) => {
+						if (loaded || event.origin !== 'https://giscus.app') return;
+						loaded = true;
+						send();
+					});
+
+					new MutationObserver(() => {
+						wanted = theme();
+						send();
+					}).observe(document.documentElement, {
+						attributes: true,
+						attributeFilter: ['data-theme'],
+					});
+				})();
+			})();</script></section><div class="scroll-buttons astro-nfluvhd2" data-scroll-buttons><button type="button" data-to="top" aria-label="맨 위로" title="맨 위로" hidden class="astro-nfluvhd2"><svg viewBox="0 0 24 24" aria-hidden="true" class="astro-nfluvhd2"><path d="M12 5l-7 7m7-7l7 7M12 5v14" class="astro-nfluvhd2"></path></svg></button><button type="button" data-to="bottom" aria-label="맨 아래로" title="맨 아래로" hidden class="astro-nfluvhd2"><svg viewBox="0 0 24 24" aria-hidden="true" class="astro-nfluvhd2"><path d="M12 19l-7-7m7 7l7-7M12 19V5" class="astro-nfluvhd2"></path></svg></button></div><script type="module">var e=document.querySelector(`[data-scroll-buttons]`),t=e?.querySelector(`[data-to="top"]`),n=e?.querySelector(`[data-to="bottom"]`);if(e&&t&&n){document.body.append(e);let r=matchMedia(`(prefers-reduced-motion: reduce)`).matches?`auto`:`smooth`,i=()=>window.innerHeight,a=()=>{let e=window.scrollY,r=document.documentElement.scrollHeight-window.innerHeight,a=r>i()*1.5;t.hidden=!a||e<i(),n.hidden=!a||e>r-i()};t.addEventListener(`click`,()=>window.scrollTo({top:0,behavior:r})),n.addEventListener(`click`,()=>window.scrollTo({top:document.documentElement.scrollHeight,behavior:r})),addEventListener(`scroll`,a,{passive:!0}),addEventListener(`resize`,a),a()}</script><div class="reading-progress astro-kw4rgypl" data-reading-progress aria-hidden="true"></div><script type="module">var e=document.querySelector(`[data-reading-progress]`),t=document.querySelector(`main .sl-markdown-content`);if(e&&t){document.body.append(e);let n=()=>{let n=t.getBoundingClientRect().top+window.scrollY,r=n+t.offsetHeight-window.innerHeight,i=r<=n?1:(window.scrollY-n)/(r-n);e.style.transform=`scaleX(${Math.min(1,Math.max(0,i))})`};addEventListener(`scroll`,n,{passive:!0}),addEventListener(`resize`,n),n()}</script><script type="module">var e=location.origin;for(let t of document.querySelectorAll(`.sl-markdown-content a[href^="http"]`))t.origin!==e&&(t.target=`_blank`,t.rel=`noopener noreferrer`);</script><button type="button" class="sidebar-toggle astro-6h44x6yh" data-sidebar-toggle data-label-hide="사이드바 접기" data-label-show="사이드바 펼치기" aria-label="사이드바 접기" title="사이드바 접기"><svg viewBox="0 0 24 24" aria-hidden="true" class="astro-6h44x6yh"><path d="M15 6l-6 6 6 6" class="astro-6h44x6yh"></path></svg></button><script type="module">var e=document.querySelector(`[data-sidebar-toggle]`),t=document.documentElement;if(e){document.body.append(e);let n=()=>{let n=t.hasAttribute(`data-sidebar-collapsed`),r=n?e.dataset.labelShow:e.dataset.labelHide;e.setAttribute(`aria-label`,r??``),e.title=r??``,e.setAttribute(`aria-expanded`,String(!n))};e.addEventListener(`click`,()=>{let e=t.toggleAttribute(`data-sidebar-collapsed`);try{localStorage.setItem(`sidebar-collapsed`,e?`1`:`0`)}catch{}n()}),n()}</script></div></div></main></div></div></div></div></body></html>

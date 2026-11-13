@@ -1,0 +1,543 @@
+<!DOCTYPE html><html lang="ko" dir="ltr" data-theme="dark" data-has-toc data-has-sidebar class="astro-g5ptsecz"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Redis 개념과 자료구조 | 나봉 개발 블로그</title><link rel="canonical" href="https://nabongs2.github.io/blog/redis-basics/"/><link rel="alternate" hreflang="ko" href="https://nabongs2.github.io/blog/redis-basics/"/><link rel="alternate" hreflang="en" href="https://nabongs2.github.io/en/blog/redis-basics/"/><link rel="alternate" hreflang="x-default" href="https://nabongs2.github.io/blog/redis-basics/"/><link rel="sitemap" href="/sitemap-index.xml"/><script>try{if(localStorage.getItem('sidebar-collapsed')==='1')document.documentElement.dataset.sidebarCollapsed=''}catch(e){}</script><link href="https://nabongs2.github.io/blog/rss.xml" rel="alternate" title="Blog" type="application/rss+xml"/><link rel="shortcut icon" href="/favicon.svg" type="image/svg+xml"/><meta name="generator" content="Astro v7.3.3"/><meta name="generator" content="Starlight v0.42.2"/><meta property="og:title" content="Redis 개념과 자료구조"/><meta property="og:type" content="article"/><meta property="og:url" content="https://nabongs2.github.io/blog/redis-basics/"/><meta property="og:locale" content="ko"/><meta property="og:description" content="Redis 가 무엇이고 왜 빠른지, 관계형 DB 와 무엇이 다른지, 자료구조 다섯 가지를 언제 고르는지와 redis-cli 명령을 정리했습니다."/><meta property="og:site_name" content="나봉 개발 블로그"/><meta name="twitter:card" content="summary_large_image"/><meta name="description" content="Redis 가 무엇이고 왜 빠른지, 관계형 DB 와 무엇이 다른지, 자료구조 다섯 가지를 언제 고르는지와 redis-cli 명령을 정리했습니다."/><script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","datePublished":"2026-09-23T07:00:00.000Z","headline":"Redis 개념과 자료구조","inLanguage":"ko","isPartOf":{"@id":"https://nabongs2.github.io/blog/#blog","@type":"Blog","name":"블로그","url":"https://nabongs2.github.io/blog/"},"mainEntityOfPage":"https://nabongs2.github.io/blog/redis-basics/","url":"https://nabongs2.github.io/blog/redis-basics/","author":[{"@type":"Person","@id":"https://nabongs2.github.io/blog/authors/nabong/#author","name":"nabong","url":"https://github.com/NabongS2"}],"description":"Redis 가 무엇이고 왜 빠른지, 관계형 DB 와 무엇이 다른지, 자료구조 다섯 가지를 언제 고르는지와 redis-cli 명령을 정리했습니다.","image":"https://nabongs2.github.io/_astro/cover-basics-light.rE-mS5Yy.png","keywords":["데이터","Redis"]},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"블로그","item":"https://nabongs2.github.io/blog/"},{"@type":"ListItem","position":2,"name":"Redis 개념과 자료구조"}]}]}</script><meta property="og:image" content="https://nabongs2.github.io/_astro/cover-basics-light.rE-mS5Yy_XGhiK.png"/><meta name="twitter:image" content="https://nabongs2.github.io/_astro/cover-basics-light.rE-mS5Yy_XGhiK.png"/><meta property="og:image:alt" content="Redis 로고와 함께 키에 값을 넣는 SET 명령, 그리고 String, Hash, List, Set, Sorted Set 다섯 가지 자료구조를 보여주는 표지"/><meta property="og:image:width" content="1200"/><meta property="og:image:height" content="630"/><script>
+	window.StarlightThemeProvider = (() => {
+		const storedTheme =
+			typeof localStorage !== 'undefined' && localStorage.getItem('starlight-theme');
+		const theme =
+			storedTheme ||
+			(window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+		document.documentElement.dataset.theme = theme === 'light' ? 'light' : 'dark';
+		return {
+			updatePickers(theme = storedTheme || 'auto') {
+				document.querySelectorAll('starlight-theme-select').forEach((picker) => {
+					const select = picker.querySelector('select');
+					if (select) select.value = theme;
+					/** @type {HTMLTemplateElement | null} */
+					const tmpl = document.querySelector(`#theme-icons`);
+					const newIcon = tmpl && tmpl.content.querySelector('.' + theme);
+					if (newIcon) {
+						const oldIcon = picker.querySelector('svg.label-icon');
+						if (oldIcon) {
+							oldIcon.replaceChildren(...newIcon.cloneNode(true).childNodes);
+						}
+					}
+				});
+			},
+		};
+	})();
+</script><template id="theme-icons"><svg aria-hidden="true" class="light astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M5 12a1 1 0 0 0-1-1H3a1 1 0 0 0 0 2h1a1 1 0 0 0 1-1Zm.64 5-.71.71a1 1 0 0 0 0 1.41 1 1 0 0 0 1.41 0l.71-.71A1 1 0 0 0 5.64 17ZM12 5a1 1 0 0 0 1-1V3a1 1 0 0 0-2 0v1a1 1 0 0 0 1 1Zm5.66 2.34a1 1 0 0 0 .7-.29l.71-.71a1 1 0 1 0-1.41-1.41l-.66.71a1 1 0 0 0 0 1.41 1 1 0 0 0 .66.29Zm-12-.29a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.71-.71a1.004 1.004 0 1 0-1.43 1.41l.73.71ZM21 11h-1a1 1 0 0 0 0 2h1a1 1 0 0 0 0-2Zm-2.64 6A1 1 0 0 0 17 18.36l.71.71a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.76-.66ZM12 6.5a5.5 5.5 0 1 0 5.5 5.5A5.51 5.51 0 0 0 12 6.5Zm0 9a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Zm0 3.5a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 0-1-1Z"/></svg><svg aria-hidden="true" class="dark astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.64 13a1 1 0 0 0-1.05-.14 8.049 8.049 0 0 1-3.37.73 8.15 8.15 0 0 1-8.14-8.1 8.59 8.59 0 0 1 .25-2A1 1 0 0 0 8 2.36a10.14 10.14 0 1 0 14 11.69 1 1 0 0 0-.36-1.05Zm-9.5 6.69A8.14 8.14 0 0 1 7.08 5.22v.27a10.15 10.15 0 0 0 10.14 10.14 9.784 9.784 0 0 0 2.1-.22 8.11 8.11 0 0 1-7.18 4.32v-.04Z"/></svg><svg aria-hidden="true" class="auto astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg></template><link rel="stylesheet" href="/_astro/print.ehPL0gv-.css" media="print"><link rel="stylesheet" href="/_astro/middleware.Ve8gaIO-.css"><style>@layer starlight.components{.card:where(.astro-oag6qnet){--sl-card-border:var(--sl-color-purple);--sl-card-bg:var(--sl-color-purple-low);border:1px solid var(--sl-color-gray-5);background-color:var(--sl-color-black);flex-direction:column;gap:clamp(.5rem,.125rem + 1vw,1rem);padding:clamp(1rem,.125rem + 3vw,2.5rem)}.card:where(.astro-oag6qnet):nth-child(4n+1){--sl-card-border:var(--sl-color-orange);--sl-card-bg:var(--sl-color-orange-low)}.card:where(.astro-oag6qnet):nth-child(4n+3){--sl-card-border:var(--sl-color-green);--sl-card-bg:var(--sl-color-green-low)}.card:where(.astro-oag6qnet):nth-child(4n+4){--sl-card-border:var(--sl-color-red);--sl-card-bg:var(--sl-color-red-low)}.card:where(.astro-oag6qnet):nth-child(4n+5){--sl-card-border:var(--sl-color-blue);--sl-card-bg:var(--sl-color-blue-low)}.title:where(.astro-oag6qnet){font-weight:600;font-size:var(--sl-text-h4);color:var(--sl-color-white);line-height:var(--sl-line-height-headings);align-items:center;gap:1rem}.card:where(.astro-oag6qnet) .icon:where(.astro-oag6qnet){border:1px solid var(--sl-card-border);background-color:var(--sl-card-bg);border-radius:.25rem;flex-shrink:0;padding:.2em}.card:where(.astro-oag6qnet) .body:where(.astro-oag6qnet){font-size:clamp(var(--sl-text-sm), calc(.5rem + 1vw), var(--sl-text-body));margin:0}}.home-category:where(.astro-swwetth3){border:1px solid var(--nb-chip-border);background:var(--nb-chip-bg);color:var(--nb-chip-text);font-size:var(--sl-text-xs);border-radius:999px;align-items:center;gap:.35rem;padding:.1rem .65rem;text-decoration:none;display:inline-flex}.home-category:where(.astro-swwetth3):hover{border-color:var(--sl-color-accent)}.home-category-count:where(.astro-swwetth3){color:var(--sl-color-gray-3)}.home-series:where(.astro-wdm2kzqn){margin-top:3rem}.home-series-heading:where(.astro-wdm2kzqn){font-size:var(--sl-text-2xl);margin-bottom:1.5rem}.home-series-list:where(.astro-wdm2kzqn){grid-template-columns:repeat(auto-fill,minmax(min(100%,18rem),1fr));gap:1rem;margin:0;padding:0;list-style:none;display:grid}.home-series-card:where(.astro-wdm2kzqn){border:1px solid var(--nb-border);border-inline-start:3px solid var(--sl-color-accent);border-radius:var(--nb-radius);background:var(--nb-surface);margin:0;padding:1rem 1.25rem}.home-series-name:where(.astro-wdm2kzqn){color:var(--sl-color-white);margin:0 0 .6rem;font-weight:600}.home-series-count:where(.astro-wdm2kzqn){font-size:var(--sl-text-xs);color:var(--sl-color-gray-3);margin-inline-start:.5rem;font-weight:400}.home-series-parts:where(.astro-wdm2kzqn){font-size:var(--sl-text-sm);margin:0;padding-inline-start:1.4rem}.home-series-parts:where(.astro-wdm2kzqn) li:where(.astro-wdm2kzqn){margin:.3rem 0}
+@layer starlight.components{svg:where(.astro-hkc32dio){color:var(--sl-icon-color);font-size:var(--sl-icon-size,1em);width:1em;height:1em}:root{--sl-badge-default-border:var(--sl-color-accent);--sl-badge-default-bg:var(--sl-color-accent-low);--sl-badge-default-text:#fff;--sl-badge-note-border:var(--sl-color-blue);--sl-badge-note-bg:var(--sl-color-blue-low);--sl-badge-note-text:#fff;--sl-badge-danger-border:var(--sl-color-red);--sl-badge-danger-bg:var(--sl-color-red-low);--sl-badge-danger-text:#fff;--sl-badge-success-border:var(--sl-color-green);--sl-badge-success-bg:var(--sl-color-green-low);--sl-badge-success-text:#fff;--sl-badge-caution-border:var(--sl-color-orange);--sl-badge-caution-bg:var(--sl-color-orange-low);--sl-badge-caution-text:#fff;--sl-badge-tip-border:var(--sl-color-purple);--sl-badge-tip-bg:var(--sl-color-purple-low);--sl-badge-tip-text:#fff}[data-theme=light]:root{--sl-badge-default-bg:var(--sl-color-accent-high);--sl-badge-note-bg:var(--sl-color-blue-high);--sl-badge-danger-bg:var(--sl-color-red-high);--sl-badge-success-bg:var(--sl-color-green-high);--sl-badge-caution-bg:var(--sl-color-orange-high);--sl-badge-tip-bg:var(--sl-color-purple-high)}.sl-badge:where(.astro-f4zorn72){border:1px solid var(--sl-color-border-badge);font-family:var(--sl-font-system-mono);color:var(--sl-color-text-badge);background-color:var(--sl-color-bg-badge);overflow-wrap:anywhere;border-radius:.25rem;line-height:normal;display:inline-block}.sidebar-content .sl-badge:where(.astro-f4zorn72){line-height:1;font-size:var(--sl-text-xs);padding:.125rem .375rem}.sidebar-content a[aria-current=page]>.sl-badge:where(.astro-f4zorn72){--sl-color-bg-badge:transparent;--sl-color-border-badge:currentColor;color:inherit}.default:where(.astro-f4zorn72){--sl-color-bg-badge:var(--sl-badge-default-bg);--sl-color-border-badge:var(--sl-badge-default-border);--sl-color-text-badge:var(--sl-badge-default-text)}.note:where(.astro-f4zorn72){--sl-color-bg-badge:var(--sl-badge-note-bg);--sl-color-border-badge:var(--sl-badge-note-border);--sl-color-text-badge:var(--sl-badge-note-text)}.danger:where(.astro-f4zorn72){--sl-color-bg-badge:var(--sl-badge-danger-bg);--sl-color-border-badge:var(--sl-badge-danger-border);--sl-color-text-badge:var(--sl-badge-danger-text)}.success:where(.astro-f4zorn72){--sl-color-bg-badge:var(--sl-badge-success-bg);--sl-color-border-badge:var(--sl-badge-success-border);--sl-color-text-badge:var(--sl-badge-success-text)}.tip:where(.astro-f4zorn72){--sl-color-bg-badge:var(--sl-badge-tip-bg);--sl-color-border-badge:var(--sl-badge-tip-border);--sl-color-text-badge:var(--sl-badge-tip-text)}.caution:where(.astro-f4zorn72){--sl-color-bg-badge:var(--sl-badge-caution-bg);--sl-color-border-badge:var(--sl-badge-caution-border);--sl-color-text-badge:var(--sl-badge-caution-text)}.small:where(.astro-f4zorn72){font-size:var(--sl-text-xs);padding:.125rem .25rem}.medium:where(.astro-f4zorn72){font-size:var(--sl-text-sm);padding:.175rem .35rem}.large:where(.astro-f4zorn72){font-size:var(--sl-text-base);padding:.225rem .45rem}.sl-markdown-content :is(h1,h2,h3,h4,h5,h6) .sl-badge:where(.astro-f4zorn72){vertical-align:middle}.card-grid:where(.astro-7qmvx3iy){grid-template-columns:100%;gap:1rem;display:grid}.card-grid:where(.astro-7qmvx3iy)>*{margin-top:0!important}@media (width>=50rem){.card-grid:where(.astro-7qmvx3iy){grid-template-columns:1fr 1fr;gap:1.5rem}.stagger:where(.astro-7qmvx3iy){--stagger-height:5rem;padding-bottom:var(--stagger-height)}.stagger:where(.astro-7qmvx3iy)>:nth-child(2n){transform:translateY(var(--stagger-height))}}}
+</style><script type="module" src="/_astro/page.Dwipeu-R.js"></script></head><body class="astro-g5ptsecz"><a class="sl-skip-link astro-qb7clj6f" href="#_top">콘텐츠로 이동</a><div class="page sl-flex astro-yntsjkba"><header class="header astro-yntsjkba"><div class="header astro-by6fddyj"><div class="title-wrapper sl-flex astro-by6fddyj"><a href="/" class="site-title sl-flex astro-hen6hmfb" aria-label="나봉 개발 블로그"><svg class="mark astro-hen6hmfb" width="34" height="34" viewBox="0 0 40 40" fill="none" aria-hidden="true"><rect width="40" height="40" rx="9" class="astro-hen6hmfb"></rect><path d="M14 14L20 20L14 26" class="astro-hen6hmfb"></path><line x1="22" y1="26" x2="28" y2="26" class="astro-hen6hmfb"></line></svg><span class="name astro-hen6hmfb" translate="no" aria-hidden="true">nabong<span class="parens astro-hen6hmfb">()</span></span></a></div><div class="sl-flex print:hidden astro-by6fddyj"><site-search class="astro-by6fddyj astro-b5kgnn7o" data-translations="{&quot;placeholder&quot;:&quot;검색&quot;}"><button data-open-modal disabled aria-label="검색" aria-keyshortcuts="Control+K" class="astro-b5kgnn7o"><svg aria-hidden="true" class="astro-b5kgnn7o astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.71 20.29 18 16.61A9 9 0 1 0 16.61 18l3.68 3.68a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.39ZM11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"/></svg><span class="sl-hidden md:sl-block astro-b5kgnn7o" aria-hidden="true">검색</span><kbd class="sl-hidden md:sl-flex astro-b5kgnn7o" style="display: none;"><kbd class="astro-b5kgnn7o">Ctrl</kbd><kbd class="astro-b5kgnn7o">K</kbd></kbd></button><dialog style="padding:0" aria-label="검색" class="astro-b5kgnn7o"><div class="dialog-frame sl-flex astro-b5kgnn7o"><button data-close-modal class="sl-flex md:sl-hidden astro-b5kgnn7o">취소</button><div class="search-container astro-b5kgnn7o"><div id="starlight__search" class="astro-b5kgnn7o"></div></div></div></dialog></site-search><script>
+	(() => {
+		const openBtn = document.querySelector('button[data-open-modal]');
+		const shortcut = openBtn?.querySelector('kbd');
+		if (!openBtn || !(shortcut instanceof HTMLElement)) return;
+		const platformKey = shortcut.querySelector('kbd');
+		if (platformKey && /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform)) {
+			platformKey.textContent = '⌘';
+			openBtn.setAttribute('aria-keyshortcuts', 'Meta+K');
+		}
+		shortcut.style.display = '';
+	})();
+</script><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.DZqJ8Bdf.js"></script></div><div class="sl-hidden md:sl-flex print:hidden right-group astro-by6fddyj"><div class="sl-flex social-icons astro-by6fddyj"><a href="https://github.com/NabongS2" rel="me" class="sl-flex astro-n2mnl6yq"><span class="sr-only astro-n2mnl6yq">GitHub</span><svg aria-hidden="true" class="astro-n2mnl6yq astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a><a href="https://nabongs2.github.io/blog/rss.xml" rel="me" class="sl-flex astro-n2mnl6yq"><span class="sr-only astro-n2mnl6yq">RSS</span><svg aria-hidden="true" class="astro-n2mnl6yq astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M2.88 16.88a3 3 0 0 0 0 4.24 3 3 0 0 0 4.24 0 3 3 0 0 0-4.24-4.24Zm2.83 2.83a1 1 0 0 1-1.42-1.42 1 1 0 0 1 1.42 0 1 1 0 0 1 0 1.42ZM5 12a1 1 0 0 0 0 2 5 5 0 0 1 5 5 1 1 0 0 0 2 0 7 7 0 0 0-7-7Zm0-4a1 1 0 0 0 0 2 9 9 0 0 1 9 9 1 1 0 0 0 2 0 11.08 11.08 0 0 0-3.22-7.78A11.08 11.08 0 0 0 5 8Zm10.61.39A15.11 15.11 0 0 0 5 4a1 1 0 0 0 0 2 13 13 0 0 1 13 13 1 1 0 0 0 2 0 15.11 15.11 0 0 0-4.39-10.61Z"/></svg></a></div><div class="sl-blog-header-links astro-2zgbb2in"><a class="sl-blog-header-link astro-2zgbb2in" href="/blog/">블로그</a></div><starlight-theme-select><label style="--sl-select-width: 6.25em" class="astro-2z5xp7gb"><span class="sr-only astro-2z5xp7gb">테마 선택</span><svg aria-hidden="true" class="icon label-icon astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg><select autocomplete="off" class="astro-2z5xp7gb"><option value="dark" class="astro-2z5xp7gb">어두운 테마</option><option value="light" class="astro-2z5xp7gb">밝은 테마</option><option value="auto" selected class="astro-2z5xp7gb">자동</option></select><svg aria-hidden="true" class="icon caret astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg></label></starlight-theme-select><script>
+	StarlightThemeProvider.updatePickers();
+</script><script type="module">var e=`starlight-theme`,t=e=>e===`auto`||e===`dark`||e===`light`?e:`auto`,n=()=>t(typeof localStorage<`u`&&localStorage.getItem(e));function r(t){typeof localStorage<`u`&&localStorage.setItem(e,t===`light`||t===`dark`?t:``)}var i=()=>matchMedia(`(prefers-color-scheme: light)`).matches?`light`:`dark`;function a(e){StarlightThemeProvider.updatePickers(e),document.documentElement.dataset.theme=e===`auto`?i():e,r(e)}matchMedia(`(prefers-color-scheme: light)`).addEventListener(`change`,()=>{n()===`auto`&&a(`auto`)});var o=class extends HTMLElement{constructor(){super(),a(n()),this.querySelector(`select`)?.addEventListener(`change`,e=>{e.currentTarget instanceof HTMLSelectElement&&a(t(e.currentTarget.value))})}};customElements.define(`starlight-theme-select`,o);</script><starlight-lang-select><label style="--sl-select-width: 7em" class="astro-2z5xp7gb"><span class="sr-only astro-2z5xp7gb">언어 선택</span><svg aria-hidden="true" class="icon label-icon astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path fill-rule="evenodd" d="M8.516 3a.94.94 0 0 0-.941.94v1.15H2.94a.94.94 0 1 0 0 1.882h7.362a7.422 7.422 0 0 1-1.787 3.958 7.42 7.42 0 0 1-1.422-2.425.94.94 0 1 0-1.774.627 9.303 9.303 0 0 0 1.785 3.043 7.422 7.422 0 0 1-4.164 1.278.94.94 0 1 0 0 1.881 9.303 9.303 0 0 0 5.575-1.855 9.303 9.303 0 0 0 4.11 1.74l-.763 1.525a.968.968 0 0 0-.016.034l-1.385 2.77a.94.94 0 1 0 1.683.841l1.133-2.267h5.806l1.134 2.267a.94.94 0 0 0 1.683-.841l-1.385-2.769a.95.95 0 0 0-.018-.036l-3.476-6.951a.94.94 0 0 0-1.682 0l-1.82 3.639a7.423 7.423 0 0 1-3.593-1.256 9.303 9.303 0 0 0 2.27-5.203h1.894a.94.94 0 0 0 0-1.881H9.456V3.94A.94.94 0 0 0 8.516 3Zm6.426 11.794a1.068 1.068 0 0 1-.02.039l-.703 1.407h3.924l-1.962-3.924-1.24 2.478Z" clip-rule="evenodd"/></svg><select autocomplete="off" class="astro-2z5xp7gb"><option value="/blog/redis-basics/" class="astro-2z5xp7gb">한국어</option><option value="/en/blog/redis-basics/" class="astro-2z5xp7gb">English</option></select><svg aria-hidden="true" class="icon caret astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg></label></starlight-lang-select><script type="module">var e=class extends HTMLElement{constructor(){super();let e=this.querySelector(`select`);e&&(e.addEventListener(`change`,e=>{e.currentTarget instanceof HTMLSelectElement&&(window.location.pathname=e.currentTarget.value)}),window.addEventListener(`pageshow`,t=>{if(!t.persisted)return;let n=e.querySelector(`option[selected]`)?.index;n!==e.selectedIndex&&(e.selectedIndex=n??0)}))}};customElements.define(`starlight-lang-select`,e);</script></div></div></header><nav class="sidebar print:hidden astro-yntsjkba" aria-label="메인"><button popovertarget="starlight__sidebar" class="sl-menu-button sl-flex md:sl-hidden print:hidden astro-r2osgdlg"><svg aria-hidden="true" class="open-menu astro-r2osgdlg astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M3 8h18a1 1 0 1 0 0-2H3a1 1 0 0 0 0 2Zm18 8H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Zm0-5H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Z"/></svg><svg aria-hidden="true" class="close-menu astro-r2osgdlg astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="m13.41 12 6.3-6.29a1.004 1.004 0 1 0-1.42-1.42L12 10.59l-6.29-6.3a1.004 1.004 0 0 0-1.42 1.42l6.3 6.29-6.3 6.29a1 1 0 0 0 0 1.42.998.998 0 0 0 1.42 0l6.29-6.3 6.29 6.3a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.42L13.41 12Z"/></svg><span class="sr-only astro-r2osgdlg">메뉴</span></button><script type="module">var e=class extends HTMLElement{constructor(){super();let e=matchMedia(`(min-width: 50em)`),t=()=>{this.popover=e.matches?null:`auto`};t(),e.addEventListener(`change`,()=>t()),this.addEventListener(`toggle`,({newState:e})=>this.trapFocus(e===`open`))}trapFocus(e){document.querySelectorAll(`.main-frame, .sl-skip-link`).forEach(t=>{t.toggleAttribute(`inert`,e)})}};customElements.define(`sl-sidebar-pane`,e);</script><sl-sidebar-pane popover id="starlight__sidebar" class="sidebar-pane astro-yntsjkba"><div class="sidebar-content sl-flex astro-yntsjkba"><sl-sidebar-state-persist data-hash="0d79wok" class="astro-ipdry5cl"><script aria-hidden="true">
+		(() => {
+			try {
+				if (!matchMedia('(min-width: 50em)').matches) return;
+				/** @type {HTMLElement | null} */
+				const target = document.querySelector('sl-sidebar-state-persist');
+				const state = JSON.parse(sessionStorage.getItem('sl-sidebar-state') || '0');
+				if (!target || !state || target.dataset.hash !== state.hash) return;
+				window._starlightScrollRestore = state.scroll;
+				customElements.define(
+					'sl-sidebar-restore',
+					class SidebarRestore extends HTMLElement {
+						connectedCallback() {
+							try {
+								const idx = parseInt(this.dataset.index || '');
+								const details = this.closest('details');
+								if (details && typeof state.open[idx] === 'boolean') details.open = state.open[idx];
+							} catch {}
+						}
+					}
+				);
+			} catch {}
+		})();
+	</script><ul class="top-level astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/blog/" class="large astro-rmhv4bp6"><span class="astro-rmhv4bp6">전체 글</span></a></li><li class="astro-rmhv4bp6"><details open class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">최근 글</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="0"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/blog/https-certificate/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">HTTPS 와 인증서</span></a></li><li class="astro-rmhv4bp6"><a href="/blog/dns-and-domain/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">DNS 와 도메인</span></a></li><li class="astro-rmhv4bp6"><a href="/blog/vpn/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">VPN</span></a></li><li class="astro-rmhv4bp6"><a href="/blog/nat-port-forwarding/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">NAT 와 포트포워딩</span></a></li><li class="astro-rmhv4bp6"><a href="/blog/ip-and-port/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">IP 주소와 포트</span></a></li><li class="astro-rmhv4bp6"><a href="/blog/network-layers/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">네트워크 계층</span></a></li><li class="astro-rmhv4bp6"><a href="/blog/access-refresh-token/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">액세스 토큰과 리프레시 토큰</span></a></li><li class="astro-rmhv4bp6"><a href="/blog/session-token/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">세션과 토큰</span></a></li><li class="astro-rmhv4bp6"><a href="/blog/browser-storage/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">쿠키, localStorage, sessionStorage</span></a></li><li class="astro-rmhv4bp6"><a href="/blog/zustand-react-query/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Zustand 와 React Query</span></a></li></ul></details></li><li class="astro-rmhv4bp6"><details open class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">카테고리</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="1"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><details class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">프론트엔드 (2)</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="2"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/blog/tags/react/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">React (2)</span></a></li><li class="astro-rmhv4bp6"><a href="/blog/tags/상태-관리/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">상태 관리 (1)</span></a></li></ul></details></li><li class="astro-rmhv4bp6"><details class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">데이터 (3)</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="3"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/blog/tags/redis/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Redis (3)</span></a></li></ul></details></li><li class="astro-rmhv4bp6"><details class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">인프라 (6)</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="4"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/blog/tags/docker/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Docker (1)</span></a></li><li class="astro-rmhv4bp6"><a href="/blog/tags/nginx/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Nginx (3)</span></a></li><li class="astro-rmhv4bp6"><a href="/blog/tags/linux/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Linux (2)</span></a></li></ul></details></li><li class="astro-rmhv4bp6"><details class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">CS (13)</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="5"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/blog/tags/웹/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">웹 (6)</span></a></li><li class="astro-rmhv4bp6"><a href="/blog/tags/네트워크/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">네트워크 (6)</span></a></li><li class="astro-rmhv4bp6"><a href="/blog/tags/프로그래밍/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">프로그래밍 (1)</span></a></li></ul></details></li><li class="astro-rmhv4bp6"><details class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">생각 (1)</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="6"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/blog/tags/회고/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">회고 (1)</span></a></li></ul></details></li></ul></details></li><li class="astro-rmhv4bp6"><a href="/blog/rss.xml" class="large astro-rmhv4bp6"><span class="astro-rmhv4bp6">RSS</span></a></li></ul><script aria-hidden="true">
+		(() => {
+			const scroller = document.getElementById('starlight__sidebar');
+			if (!window._starlightScrollRestore || !scroller) return;
+			scroller.scrollTop = window._starlightScrollRestore;
+			delete window._starlightScrollRestore;
+		})();
+	</script></sl-sidebar-state-persist><div class="md:sl-hidden"><div class="mobile-preferences sl-flex astro-p4azlveh"><div class="social-icons astro-p4azlveh"><a href="https://github.com/NabongS2" rel="me" class="sl-flex astro-n2mnl6yq"><span class="sr-only astro-n2mnl6yq">GitHub</span><svg aria-hidden="true" class="astro-n2mnl6yq astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a><a href="https://nabongs2.github.io/blog/rss.xml" rel="me" class="sl-flex astro-n2mnl6yq"><span class="sr-only astro-n2mnl6yq">RSS</span><svg aria-hidden="true" class="astro-n2mnl6yq astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M2.88 16.88a3 3 0 0 0 0 4.24 3 3 0 0 0 4.24 0 3 3 0 0 0-4.24-4.24Zm2.83 2.83a1 1 0 0 1-1.42-1.42 1 1 0 0 1 1.42 0 1 1 0 0 1 0 1.42ZM5 12a1 1 0 0 0 0 2 5 5 0 0 1 5 5 1 1 0 0 0 2 0 7 7 0 0 0-7-7Zm0-4a1 1 0 0 0 0 2 9 9 0 0 1 9 9 1 1 0 0 0 2 0 11.08 11.08 0 0 0-3.22-7.78A11.08 11.08 0 0 0 5 8Zm10.61.39A15.11 15.11 0 0 0 5 4a1 1 0 0 0 0 2 13 13 0 0 1 13 13 1 1 0 0 0 2 0 15.11 15.11 0 0 0-4.39-10.61Z"/></svg></a></div><div class="sl-blog-header-links astro-2zgbb2in"><a class="sl-blog-header-link astro-2zgbb2in" href="/blog/">블로그</a></div><starlight-theme-select><label style="--sl-select-width: 6.25em" class="astro-2z5xp7gb"><span class="sr-only astro-2z5xp7gb">테마 선택</span><svg aria-hidden="true" class="icon label-icon astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg><select autocomplete="off" class="astro-2z5xp7gb"><option value="dark" class="astro-2z5xp7gb">어두운 테마</option><option value="light" class="astro-2z5xp7gb">밝은 테마</option><option value="auto" selected class="astro-2z5xp7gb">자동</option></select><svg aria-hidden="true" class="icon caret astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg></label></starlight-theme-select><script>
+	StarlightThemeProvider.updatePickers();
+</script><starlight-lang-select><label style="--sl-select-width: 7em" class="astro-2z5xp7gb"><span class="sr-only astro-2z5xp7gb">언어 선택</span><svg aria-hidden="true" class="icon label-icon astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path fill-rule="evenodd" d="M8.516 3a.94.94 0 0 0-.941.94v1.15H2.94a.94.94 0 1 0 0 1.882h7.362a7.422 7.422 0 0 1-1.787 3.958 7.42 7.42 0 0 1-1.422-2.425.94.94 0 1 0-1.774.627 9.303 9.303 0 0 0 1.785 3.043 7.422 7.422 0 0 1-4.164 1.278.94.94 0 1 0 0 1.881 9.303 9.303 0 0 0 5.575-1.855 9.303 9.303 0 0 0 4.11 1.74l-.763 1.525a.968.968 0 0 0-.016.034l-1.385 2.77a.94.94 0 1 0 1.683.841l1.133-2.267h5.806l1.134 2.267a.94.94 0 0 0 1.683-.841l-1.385-2.769a.95.95 0 0 0-.018-.036l-3.476-6.951a.94.94 0 0 0-1.682 0l-1.82 3.639a7.423 7.423 0 0 1-3.593-1.256 9.303 9.303 0 0 0 2.27-5.203h1.894a.94.94 0 0 0 0-1.881H9.456V3.94A.94.94 0 0 0 8.516 3Zm6.426 11.794a1.068 1.068 0 0 1-.02.039l-.703 1.407h3.924l-1.962-3.924-1.24 2.478Z" clip-rule="evenodd"/></svg><select autocomplete="off" class="astro-2z5xp7gb"><option value="/blog/redis-basics/" class="astro-2z5xp7gb">한국어</option><option value="/en/blog/redis-basics/" class="astro-2z5xp7gb">English</option></select><svg aria-hidden="true" class="icon caret astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg></label></starlight-lang-select></div></div></div></sl-sidebar-pane></nav><div class="main-frame astro-yntsjkba"><script type="module">var e=document.getElementById(`starlight__sidebar`),t=e?.querySelector(`sl-sidebar-state-persist`),n=`sl-sidebar-state`,r=()=>{let r=[],i=t?.dataset.hash||``;try{let e=sessionStorage.getItem(n),t=JSON.parse(e||`{}`);Array.isArray(t.open)&&t.hash===i&&(r=t.open)}catch{}return{hash:i,open:r,scroll:e?.scrollTop||0}},i=e=>{try{sessionStorage.setItem(n,JSON.stringify(e))}catch{}},a=()=>i(r()),o=(e,t)=>{let n=r();n.open[t]=e,i(n)};t?.addEventListener(`click`,e=>{if(!(e.target instanceof Element))return;let t=e.target.closest(`summary`)?.closest(`details`);if(!t)return;let n=t.querySelector(`sl-sidebar-restore`),r=parseInt(n?.dataset.index||``);isNaN(r)||o(!t.open,r)}),addEventListener(`visibilitychange`,()=>{document.visibilityState===`hidden`&&a()});</script><div class="lg:sl-flex astro-lrzkfocr"><aside class="right-sidebar-container print:hidden astro-lrzkfocr"><div class="right-sidebar astro-lrzkfocr"><div class="lg:sl-hidden astro-qok35upx"><mobile-starlight-toc data-min-h="2" data-max-h="3" class="astro-66cqc7ze"><nav aria-labelledby="starlight__on-this-page--mobile" class="astro-66cqc7ze"><details id="starlight__mobile-toc" class="astro-66cqc7ze"><summary id="starlight__on-this-page--mobile" class="sl-flex astro-66cqc7ze"><span class="toggle sl-flex astro-66cqc7ze">목차<svg aria-hidden="true" class="caret astro-66cqc7ze astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></span><span class="display-current astro-66cqc7ze"></span></summary><div class="dropdown astro-66cqc7ze"><ul class="isMobile astro-jugkfwgx" style="--depth: 0;"><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#_top" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">개요</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#redis-의-특징" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Redis 의 특징</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#관계형-db-와-다른-점" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">관계형 DB 와 다른 점</span></a><ul class="isMobile astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#키-기반-조회" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">키 기반 조회</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#단일-스레드-명령-처리" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">단일 스레드 명령 처리</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#사용-예시" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">사용 예시</span></a><ul class="isMobile astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#원본-데이터-위치" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">원본 데이터 위치</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#json-문자열과-hash-비교" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">JSON 문자열과 Hash 비교</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#redis-cli-접속" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">redis-cli 접속</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#자료구조" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">자료구조</span></a><ul class="isMobile astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#string" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">String</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#hash" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Hash</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#list" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">List</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#set" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Set</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#sorted-set" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Sorted Set</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#만료ttl" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">만료(TTL)</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#spring-연동" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Spring 연동</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#명령어-요약" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">명령어 요약</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#comments" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">댓글</span></a></li></ul></div></details></nav></mobile-starlight-toc><script type="module" src="/_astro/MobileTableOfContents.astro_astro_type_script_index_0_lang.BcSo_yiZ.js"></script></div><div class="right-sidebar-panel sl-hidden lg:sl-block astro-qok35upx"><div class="sl-container astro-qok35upx"><starlight-toc data-min-h="2" data-max-h="3"><nav aria-labelledby="starlight__on-this-page"><h2 id="starlight__on-this-page">목차</h2><ul class="astro-jugkfwgx" style="--depth: 0;"><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#_top" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">개요</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#redis-의-특징" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Redis 의 특징</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#관계형-db-와-다른-점" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">관계형 DB 와 다른 점</span></a><ul class="astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#키-기반-조회" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">키 기반 조회</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#단일-스레드-명령-처리" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">단일 스레드 명령 처리</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#사용-예시" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">사용 예시</span></a><ul class="astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#원본-데이터-위치" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">원본 데이터 위치</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#json-문자열과-hash-비교" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">JSON 문자열과 Hash 비교</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#redis-cli-접속" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">redis-cli 접속</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#자료구조" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">자료구조</span></a><ul class="astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#string" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">String</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#hash" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Hash</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#list" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">List</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#set" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Set</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#sorted-set" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Sorted Set</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#만료ttl" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">만료(TTL)</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#spring-연동" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Spring 연동</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#명령어-요약" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">명령어 요약</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#comments" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">댓글</span></a></li></ul></nav></starlight-toc><script type="module" src="/_astro/TableOfContents.astro_astro_type_script_index_0_lang.Csloo1VZ.js"></script></div></div></div></aside><div class="main-pane astro-lrzkfocr"><main data-pagefind-body class="astro-g5ptsecz" lang="ko" dir="ltr"><div class="content-panel astro-a7po4psb"><div class="sl-container astro-a7po4psb"><a class="back-to-list not-content top astro-vw3nbasd" href="/blog/"><span aria-hidden="true" class="astro-vw3nbasd">←</span>전체 글</a><h1 id="_top" class="astro-bebwqqxs">Redis 개념과 자료구조</h1></div></div><div class="content-panel astro-a7po4psb"><div class="sl-container astro-a7po4psb"><starlight-image-zoom class="astro-uhbei7rv"><template class="astro-uhbei7rv"><dialog class="starlight-image-zoom-dialog astro-uhbei7rv"><button aria-label="Unzoom image" class="starlight-image-zoom-control astro-uhbei7rv"><svg aria-hidden="true" fill="currentColor" viewBox="0 0 24 24" class="astro-uhbei7rv"><use href="#starlight-image-zoom-icon-unzoom" class="astro-uhbei7rv"></use></svg></button><figure class="astro-uhbei7rv"></figure></dialog></template><svg xmlns="http://www.w3.org/2000/svg" style="display:none" class="astro-uhbei7rv"><symbol id="starlight-image-zoom-icon-zoom" viewBox="0 0 24 24" class="astro-uhbei7rv"><path d="M9.79 12.79 4 18.59V17a1 1 0 0 0-2 0v4a1 1 0 0 0 .08.38 1 1 0 0 0 .54.54A1 1 0 0 0 3 22h4a1 1 0 0 0 0-2H5.41l5.8-5.79a1 1 0 0 0-1.42-1.42ZM21.92 2.62a1 1 0 0 0-.54-.54A1 1 0 0 0 21 2h-4a1 1 0 0 0 0 2h1.59l-5.8 5.79a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0L20 5.41V7a1 1 0 0 0 2 0V3a1 1 0 0 0-.08-.38Z" class="astro-uhbei7rv"></path></symbol><symbol id="starlight-image-zoom-icon-unzoom" viewBox="0 0 24 24" class="astro-uhbei7rv"><path d="M21.71 2.29a1 1 0 0 0-1.42 0l-5.79 5.8V6.5a1 1 0 0 0-2 0v4a1 1 0 0 0 .08.38 1 1 0 0 0 .54.54 1 1 0 0 0 .38.08h4a1 1 0 0 0 0-2h-1.59l5.8-5.79a1 1 0 0 0 0-1.42ZM10.88 12.58a1 1 0 0 0-.38-.08h-4a1 1 0 0 0 0 2h1.59l-5.8 5.79a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l5.79-5.8v1.59a1 1 0 0 0 2 0v-4a1 1 0 0 0-.08-.38 1 1 0 0 0-.54-.54Z" class="astro-uhbei7rv"></path></symbol></svg></starlight-image-zoom><script type="module" src="/_astro/ImageZoom.astro_astro_type_script_index_0_lang.CNfBy0nv.js"></script><div class="sl-markdown-content"><figure class="sl-blog-cover astro-uvqvkfg3"><img src="/_astro/cover-basics-dark.C3NhZdSc_Z2dSI0W.webp" alt="Redis 로고와 함께 키에 값을 넣는 SET 명령, 그리고 String, Hash, List, Set, Sorted Set 다섯 가지 자료구조를 보여주는 표지" loading="eager" decoding="async" width="2400" height="1260" class="astro-uvqvkfg3 sl-blog-cover-image light:sl-hidden"><img src="/_astro/cover-basics-light.rE-mS5Yy_21Aq8v.webp" alt="Redis 로고와 함께 키에 값을 넣는 SET 명령, 그리고 String, Hash, List, Set, Sorted Set 다섯 가지 자료구조를 보여주는 표지" loading="eager" decoding="async" width="2400" height="1260" class="astro-uvqvkfg3 sl-blog-cover-image dark:sl-hidden"></figure><div class="sl-blog-metadata not-content astro-zrjirpgi"><div class="sl-blog-metadata-items astro-zrjirpgi"><time class="sl-blog-metadata-date astro-zrjirpgi" datetime="2026-09-23T07:00:00.000Z">2026년 9월 23일</time><span class="sl-blog-metadata-secondary sl-blog-metadata-reading-time astro-zrjirpgi"> · 읽는 데 8분</span></div><div class="sl-blog-metadata-authors astro-zrjirpgi"><a href="https://github.com/NabongS2" class="sl-blog-author astro-c6o6xw4v"><div class="sl-blog-author-details astro-c6o6xw4v"><div class="sl-blog-author-name astro-c6o6xw4v">nabong</div></div></a></div></div><nav class="series astro-x3pxgsip" aria-label="시리즈"><p class="series-heading astro-x3pxgsip"><span class="series-word astro-x3pxgsip">시리즈</span>Redis</p><ol class="series-parts astro-x3pxgsip"><li class="series-part astro-x3pxgsip" aria-current="page"><span class="astro-x3pxgsip">Redis 개념과 자료구조</span></li><li class="series-part astro-x3pxgsip"><a href="/blog/redis-docker/" class="astro-x3pxgsip">Redis 컨테이너 접속과 상태 확인</a></li><li class="series-part astro-x3pxgsip"><a href="/blog/redis-java/" class="astro-x3pxgsip">Spring Data Redis 사용</a></li></ol></nav>
+<p>이 글에서는 Redis 가 무엇이고 관계형 DB 와 무엇이 다른지, 자료구조와 redis-cli 명령을 어떻게 쓰는지 알아봅니다.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="redis-의-특징">Redis 의 특징</h2><a class="sl-anchor-link" href="#redis-의-특징"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “Redis 의 특징”</span></a></div>
+<p>Redis 는 키에 값을 넣고, 키로 꺼내는 저장소입니다. Redis 는 이 데이터를 <strong>디스크가 아니라 메모리에</strong> 둡니다.</p>
+<div class="expressive-code"><link rel="stylesheet" href="/_astro/ec.gzf8s.css"><script type="module" src="/_astro/ec.0vx5m.js"></script><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#cdd6f4;--1:#4c4f69">SET  session:a1b2c3  "user=1000"</span></div></div><div class="ec-line"><div class="code"><span style="--0:#cdd6f4;--1:#4c4f69">GET  session:a1b2c3</span></div></div><div class="ec-line"><div class="code"><span style="--0:#cdd6f4;--1:#4c4f69">→ "user=1000"</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="SET  session:a1b2c3  &quot;user=1000&quot;GET  session:a1b2c3→ &quot;user=1000&quot;"><div></div></button></div></figure></div>
+<p>이름은 <strong>RE</strong>mote <strong>DI</strong>ctionary <strong>S</strong>erver 입니다. 프로그램 안에서 쓰는 <code dir="auto">Map</code> 을 프로세스 밖으로 꺼내 여러 서버가 같이 쓰게 만든 것으로 보면 됩니다. 서버 세 대가 같은 Redis 에 연결하면 세 대가 같은 세션을 공유합니다.</p>
+<p>Redis 의 특징은 대부분 데이터를 디스크가 아니라 메모리에 저장한다는 점에서 나옵니다.</p>
+<table>
+<thead>
+<tr>
+<th>메모리 저장의 성질</th>
+<th>결과</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>디스크를 왕복하지 않는다</td>
+<td>응답 시간이 대부분 1밀리초 미만입니다</td>
+</tr>
+<tr>
+<td>메모리 크기가 한계다</td>
+<td>담을 수 있는 양이 장비 메모리로 제한됩니다</td>
+</tr>
+<tr>
+<td>프로세스가 종료되면 사라진다</td>
+<td>남겨야 하면 디스크에 따로 써 두는 설정이 필요합니다</td>
+</tr>
+</tbody>
+</table>
+<div class="sl-heading-wrapper level-h2"><h2 id="관계형-db-와-다른-점">관계형 DB 와 다른 점</h2><a class="sl-anchor-link" href="#관계형-db-와-다른-점"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “관계형 DB 와 다른 점”</span></a></div>
+<p>관계형 DB 에 익숙한 사람이 다르게 느낄 만한 점을 정리합니다. 먼저 표에 나오는 두 용어를 설명합니다.</p>
+<p><strong>버퍼 풀</strong>은 관계형 DB 가 디스크에서 읽어 온 페이지를 메모리에 올려 두는 영역입니다. 원본은 디스크에 있고, 메모리에는 자주 쓰는 페이지를 임시로 둡니다.</p>
+<p><strong>영속화</strong>는 메모리에 있는 데이터를 디스크에 기록하는 일입니다. 메모리의 데이터는 프로세스가 종료되면 사라지므로, 다시 시작했을 때 복원할 수 있게 파일로 복사해 둡니다. 이 기능을 영속성이라고도 합니다.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>관계형 DB</th>
+<th>Redis</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>저장 방식</td>
+<td>디스크 기반. 메모리는 버퍼 풀로 씀</td>
+<td>인메모리. 디스크는 영속화용</td>
+</tr>
+<tr>
+<td>데이터 모델</td>
+<td>테이블, 열, 타입, 제약</td>
+<td>키-값. 스키마 없음</td>
+</tr>
+<tr>
+<td>조회 방식</td>
+<td>SQL 로 조건을 걸어 탐색</td>
+<td>키로 직접 접근</td>
+</tr>
+<tr>
+<td>조인</td>
+<td>지원</td>
+<td>없음</td>
+</tr>
+<tr>
+<td>트랜잭션</td>
+<td>커밋·롤백, 격리 수준</td>
+<td>원자적 실행은 되지만 롤백 없음</td>
+</tr>
+<tr>
+<td>용량 상한</td>
+<td>디스크 크기</td>
+<td>메모리 크기</td>
+</tr>
+</tbody>
+</table>
+<p>Redis 는 저장 위치가 관계형 DB 와 반대입니다. 원본이 메모리에 있고, 디스크에 있는 데이터는 사본입니다.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="키-기반-조회">키 기반 조회</h3><a class="sl-anchor-link" href="#키-기반-조회"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “키 기반 조회”</span></a></div>
+<p>키 기반 조회는 관계형 DB 와 가장 크게 다른 점입니다. 관계형 DB 에서는 데이터를 넣어 둔 뒤 나중에 조회 조건을 정할 수 있습니다.</p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="sql"><code><div class="ec-line"><div class="code"><span style="--0:#CBA6F7;--1:#7B34D9">SELECT</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#94E2D5;--1:#116B70">*</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#CBA6F7;--1:#7B34D9">FROM</span><span style="--0:#CDD6F4;--1:#4C4F69"> users </span><span style="--0:#CBA6F7;--1:#7B34D9">WHERE</span><span style="--0:#CDD6F4;--1:#4C4F69"> age </span><span style="--0:#94E2D5;--1:#116B70">&gt;</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#FAB387;--1:#A54107">30</span><span style="--0:#CDD6F4;--1:#4C4F69">;</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="SELECT * FROM users WHERE age > 30;"><div></div></button></div></figure></div>
+<p>Redis 에는 이런 조건 조회가 없습니다. 나이로 찾고 싶으면 <strong>그 조건에 해당하는 키 목록을 미리 만들어 두어야</strong> 합니다.</p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#cdd6f4;--1:#4c4f69">SADD  users:age:over30  1000  1001  1002</span></div></div><div class="ec-line"><div class="code"><span style="--0:#cdd6f4;--1:#4c4f69">SMEMBERS users:age:over30</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="SADD  users:age:over30  1000  1001  1002SMEMBERS users:age:over30"><div></div></button></div></figure></div>
+<p>그래서 Redis 는 <strong>무엇을 어떻게 꺼낼지 먼저 정하고 그 모양대로 넣는</strong> 저장소입니다. 관계형 DB 는 순서가 반대라서, 넣어 둔 데이터에 나중에 새 조건을 걸 수 있습니다.</p>
+<p>전체 키를 조회하는 <code dir="auto">KEYS *</code> 명령이 있지만 운영에서는 쓰지 않습니다. 이유는 다음 절에서 설명합니다.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="단일-스레드-명령-처리">단일 스레드 명령 처리</h2><a class="sl-anchor-link" href="#단일-스레드-명령-처리"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “단일 스레드 명령 처리”</span></a></div>
+<p>Redis 는 명령을 한 스레드에서 실행합니다. 들어온 순서대로 하나를 끝내고 다음을 시작합니다. (네트워크 입출력은 여러 스레드로 나눠 처리하지만, 명령 자체는 한 번에 하나입니다.)</p>
+<p>이 구조에는 장점과 주의할 점이 있습니다.</p>
+<ul>
+<li><strong>장점</strong>: 락 경쟁이나 컨텍스트 스위치가 없어서 명령 하나하나가 매우 빠릅니다. 동시에 두 명령이 같은 키를 고치는 일이 없으니 카운터 증가나 락 구현이 단순합니다</li>
+<li><strong>주의할 점</strong>: 오래 걸리는 명령 하나가 실행되는 동안 다른 명령이 모두 기다립니다. 키가 수백만 개인데 <code dir="auto">KEYS *</code> 를 실행하면 그 시간 내내 다른 요청이 모두 대기합니다</li>
+</ul>
+<p>전체 키를 조회해야 할 때는 <code dir="auto">SCAN</code> 을 씁니다. <code dir="auto">SCAN</code> 은 키를 조금씩 나눠 가져오기 때문에 다른 명령이 오래 기다리지 않습니다.</p>
+<p>관계형 DB 는 커넥션마다 병렬로 처리하므로 무거운 쿼리 하나가 다른 요청 처리를 멈추게 하지는 않습니다. 대신 락과 격리 수준을 신경 써야 합니다.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="사용-예시">사용 예시</h2><a class="sl-anchor-link" href="#사용-예시"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “사용 예시”</span></a></div>
+<table>
+<thead>
+<tr>
+<th>쓰임</th>
+<th>무엇을 넣나</th>
+<th>자료구조</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>세션</strong></td>
+<td>로그인 상태</td>
+<td>String, Hash</td>
+</tr>
+<tr>
+<td><strong>진행 중인 상태</strong></td>
+<td>처리 중인 주문, 진행 중인 작업</td>
+<td>Hash</td>
+</tr>
+<tr>
+<td>캐시</td>
+<td>관계형 DB 조회 결과</td>
+<td>String</td>
+</tr>
+<tr>
+<td>카운터</td>
+<td>조회수, 호출 건수</td>
+<td>String + <code dir="auto">INCR</code></td>
+</tr>
+<tr>
+<td>순위표</td>
+<td>점수 상위 N명</td>
+<td>Sorted Set</td>
+</tr>
+<tr>
+<td>분산 락</td>
+<td>한 번만 실행되게</td>
+<td>String + <code dir="auto">SET NX</code></td>
+</tr>
+</tbody>
+</table>
+<p>Redis 를 고르는 이유는 쓰임마다 다릅니다. 아래 여섯 가지 중 <strong>하나만 해당해도</strong> 쓸 이유가 되고, 여러 개가 함께 해당하는 경우도 있습니다.</p>
+<table>
+<thead>
+<tr>
+<th>필요 조건</th>
+<th>쓰임 예</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>디스크를 왕복하면 느리다</td>
+<td>캐시, 진행 중인 상태</td>
+</tr>
+<tr>
+<td>서버 여러 대가 같은 것을 봐야 한다</td>
+<td>세션, 분산 락</td>
+</tr>
+<tr>
+<td>재배포하거나 재시작해도 남아야 한다</td>
+<td>세션, 진행 중인 상태</td>
+</tr>
+<tr>
+<td>시간이 지나면 알아서 사라져야 한다</td>
+<td>세션, 캐시</td>
+</tr>
+<tr>
+<td>여러 곳에서 동시에 고쳐도 어긋나면 안 된다</td>
+<td>카운터, 분산 락</td>
+</tr>
+<tr>
+<td>정렬된 순서를 계속 유지해야 한다</td>
+<td>순위표</td>
+</tr>
+</tbody>
+</table>
+<p>마지막 줄의 정렬 순서 유지는 다음과 같은 차이를 말합니다. 관계형 DB 로 순위를 구하면 조회할 때마다 정렬해야 합니다. Sorted Set 은 값을 넣을 때 정렬된 위치에 저장하므로, 상위 10명이나 특정 사용자의 등수를 바로 조회할 수 있습니다.</p>
+<p>서버 간 공유, 재시작 후 유지, 자동 만료는 속도와 상관없는 조건입니다. 앱 프로세스 안에 <code dir="auto">Map</code> 을 두면 디스크 왕복이 없다는 첫 조건은 만족하지만 이 세 조건은 만족하지 못합니다. 관계형 DB 에 두면 반대로 첫 조건만 만족하지 못합니다.</p>
+<p>반대로 다음과 같은 데이터는 Redis 에 두기에 맞지 않습니다.</p>
+<ul>
+<li><strong>조건을 걸어 찾아야 하는 것</strong>: 키를 모르면 찾을 수 없습니다</li>
+<li><strong>오래 보관해야 하는 것</strong>: 메모리가 디스크보다 비쌉니다</li>
+<li><strong>트랜잭션이 필요한 것</strong>: 롤백이 없습니다</li>
+</ul>
+<div class="sl-heading-wrapper level-h3"><h3 id="원본-데이터-위치">원본 데이터 위치</h3><a class="sl-anchor-link" href="#원본-데이터-위치"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “원본 데이터 위치”</span></a></div>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>예</th>
+<th>Redis 가 종료되면</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>원본이 관계형 DB 에 있다</td>
+<td>캐시, 순위표</td>
+<td>다시 읽어 채웁니다</td>
+</tr>
+<tr>
+<td>Redis 가 원본이다</td>
+<td>세션, 진행 중인 상태</td>
+<td>그때 진행 중이던 것을 잃습니다</td>
+</tr>
+</tbody>
+</table>
+<p>처리 중인 주문을 예로 들면, 결제부터 배송 시작까지 주문의 진행 상태는 Redis 에만 있습니다. 관계형 DB 에는 처리가 끝난 뒤에 이력으로 들어갑니다.</p>
+<p>Redis 에 원본 데이터를 담는다면 <strong>영속성과 메모리 정책을 같이 정해야 합니다.</strong> 메모리 정책(<code dir="auto">maxmemory-policy</code>)은 메모리 한도에 닿았을 때 어떤 키를 지울지 정하는 설정입니다. 캐시로만 쓸 때는 데이터를 관계형 DB 에서 다시 읽어 채울 수 있으므로 영속성 설정이 필요하지 않습니다.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="json-문자열과-hash-비교">JSON 문자열과 Hash 비교</h2><a class="sl-anchor-link" href="#json-문자열과-hash-비교"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “JSON 문자열과 Hash 비교”</span></a></div>
+<p>객체를 Redis 에 넣는 방법은 두 가지입니다.</p>
+<p>첫째는 JSON 문자열 하나로 넣는 방법입니다.</p>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">SET</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">order:a1b2c3</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">'{"status":"PAID","qty":1}'</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="SET order:a1b2c3 &#x27;{&quot;status&quot;:&quot;PAID&quot;,&quot;qty&quot;:1}&#x27;"><div></div></button></div></figure></div>
+<p>둘째는 Hash 로 넣는 방법입니다.</p>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">HSET</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">order:a1b2c3</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">status</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">PAID</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">qty</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#FAB387;--1:#A54107">1</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="HSET order:a1b2c3 status PAID qty 1"><div></div></button></div></figure></div>
+<p>전체를 읽을 때는 차이가 거의 없습니다. 차이는 <strong>일부만 바꿀 때</strong> 생깁니다.</p>
+<p>주문 상태를 <code dir="auto">PAID</code> 에서 <code dir="auto">SHIPPED</code> 로 바꾼다고 하겠습니다. JSON 문자열로 넣었다면 세 단계가 필요합니다.</p>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">GET</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">order:a1b2c3</span><span style="--0:#CDD6F4;--1:#4C4F69">               </span><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># 객체 전체를 받아온다</span></div></div><div class="ec-line"><div class="code"><span class="indent">                               </span><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># 앱에서 파싱해 status 만 바꾼다</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">SET</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">order:a1b2c3</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">'{...}'</span><span style="--0:#CDD6F4;--1:#4C4F69">       </span><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># 객체 전체를 다시 보낸다</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="GET order:a1b2c3               # 객체 전체를 받아온다SET order:a1b2c3 &#x27;{...}&#x27;       # 객체 전체를 다시 보낸다"><div></div></button></div></figure></div>
+<p>Hash 로 넣었다면 명령 하나로 바꿀 수 있습니다.</p>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">HSET</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">order:a1b2c3</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">status</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">SHIPPED</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="HSET order:a1b2c3 status SHIPPED"><div></div></button></div></figure></div>
+<p>두 방법은 다음 두 가지에서 달라집니다.</p>
+<p><strong>주고받는 양.</strong> JSON 문자열은 필드 하나를 바꾸려고 객체 전체를 두 번 전송합니다. 필드가 서른 개면 서른 개를 받아서 서른 개를 보냅니다.</p>
+<p><strong>동시 변경.</strong> 두 가지 중 이 차이가 더 중요합니다.</p>
+<!--
+	starlight-image-zoom 은 마크다운의 img 와 Image 만 감싼다. 이 컴포넌트는
+	그 목록에 없어서 그냥 지나치므로, 확대 기능이 필요한 래퍼를 직접 두른다.
+	버튼은 키보드로도 열 수 있게 두는 플러그인 규약이고, 평소에는 화면에
+	보이지 않는다.
+--><starlight-image-zoom-zoomable><img src="/_astro/concurrent-update-light.BfVs7fp8_Z1SQ1Cx.webp" alt="두 서버가 같은 값을 동시에 고칠 때 JSON 문자열은 한쪽 변경이 덮어써지고 Hash 는 둘 다 남는다는 비교" loading="lazy" decoding="async" width="1800" height="1080" class="dark:sl-hidden"><button type="button" aria-label="두 서버가 같은 값을 동시에 고칠 때 JSON 문자열은 한쪽 변경이 덮어써지고 Hash 는 둘 다 남는다는 비교 확대"><svg aria-hidden="true" fill="currentColor" viewBox="0 0 24 24" width="24" height="24"><use href="#starlight-image-zoom-icon-zoom"></use></svg></button></starlight-image-zoom-zoomable><starlight-image-zoom-zoomable><img src="/_astro/concurrent-update-dark.1PWDhJmz_1ewCnu.webp" alt="두 서버가 같은 값을 동시에 고칠 때 JSON 문자열은 한쪽 변경이 덮어써지고 Hash 는 둘 다 남는다는 비교" loading="lazy" decoding="async" width="1800" height="1080" class="light:sl-hidden"><button type="button" aria-label="두 서버가 같은 값을 동시에 고칠 때 JSON 문자열은 한쪽 변경이 덮어써지고 Hash 는 둘 다 남는다는 비교 확대"><svg aria-hidden="true" fill="currentColor" viewBox="0 0 24 24" width="24" height="24"><use href="#starlight-image-zoom-icon-zoom"></use></svg></button></starlight-image-zoom-zoomable>
+<p>JSON 문자열을 쓰면 서버 B 는 자기가 읽은 옛 값을 기준으로 전체를 덮어썼습니다. B 는 <code dir="auto">status</code> 를 고치지 않았는데도 A 가 바꾼 <code dir="auto">SHIPPED</code> 가 사라집니다.</p>
+<p><code dir="auto">HSET</code> 은 지정한 필드만 바꿉니다. 읽어 오는 단계가 없으니 덮어쓸 옛 값도 없습니다.</p>
+<p><strong>정리하면 다음과 같습니다.</strong></p>
+<table>
+<thead>
+<tr>
+<th>사용 방식</th>
+<th>넣는 방법</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>항상 전체를 읽고 전체를 쓴다</td>
+<td>JSON 문자열이 단순합니다</td>
+</tr>
+<tr>
+<td>필드를 따로 고친다</td>
+<td>Hash</td>
+</tr>
+<tr>
+<td>여러 서버가 같은 객체를 고친다</td>
+<td>Hash</td>
+</tr>
+</tbody>
+</table>
+<p>목록에도 같은 차이가 있습니다. JSON 배열을 String 에 넣으면 하나를 더할 때마다 전체를 주고받아야 하고, List 를 쓰면 <code dir="auto">RPUSH</code> 한 번으로 추가할 수 있습니다.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="redis-cli-접속">redis-cli 접속</h2><a class="sl-anchor-link" href="#redis-cli-접속"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “redis-cli 접속”</span></a></div>
+<p>아래 명령은 <code dir="auto">redis-cli</code> 프롬프트에서 입력합니다. Redis 를 컨테이너로 실행했다면 다음 명령으로 접속합니다.</p>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">docker</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">exec</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-it</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">myapp-redis</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">redis-cli</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="docker exec -it myapp-redis redis-cli"><div></div></button></div></figure></div>
+<p>접속하면 프롬프트가 <code dir="auto">127.0.0.1:6379&gt;</code> 로 바뀝니다. <code dir="auto">exit</code> 로 나옵니다. 지금 상태를 확인하는 명령과 GUI 로 연결하는 방법은 <a href="/blog/redis-docker/">Redis 컨테이너 접속과 상태 확인</a>에 있습니다.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="자료구조">자료구조</h2><a class="sl-anchor-link" href="#자료구조"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “자료구조”</span></a></div>
+<table>
+<thead>
+<tr>
+<th>자료구조</th>
+<th>무엇인가</th>
+<th>쓰는 자리</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>String</strong></td>
+<td>키 하나에 값 하나</td>
+<td>세션, 캐시, 카운터</td>
+</tr>
+<tr>
+<td><strong>Hash</strong></td>
+<td>필드와 값의 묶음. 객체 하나</td>
+<td>객체를 필드별로 읽고 고칠 때</td>
+</tr>
+<tr>
+<td><strong>List</strong></td>
+<td>순서가 있는 목록. 양쪽 끝에서 넣고 뺀다</td>
+<td>최근 목록, 간단한 큐</td>
+</tr>
+<tr>
+<td><strong>Set</strong></td>
+<td>중복 없는 모음. 순서 없음</td>
+<td>중복 제거, 교집합</td>
+</tr>
+<tr>
+<td><strong>Sorted Set</strong></td>
+<td>점수로 정렬된 모음</td>
+<td>순위표, 시간순 목록</td>
+</tr>
+</tbody>
+</table>
+<!--
+	starlight-image-zoom 은 마크다운의 img 와 Image 만 감싼다. 이 컴포넌트는
+	그 목록에 없어서 그냥 지나치므로, 확대 기능이 필요한 래퍼를 직접 두른다.
+	버튼은 키보드로도 열 수 있게 두는 플러그인 규약이고, 평소에는 화면에
+	보이지 않는다.
+--><starlight-image-zoom-zoomable><img src="/_astro/data-types-light.BYei3nsU_25L2I.webp" alt="String, Hash, List, Set, Sorted Set 다섯 자료구조가 각각 값을 어떤 모양으로 담는지 비교" loading="lazy" decoding="async" width="1800" height="1200" class="dark:sl-hidden"><button type="button" aria-label="String, Hash, List, Set, Sorted Set 다섯 자료구조가 각각 값을 어떤 모양으로 담는지 비교 확대"><svg aria-hidden="true" fill="currentColor" viewBox="0 0 24 24" width="24" height="24"><use href="#starlight-image-zoom-icon-zoom"></use></svg></button></starlight-image-zoom-zoomable><starlight-image-zoom-zoomable><img src="/_astro/data-types-dark.CfYXpDUl_7cTep.webp" alt="String, Hash, List, Set, Sorted Set 다섯 자료구조가 각각 값을 어떤 모양으로 담는지 비교" loading="lazy" decoding="async" width="1800" height="1200" class="light:sl-hidden"><button type="button" aria-label="String, Hash, List, Set, Sorted Set 다섯 자료구조가 각각 값을 어떤 모양으로 담는지 비교 확대"><svg aria-hidden="true" fill="currentColor" viewBox="0 0 24 24" width="24" height="24"><use href="#starlight-image-zoom-icon-zoom"></use></svg></button></starlight-image-zoom-zoomable>
+<div class="sl-heading-wrapper level-h3"><h3 id="string">String</h3><a class="sl-anchor-link" href="#string"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “String”</span></a></div>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">SET</span><span style="--0:#CDD6F4;--1:#4C4F69">    </span><span style="--0:#A6E3A1;--1:#2C6E1E">session:a1b2c3</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">"user=1000"</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">GET</span><span style="--0:#CDD6F4;--1:#4C4F69">    </span><span style="--0:#A6E3A1;--1:#2C6E1E">session:a1b2c3</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">SET</span><span style="--0:#CDD6F4;--1:#4C4F69">    </span><span style="--0:#A6E3A1;--1:#2C6E1E">session:a1b2c3</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">"user=1000"</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">EX</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#FAB387;--1:#A54107">1800</span><span style="--0:#CDD6F4;--1:#4C4F69">   </span><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># 30분 뒤 만료</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">INCR</span><span style="--0:#CDD6F4;--1:#4C4F69">   </span><span style="--0:#A6E3A1;--1:#2C6E1E">visits:2026-09-22</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">INCRBY</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">visits:2026-09-22</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#FAB387;--1:#A54107">5</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">DEL</span><span style="--0:#CDD6F4;--1:#4C4F69">    </span><span style="--0:#A6E3A1;--1:#2C6E1E">session:a1b2c3</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="SET    session:a1b2c3  &quot;user=1000&quot;GET    session:a1b2c3SET    session:a1b2c3  &quot;user=1000&quot;  EX 1800   # 30분 뒤 만료INCR   visits:2026-09-22INCRBY visits:2026-09-22  5DEL    session:a1b2c3"><div></div></button></div></figure></div>
+<p><code dir="auto">INCR</code> 은 값을 읽어 더해서 다시 쓰는 것이 아니라 Redis 안에서 한 번에 처리됩니다. 그래서 여러 서버가 같은 카운터를 올려도 값이 어긋나지 않습니다.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="hash">Hash</h3><a class="sl-anchor-link" href="#hash"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “Hash”</span></a></div>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">HSET</span><span style="--0:#CDD6F4;--1:#4C4F69">    </span><span style="--0:#A6E3A1;--1:#2C6E1E">user:1000</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">name</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">"나봉"</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">age</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#FAB387;--1:#A54107">30</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">HGET</span><span style="--0:#CDD6F4;--1:#4C4F69">    </span><span style="--0:#A6E3A1;--1:#2C6E1E">user:1000</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">name</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">HGETALL</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">user:1000</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">HINCRBY</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">user:1000</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">age</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#FAB387;--1:#A54107">1</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">HDEL</span><span style="--0:#CDD6F4;--1:#4C4F69">    </span><span style="--0:#A6E3A1;--1:#2C6E1E">user:1000</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">age</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">HKEYS</span><span style="--0:#CDD6F4;--1:#4C4F69">   </span><span style="--0:#A6E3A1;--1:#2C6E1E">user:1000</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="HSET    user:1000  name &quot;나봉&quot;  age 30HGET    user:1000  nameHGETALL user:1000HINCRBY user:1000  age  1HDEL    user:1000  ageHKEYS   user:1000"><div></div></button></div></figure></div>
+<p><code dir="auto">HashOperations</code> 처럼 이 명령에 대응하는 Java 코드는 <a href="/blog/redis-java/">3편</a>에서 다룹니다.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="list">List</h3><a class="sl-anchor-link" href="#list"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “List”</span></a></div>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">RPUSH</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">recent:1000</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">"item-a"</span><span style="--0:#CDD6F4;--1:#4C4F69">      </span><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># 오른쪽에 넣기</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">LPUSH</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">recent:1000</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">"item-b"</span><span style="--0:#CDD6F4;--1:#4C4F69">      </span><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># 왼쪽에 넣기</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">LRANGE</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">recent:1000</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#FAB387;--1:#A54107">0</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#FAB387;--1:#A54107">9</span><span style="--0:#CDD6F4;--1:#4C4F69">          </span><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># 0번부터 9번까지</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">LPOP</span><span style="--0:#CDD6F4;--1:#4C4F69">   </span><span style="--0:#A6E3A1;--1:#2C6E1E">recent:1000</span><span style="--0:#CDD6F4;--1:#4C4F69">                </span><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># 왼쪽에서 하나 빼기</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">LLEN</span><span style="--0:#CDD6F4;--1:#4C4F69">   </span><span style="--0:#A6E3A1;--1:#2C6E1E">recent:1000</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">LTRIM</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">recent:1000</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#FAB387;--1:#A54107">0</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#FAB387;--1:#A54107">9</span><span style="--0:#CDD6F4;--1:#4C4F69">          </span><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># 앞 10개만 남기고 자르기</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="RPUSH  recent:1000  &quot;item-a&quot;      # 오른쪽에 넣기LPUSH  recent:1000  &quot;item-b&quot;      # 왼쪽에 넣기LRANGE recent:1000  0  9          # 0번부터 9번까지LPOP   recent:1000                # 왼쪽에서 하나 빼기LLEN   recent:1000LTRIM  recent:1000  0  9          # 앞 10개만 남기고 자르기"><div></div></button></div></figure></div>
+<p><code dir="auto">LPUSH</code> 로 넣고 <code dir="auto">LTRIM 0 9</code> 로 자르면 최근 10개만 유지되는 목록이 됩니다. 넣을 때마다 자르는 것이 관례입니다.</p>
+<p>한쪽에서 <code dir="auto">RPUSH</code>, 다른 쪽에서 <code dir="auto">LPOP</code> 하면 큐가 됩니다. 다만 재시도나 실패 처리가 필요하면 메시지 큐를 사용할 수 있습니다. RabbitMQ, Kafka, Redis Streams 등이 있습니다. List 로 만든 큐는 꺼낸 메시지를 처리하던 프로세스가 종료되면 그 메시지가 사라집니다.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="set">Set</h3><a class="sl-anchor-link" href="#set"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “Set”</span></a></div>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">SADD</span><span style="--0:#CDD6F4;--1:#4C4F69">      </span><span style="--0:#A6E3A1;--1:#2C6E1E">tags:post:1</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">"redis"</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">"java"</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">SMEMBERS</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">tags:post:1</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">SISMEMBER</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">tags:post:1</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">"redis"</span><span style="--0:#CDD6F4;--1:#4C4F69">     </span><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># 있으면 1, 없으면 0</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">SREM</span><span style="--0:#CDD6F4;--1:#4C4F69">      </span><span style="--0:#A6E3A1;--1:#2C6E1E">tags:post:1</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">"java"</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">SCARD</span><span style="--0:#CDD6F4;--1:#4C4F69">     </span><span style="--0:#A6E3A1;--1:#2C6E1E">tags:post:1</span><span style="--0:#CDD6F4;--1:#4C4F69">              </span><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># 개수</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">SINTER</span><span style="--0:#CDD6F4;--1:#4C4F69">    </span><span style="--0:#A6E3A1;--1:#2C6E1E">tags:post:1</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">tags:post:2</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># 교집합</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="SADD      tags:post:1  &quot;redis&quot;  &quot;java&quot;SMEMBERS  tags:post:1SISMEMBER tags:post:1  &quot;redis&quot;     # 있으면 1, 없으면 0SREM      tags:post:1  &quot;java&quot;SCARD     tags:post:1              # 개수SINTER    tags:post:1  tags:post:2 # 교집합"><div></div></button></div></figure></div>
+<p><code dir="auto">SISMEMBER</code> 는 원소가 10개든 100만 개든 <strong>걸리는 시간이 거의 같습니다.</strong> Set 은 내부에서 해시로 값을 바로 찾기 때문에, 원소를 처음부터 하나씩 비교하지 않습니다. <code dir="auto">SMEMBERS</code> 로 전부 받아와 앱에서 찾으면, 원소가 많을수록 받아오는 데만 오래 걸립니다.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="sorted-set">Sorted Set</h3><a class="sl-anchor-link" href="#sorted-set"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “Sorted Set”</span></a></div>
+<p>Sorted Set 은 값마다 점수를 함께 저장하고, 점수 순으로 정렬해 둡니다.</p>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">ZADD</span><span style="--0:#CDD6F4;--1:#4C4F69">       </span><span style="--0:#A6E3A1;--1:#2C6E1E">rank:2026-09</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#FAB387;--1:#A54107">120</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">"user:1000"</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">ZINCRBY</span><span style="--0:#CDD6F4;--1:#4C4F69">    </span><span style="--0:#A6E3A1;--1:#2C6E1E">rank:2026-09</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#FAB387;--1:#A54107">10</span><span style="--0:#CDD6F4;--1:#4C4F69">   </span><span style="--0:#A6E3A1;--1:#2C6E1E">"user:1000"</span><span style="--0:#CDD6F4;--1:#4C4F69">    </span><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># 점수 올리기</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">ZREVRANGE</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">rank:2026-09</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#FAB387;--1:#A54107">0</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#FAB387;--1:#A54107">9</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">WITHSCORES</span><span style="--0:#CDD6F4;--1:#4C4F69">    </span><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># 높은 점수부터 10명</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">ZREVRANK</span><span style="--0:#CDD6F4;--1:#4C4F69">   </span><span style="--0:#A6E3A1;--1:#2C6E1E">rank:2026-09</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">"user:1000"</span><span style="--0:#CDD6F4;--1:#4C4F69">         </span><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># 몇 등인가</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">ZSCORE</span><span style="--0:#CDD6F4;--1:#4C4F69">     </span><span style="--0:#A6E3A1;--1:#2C6E1E">rank:2026-09</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">"user:1000"</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">ZCARD</span><span style="--0:#CDD6F4;--1:#4C4F69">      </span><span style="--0:#A6E3A1;--1:#2C6E1E">rank:2026-09</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="ZADD       rank:2026-09  120  &quot;user:1000&quot;ZINCRBY    rank:2026-09  10   &quot;user:1000&quot;    # 점수 올리기ZREVRANGE  rank:2026-09  0  9  WITHSCORES    # 높은 점수부터 10명ZREVRANK   rank:2026-09  &quot;user:1000&quot;         # 몇 등인가ZSCORE     rank:2026-09  &quot;user:1000&quot;ZCARD      rank:2026-09"><div></div></button></div></figure></div>
+<p>점수 자리에 시각을 숫자로 넣으면 시간순 목록이 됩니다. <code dir="auto">ZRANGEBYSCORE</code> 로 기간을 잘라 가져올 수 있습니다.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="만료ttl">만료(TTL)</h2><a class="sl-anchor-link" href="#만료ttl"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “만료(TTL)”</span></a></div>
+<p>키에 수명을 지정하면 시간이 지났을 때 <strong>Redis 가 자동으로 지웁니다.</strong> 이 수명을 <strong>TTL</strong>, <strong>T</strong>ime <strong>T</strong>o <strong>L</strong>ive 라고 합니다.</p>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">EXPIRE</span><span style="--0:#CDD6F4;--1:#4C4F69">   </span><span style="--0:#A6E3A1;--1:#2C6E1E">session:a1b2c3</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#FAB387;--1:#A54107">1800</span><span style="--0:#CDD6F4;--1:#4C4F69">    </span><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># 30분 뒤에 사라지게</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">TTL</span><span style="--0:#CDD6F4;--1:#4C4F69">      </span><span style="--0:#A6E3A1;--1:#2C6E1E">session:a1b2c3</span><span style="--0:#CDD6F4;--1:#4C4F69">          </span><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># 남은 시간(초) 확인</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">PERSIST</span><span style="--0:#CDD6F4;--1:#4C4F69">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">session:a1b2c3</span><span style="--0:#CDD6F4;--1:#4C4F69">          </span><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># 만료 해제</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="EXPIRE   session:a1b2c3  1800    # 30분 뒤에 사라지게TTL      session:a1b2c3          # 남은 시간(초) 확인PERSIST  session:a1b2c3          # 만료 해제"><div></div></button></div></figure></div>
+<p><code dir="auto">TTL</code> 명령은 다음 세 가지 중 하나를 반환합니다.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>양수</td>
+<td>남은 초</td>
+</tr>
+<tr>
+<td><code dir="auto">-1</code></td>
+<td>만료가 없음. 영원히 남습니다</td>
+</tr>
+<tr>
+<td><code dir="auto">-2</code></td>
+<td>키가 없음. 이미 사라졌거나 처음부터 없었습니다</td>
+</tr>
+</tbody>
+</table>
+<p>관계형 DB 에는 키 만료 기능이 없습니다. 만료 시각 컬럼을 두고 배치로 지우거나, 조회할 때마다 시각을 비교해야 합니다. 앞의 「사용 예시」에서 “시간이 지나면 알아서 사라져야 한다”를 Redis 를 고르는 이유로 든 것도 이 때문입니다.</p>
+<p>값을 넣을 때 만료도 같이 지정하는 편이 안전합니다. <code dir="auto">SET</code> 하고 <code dir="auto">EXPIRE</code> 를 따로 실행하면 그 사이에 프로세스가 종료되었을 때 만료 없는 키가 남습니다.</p>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">SET</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">session:a1b2c3</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">"user=1000"</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">EX</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#FAB387;--1:#A54107">1800</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="SET session:a1b2c3 &quot;user=1000&quot; EX 1800"><div></div></button></div></figure></div>
+<p><code dir="auto">TTL</code> 이 <code dir="auto">-1</code> 로 나오는 키가 쌓이는 것이 메모리가 계속 차는 흔한 원인입니다.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="spring-연동">Spring 연동</h2><a class="sl-anchor-link" href="#spring-연동"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “Spring 연동”</span></a></div>
+<p>Spring 에서 연결하는 방법은 <a href="/blog/redis-java/">따로 정리했습니다</a>. 여기 나온 명령이 <code dir="auto">StringRedisTemplate</code> 에서 각각 무엇에 대응하는지도 거기 있습니다.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="명령어-요약">명령어 요약</h2><a class="sl-anchor-link" href="#명령어-요약"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>섹션 제목: “명령어 요약”</span></a></div>
+<table>
+<thead>
+<tr>
+<th>작업</th>
+<th>명령</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>값 넣기</td>
+<td><code dir="auto">SET k v</code></td>
+</tr>
+<tr>
+<td>만료까지 같이</td>
+<td><code dir="auto">SET k v EX 1800</code></td>
+</tr>
+<tr>
+<td>값 꺼내기</td>
+<td><code dir="auto">GET k</code></td>
+</tr>
+<tr>
+<td>숫자 올리기</td>
+<td><code dir="auto">INCR k</code></td>
+</tr>
+<tr>
+<td>객체 필드 넣기</td>
+<td><code dir="auto">HSET k f v</code></td>
+</tr>
+<tr>
+<td>객체 전체 꺼내기</td>
+<td><code dir="auto">HGETALL k</code></td>
+</tr>
+<tr>
+<td>목록에 넣기</td>
+<td><code dir="auto">RPUSH k v</code></td>
+</tr>
+<tr>
+<td>목록 잘라 보기</td>
+<td><code dir="auto">LRANGE k 0 9</code></td>
+</tr>
+<tr>
+<td>목록 길이 제한</td>
+<td><code dir="auto">LTRIM k 0 9</code></td>
+</tr>
+<tr>
+<td>Set 에 추가</td>
+<td><code dir="auto">SADD k v</code></td>
+</tr>
+<tr>
+<td>포함 여부 확인</td>
+<td><code dir="auto">SISMEMBER k v</code></td>
+</tr>
+<tr>
+<td>점수와 함께 넣기</td>
+<td><code dir="auto">ZADD k 120 v</code></td>
+</tr>
+<tr>
+<td>상위 10개</td>
+<td><code dir="auto">ZREVRANGE k 0 9</code></td>
+</tr>
+<tr>
+<td>만료 지정</td>
+<td><code dir="auto">EXPIRE k 1800</code></td>
+</tr>
+<tr>
+<td>남은 시간</td>
+<td><code dir="auto">TTL k</code></td>
+</tr>
+<tr>
+<td>지우기</td>
+<td><code dir="auto">DEL k</code></td>
+</tr>
+<tr>
+<td>자료구조 확인</td>
+<td><code dir="auto">TYPE k</code></td>
+</tr>
+</tbody>
+</table><nav class="series-pager not-content astro-3exwosfk" aria-label="시리즈 Redis"><p class="series-pager-heading astro-3exwosfk"><span class="series-word astro-3exwosfk">시리즈</span>Redis · 1/3</p><div class="series-pager-links astro-3exwosfk"><span class="astro-3exwosfk"></span><a class="series-pager-link series-pager-next astro-3exwosfk" href="/blog/redis-docker/" rel="next"><span class="series-pager-dir astro-3exwosfk">다음 편 →</span><span class="series-pager-title astro-3exwosfk">Redis 컨테이너 접속과 상태 확인</span></a></div></nav><div class="sl-blog-post-footer astro-gx5dlkfr"><div class="sl-blog-tags astro-xesoswnh"><b class="sl-blog-tags-label astro-xesoswnh">태그:</b><ul class="sl-blog-tags-list astro-xesoswnh"><li class="astro-xesoswnh"><a class="sl-blog-tag astro-xesoswnh" href="/blog/tags/데이터/">데이터</a></li><li class="astro-xesoswnh"><a class="sl-blog-tag astro-xesoswnh" href="/blog/tags/redis/">Redis</a></li></ul></div><div class="sl-blog-pagination astro-nhmjxwsg" data-pagefind-ignore><div class="card-grid astro-7qmvx3iy"><div class="sl-link-card astro-zaaezwya"><span class="sl-flex stack astro-zaaezwya"><a href="/blog/docker-basics/" rel="prev" class="astro-nhmjxwsg astro-zaaezwya"><span class="title astro-zaaezwya">Docker 개념과 Dockerfile</span></a></span><svg aria-hidden="true" class="icon rtl:flip astro-zaaezwya astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.333em;"><path d="M17.92 11.62a1.001 1.001 0 0 0-.21-.33l-5-5a1.003 1.003 0 1 0-1.42 1.42l3.3 3.29H7a1 1 0 0 0 0 2h7.59l-3.3 3.29a1.002 1.002 0 0 0 .325 1.639 1 1 0 0 0 1.095-.219l5-5a1 1 0 0 0 .21-.33 1 1 0 0 0 0-.76Z"/></svg></div><div class="sl-link-card astro-zaaezwya"><span class="sl-flex stack astro-zaaezwya"><a href="/blog/redis-docker/" rel="next" class="astro-nhmjxwsg astro-zaaezwya"><span class="title astro-zaaezwya">Redis 컨테이너 접속과 상태 확인</span></a></span><svg aria-hidden="true" class="icon rtl:flip astro-zaaezwya astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.333em;"><path d="M17.92 11.62a1.001 1.001 0 0 0-.21-.33l-5-5a1.003 1.003 0 1 0-1.42 1.42l3.3 3.29H7a1 1 0 0 0 0 2h7.59l-3.3 3.29a1.002 1.002 0 0 0 .325 1.639 1 1 0 0 0 1.095-.219l5-5a1 1 0 0 0 .21-.33 1 1 0 0 0 0-.76Z"/></svg></div></div></div></div></div><a class="back-to-list not-content bottom astro-vw3nbasd" href="/blog/"><span aria-hidden="true" class="astro-vw3nbasd">←</span>전체 글</a><footer class="sl-flex astro-ddtxxk7k"><div class="meta sl-flex astro-ddtxxk7k"><p>마지막 업데이트: <time datetime="2026-11-13T00:50:53.000Z">2026. 11. 13.</time></p></div><div class="pagination-links print:hidden astro-b5raizh3" dir="ltr"></div></footer><section class="comments astro-nuen6n26" id="comments"><script>(function(){const attrs = {"data-repo":"NabongS2/NabongS2.github.io","data-repo-id":"R_kgDOU0DWKg","data-category":"Announcements","data-category-id":"DIC_kwDOU0DWKs4DISNZ","data-mapping":"pathname","data-strict":"1","data-reactions-enabled":"1","data-emit-metadata":"0","data-input-position":"top","data-loading":"lazy","data-lang":"ko"};
+
+				(() => {
+					/* Starlight always resolves its theme to one of these two on the
+					   root element, including when the reader has it on 자동. */
+					const theme = () =>
+						document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+
+					const script = document.createElement('script');
+					script.src = 'https://giscus.app/client.js';
+					script.crossOrigin = 'anonymous';
+					script.async = true;
+					for (const [name, value] of Object.entries(attrs)) script.setAttribute(name, value);
+					script.setAttribute('data-theme', theme());
+					document.currentScript.parentElement.append(script);
+
+					/* The iframe keeps its own copy of the theme, so a reader who
+					   flips the switch mid-page has to be told. */
+					let wanted = theme();
+					let loaded = false;
+
+					const send = () => {
+						if (!loaded) return;
+						const frame = document.querySelector('iframe.giscus-frame');
+						frame?.contentWindow?.postMessage(
+							{ giscus: { setConfig: { theme: wanted } } },
+							'https://giscus.app',
+						);
+					};
+
+					/* Until giscus.app has actually loaded, the frame is still on our
+					   own origin and the browser drops a message addressed to theirs.
+					   Their first message back is the signal that it's there — and it
+					   also catches a reader who flipped the theme while it loaded. */
+					addEventListener('message', (event) => {
+						if (loaded || event.origin !== 'https://giscus.app') return;
+						loaded = true;
+						send();
+					});
+
+					new MutationObserver(() => {
+						wanted = theme();
+						send();
+					}).observe(document.documentElement, {
+						attributes: true,
+						attributeFilter: ['data-theme'],
+					});
+				})();
+			})();</script></section><div class="scroll-buttons astro-nfluvhd2" data-scroll-buttons><button type="button" data-to="top" aria-label="맨 위로" title="맨 위로" hidden class="astro-nfluvhd2"><svg viewBox="0 0 24 24" aria-hidden="true" class="astro-nfluvhd2"><path d="M12 5l-7 7m7-7l7 7M12 5v14" class="astro-nfluvhd2"></path></svg></button><button type="button" data-to="bottom" aria-label="맨 아래로" title="맨 아래로" hidden class="astro-nfluvhd2"><svg viewBox="0 0 24 24" aria-hidden="true" class="astro-nfluvhd2"><path d="M12 19l-7-7m7 7l7-7M12 19V5" class="astro-nfluvhd2"></path></svg></button></div><script type="module">var e=document.querySelector(`[data-scroll-buttons]`),t=e?.querySelector(`[data-to="top"]`),n=e?.querySelector(`[data-to="bottom"]`);if(e&&t&&n){document.body.append(e);let r=matchMedia(`(prefers-reduced-motion: reduce)`).matches?`auto`:`smooth`,i=()=>window.innerHeight,a=()=>{let e=window.scrollY,r=document.documentElement.scrollHeight-window.innerHeight,a=r>i()*1.5;t.hidden=!a||e<i(),n.hidden=!a||e>r-i()};t.addEventListener(`click`,()=>window.scrollTo({top:0,behavior:r})),n.addEventListener(`click`,()=>window.scrollTo({top:document.documentElement.scrollHeight,behavior:r})),addEventListener(`scroll`,a,{passive:!0}),addEventListener(`resize`,a),a()}</script><div class="reading-progress astro-kw4rgypl" data-reading-progress aria-hidden="true"></div><script type="module">var e=document.querySelector(`[data-reading-progress]`),t=document.querySelector(`main .sl-markdown-content`);if(e&&t){document.body.append(e);let n=()=>{let n=t.getBoundingClientRect().top+window.scrollY,r=n+t.offsetHeight-window.innerHeight,i=r<=n?1:(window.scrollY-n)/(r-n);e.style.transform=`scaleX(${Math.min(1,Math.max(0,i))})`};addEventListener(`scroll`,n,{passive:!0}),addEventListener(`resize`,n),n()}</script><script type="module">var e=location.origin;for(let t of document.querySelectorAll(`.sl-markdown-content a[href^="http"]`))t.origin!==e&&(t.target=`_blank`,t.rel=`noopener noreferrer`);</script><button type="button" class="sidebar-toggle astro-6h44x6yh" data-sidebar-toggle data-label-hide="사이드바 접기" data-label-show="사이드바 펼치기" aria-label="사이드바 접기" title="사이드바 접기"><svg viewBox="0 0 24 24" aria-hidden="true" class="astro-6h44x6yh"><path d="M15 6l-6 6 6 6" class="astro-6h44x6yh"></path></svg></button><script type="module">var e=document.querySelector(`[data-sidebar-toggle]`),t=document.documentElement;if(e){document.body.append(e);let n=()=>{let n=t.hasAttribute(`data-sidebar-collapsed`),r=n?e.dataset.labelShow:e.dataset.labelHide;e.setAttribute(`aria-label`,r??``),e.title=r??``,e.setAttribute(`aria-expanded`,String(!n))};e.addEventListener(`click`,()=>{let e=t.toggleAttribute(`data-sidebar-collapsed`);try{localStorage.setItem(`sidebar-collapsed`,e?`1`:`0`)}catch{}n()}),n()}</script></div></div></main></div></div></div></div></body></html>

@@ -1,0 +1,686 @@
+<!DOCTYPE html><html lang="en" dir="ltr" data-theme="dark" data-has-toc data-has-sidebar class="astro-g5ptsecz"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>HTTPS and certificates | Nabong's Dev Blog</title><link rel="canonical" href="https://nabongs2.github.io/en/blog/https-certificate/"/><link rel="alternate" hreflang="ko" href="https://nabongs2.github.io/blog/https-certificate/"/><link rel="alternate" hreflang="en" href="https://nabongs2.github.io/en/blog/https-certificate/"/><link rel="alternate" hreflang="x-default" href="https://nabongs2.github.io/blog/https-certificate/"/><link rel="sitemap" href="/sitemap-index.xml"/><script>try{if(localStorage.getItem('sidebar-collapsed')==='1')document.documentElement.dataset.sidebarCollapsed=''}catch(e){}</script><link href="https://nabongs2.github.io/blog/rss.xml" rel="alternate" title="Blog" type="application/rss+xml"/><link rel="shortcut icon" href="/favicon.svg" type="image/svg+xml"/><meta name="generator" content="Astro v7.3.3"/><meta name="generator" content="Starlight v0.42.2"/><meta property="og:title" content="HTTPS and certificates"/><meta property="og:type" content="article"/><meta property="og:url" content="https://nabongs2.github.io/en/blog/https-certificate/"/><meta property="og:locale" content="en"/><meta property="og:description" content="The difference between HTTP and HTTPS, public and private keys, what a certificate contains and certificate authorities, certificate verification and the TLS handshake, public certificates, private CAs and self-signed certificates, issuing with Let's Encrypt, creating a private CA and a self-signed certificate with openssl, how the two differ and the risk of installing a root certificate, certificates for IP addresses, browser certificate warnings, HSTS, and commands for checking certificates."/><meta property="og:site_name" content="Nabong's Dev Blog"/><meta name="twitter:card" content="summary_large_image"/><meta name="description" content="The difference between HTTP and HTTPS, public and private keys, what a certificate contains and certificate authorities, certificate verification and the TLS handshake, public certificates, private CAs and self-signed certificates, issuing with Let's Encrypt, creating a private CA and a self-signed certificate with openssl, how the two differ and the risk of installing a root certificate, certificates for IP addresses, browser certificate warnings, HSTS, and commands for checking certificates."/><script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","datePublished":"2026-10-29T11:00:00.000Z","headline":"HTTPS and certificates","inLanguage":"en","isPartOf":{"@id":"https://nabongs2.github.io/en/blog/#blog","@type":"Blog","name":"Blog","url":"https://nabongs2.github.io/en/blog/"},"mainEntityOfPage":"https://nabongs2.github.io/en/blog/https-certificate/","url":"https://nabongs2.github.io/en/blog/https-certificate/","author":[{"@type":"Person","@id":"https://nabongs2.github.io/en/blog/authors/nabong/#author","name":"nabong","url":"https://github.com/NabongS2"}],"description":"The difference between HTTP and HTTPS, public and private keys, what a certificate contains and certificate authorities, certificate verification and the TLS handshake, public certificates, private CAs and self-signed certificates, issuing with Let's Encrypt, creating a private CA and a self-signed certificate with openssl, how the two differ and the risk of installing a root certificate, certificates for IP addresses, browser certificate warnings, HSTS, and commands for checking certificates.","image":"https://nabongs2.github.io/_astro/cover-https-light.BPN0DY1E.png","keywords":["CS","Network"]},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Blog","item":"https://nabongs2.github.io/en/blog/"},{"@type":"ListItem","position":2,"name":"HTTPS and certificates"}]}]}</script><meta property="og:image" content="https://nabongs2.github.io/_astro/cover-https-light.BPN0DY1E_1Ufkuc.png"/><meta name="twitter:image" content="https://nabongs2.github.io/_astro/cover-https-light.BPN0DY1E_1Ufkuc.png"/><meta property="og:image:alt" content="A cover showing a browser connecting to https://app.example.com over TLS and checking the server with the app.example.com certificate signed by a certificate authority"/><meta property="og:image:width" content="1200"/><meta property="og:image:height" content="630"/><script>
+	window.StarlightThemeProvider = (() => {
+		const storedTheme =
+			typeof localStorage !== 'undefined' && localStorage.getItem('starlight-theme');
+		const theme =
+			storedTheme ||
+			(window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+		document.documentElement.dataset.theme = theme === 'light' ? 'light' : 'dark';
+		return {
+			updatePickers(theme = storedTheme || 'auto') {
+				document.querySelectorAll('starlight-theme-select').forEach((picker) => {
+					const select = picker.querySelector('select');
+					if (select) select.value = theme;
+					/** @type {HTMLTemplateElement | null} */
+					const tmpl = document.querySelector(`#theme-icons`);
+					const newIcon = tmpl && tmpl.content.querySelector('.' + theme);
+					if (newIcon) {
+						const oldIcon = picker.querySelector('svg.label-icon');
+						if (oldIcon) {
+							oldIcon.replaceChildren(...newIcon.cloneNode(true).childNodes);
+						}
+					}
+				});
+			},
+		};
+	})();
+</script><template id="theme-icons"><svg aria-hidden="true" class="light astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M5 12a1 1 0 0 0-1-1H3a1 1 0 0 0 0 2h1a1 1 0 0 0 1-1Zm.64 5-.71.71a1 1 0 0 0 0 1.41 1 1 0 0 0 1.41 0l.71-.71A1 1 0 0 0 5.64 17ZM12 5a1 1 0 0 0 1-1V3a1 1 0 0 0-2 0v1a1 1 0 0 0 1 1Zm5.66 2.34a1 1 0 0 0 .7-.29l.71-.71a1 1 0 1 0-1.41-1.41l-.66.71a1 1 0 0 0 0 1.41 1 1 0 0 0 .66.29Zm-12-.29a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.71-.71a1.004 1.004 0 1 0-1.43 1.41l.73.71ZM21 11h-1a1 1 0 0 0 0 2h1a1 1 0 0 0 0-2Zm-2.64 6A1 1 0 0 0 17 18.36l.71.71a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.76-.66ZM12 6.5a5.5 5.5 0 1 0 5.5 5.5A5.51 5.51 0 0 0 12 6.5Zm0 9a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Zm0 3.5a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 0-1-1Z"/></svg><svg aria-hidden="true" class="dark astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.64 13a1 1 0 0 0-1.05-.14 8.049 8.049 0 0 1-3.37.73 8.15 8.15 0 0 1-8.14-8.1 8.59 8.59 0 0 1 .25-2A1 1 0 0 0 8 2.36a10.14 10.14 0 1 0 14 11.69 1 1 0 0 0-.36-1.05Zm-9.5 6.69A8.14 8.14 0 0 1 7.08 5.22v.27a10.15 10.15 0 0 0 10.14 10.14 9.784 9.784 0 0 0 2.1-.22 8.11 8.11 0 0 1-7.18 4.32v-.04Z"/></svg><svg aria-hidden="true" class="auto astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg></template><link rel="stylesheet" href="/_astro/print.ehPL0gv-.css" media="print"><link rel="stylesheet" href="/_astro/middleware.Ve8gaIO-.css"><style>@layer starlight.components{.card:where(.astro-oag6qnet){--sl-card-border:var(--sl-color-purple);--sl-card-bg:var(--sl-color-purple-low);border:1px solid var(--sl-color-gray-5);background-color:var(--sl-color-black);flex-direction:column;gap:clamp(.5rem,.125rem + 1vw,1rem);padding:clamp(1rem,.125rem + 3vw,2.5rem)}.card:where(.astro-oag6qnet):nth-child(4n+1){--sl-card-border:var(--sl-color-orange);--sl-card-bg:var(--sl-color-orange-low)}.card:where(.astro-oag6qnet):nth-child(4n+3){--sl-card-border:var(--sl-color-green);--sl-card-bg:var(--sl-color-green-low)}.card:where(.astro-oag6qnet):nth-child(4n+4){--sl-card-border:var(--sl-color-red);--sl-card-bg:var(--sl-color-red-low)}.card:where(.astro-oag6qnet):nth-child(4n+5){--sl-card-border:var(--sl-color-blue);--sl-card-bg:var(--sl-color-blue-low)}.title:where(.astro-oag6qnet){font-weight:600;font-size:var(--sl-text-h4);color:var(--sl-color-white);line-height:var(--sl-line-height-headings);align-items:center;gap:1rem}.card:where(.astro-oag6qnet) .icon:where(.astro-oag6qnet){border:1px solid var(--sl-card-border);background-color:var(--sl-card-bg);border-radius:.25rem;flex-shrink:0;padding:.2em}.card:where(.astro-oag6qnet) .body:where(.astro-oag6qnet){font-size:clamp(var(--sl-text-sm), calc(.5rem + 1vw), var(--sl-text-body));margin:0}}.home-category:where(.astro-swwetth3){border:1px solid var(--nb-chip-border);background:var(--nb-chip-bg);color:var(--nb-chip-text);font-size:var(--sl-text-xs);border-radius:999px;align-items:center;gap:.35rem;padding:.1rem .65rem;text-decoration:none;display:inline-flex}.home-category:where(.astro-swwetth3):hover{border-color:var(--sl-color-accent)}.home-category-count:where(.astro-swwetth3){color:var(--sl-color-gray-3)}.home-series:where(.astro-wdm2kzqn){margin-top:3rem}.home-series-heading:where(.astro-wdm2kzqn){font-size:var(--sl-text-2xl);margin-bottom:1.5rem}.home-series-list:where(.astro-wdm2kzqn){grid-template-columns:repeat(auto-fill,minmax(min(100%,18rem),1fr));gap:1rem;margin:0;padding:0;list-style:none;display:grid}.home-series-card:where(.astro-wdm2kzqn){border:1px solid var(--nb-border);border-inline-start:3px solid var(--sl-color-accent);border-radius:var(--nb-radius);background:var(--nb-surface);margin:0;padding:1rem 1.25rem}.home-series-name:where(.astro-wdm2kzqn){color:var(--sl-color-white);margin:0 0 .6rem;font-weight:600}.home-series-count:where(.astro-wdm2kzqn){font-size:var(--sl-text-xs);color:var(--sl-color-gray-3);margin-inline-start:.5rem;font-weight:400}.home-series-parts:where(.astro-wdm2kzqn){font-size:var(--sl-text-sm);margin:0;padding-inline-start:1.4rem}.home-series-parts:where(.astro-wdm2kzqn) li:where(.astro-wdm2kzqn){margin:.3rem 0}
+@layer starlight.components{svg:where(.astro-hkc32dio){color:var(--sl-icon-color);font-size:var(--sl-icon-size,1em);width:1em;height:1em}:root{--sl-badge-default-border:var(--sl-color-accent);--sl-badge-default-bg:var(--sl-color-accent-low);--sl-badge-default-text:#fff;--sl-badge-note-border:var(--sl-color-blue);--sl-badge-note-bg:var(--sl-color-blue-low);--sl-badge-note-text:#fff;--sl-badge-danger-border:var(--sl-color-red);--sl-badge-danger-bg:var(--sl-color-red-low);--sl-badge-danger-text:#fff;--sl-badge-success-border:var(--sl-color-green);--sl-badge-success-bg:var(--sl-color-green-low);--sl-badge-success-text:#fff;--sl-badge-caution-border:var(--sl-color-orange);--sl-badge-caution-bg:var(--sl-color-orange-low);--sl-badge-caution-text:#fff;--sl-badge-tip-border:var(--sl-color-purple);--sl-badge-tip-bg:var(--sl-color-purple-low);--sl-badge-tip-text:#fff}[data-theme=light]:root{--sl-badge-default-bg:var(--sl-color-accent-high);--sl-badge-note-bg:var(--sl-color-blue-high);--sl-badge-danger-bg:var(--sl-color-red-high);--sl-badge-success-bg:var(--sl-color-green-high);--sl-badge-caution-bg:var(--sl-color-orange-high);--sl-badge-tip-bg:var(--sl-color-purple-high)}.sl-badge:where(.astro-f4zorn72){border:1px solid var(--sl-color-border-badge);font-family:var(--sl-font-system-mono);color:var(--sl-color-text-badge);background-color:var(--sl-color-bg-badge);overflow-wrap:anywhere;border-radius:.25rem;line-height:normal;display:inline-block}.sidebar-content .sl-badge:where(.astro-f4zorn72){line-height:1;font-size:var(--sl-text-xs);padding:.125rem .375rem}.sidebar-content a[aria-current=page]>.sl-badge:where(.astro-f4zorn72){--sl-color-bg-badge:transparent;--sl-color-border-badge:currentColor;color:inherit}.default:where(.astro-f4zorn72){--sl-color-bg-badge:var(--sl-badge-default-bg);--sl-color-border-badge:var(--sl-badge-default-border);--sl-color-text-badge:var(--sl-badge-default-text)}.note:where(.astro-f4zorn72){--sl-color-bg-badge:var(--sl-badge-note-bg);--sl-color-border-badge:var(--sl-badge-note-border);--sl-color-text-badge:var(--sl-badge-note-text)}.danger:where(.astro-f4zorn72){--sl-color-bg-badge:var(--sl-badge-danger-bg);--sl-color-border-badge:var(--sl-badge-danger-border);--sl-color-text-badge:var(--sl-badge-danger-text)}.success:where(.astro-f4zorn72){--sl-color-bg-badge:var(--sl-badge-success-bg);--sl-color-border-badge:var(--sl-badge-success-border);--sl-color-text-badge:var(--sl-badge-success-text)}.tip:where(.astro-f4zorn72){--sl-color-bg-badge:var(--sl-badge-tip-bg);--sl-color-border-badge:var(--sl-badge-tip-border);--sl-color-text-badge:var(--sl-badge-tip-text)}.caution:where(.astro-f4zorn72){--sl-color-bg-badge:var(--sl-badge-caution-bg);--sl-color-border-badge:var(--sl-badge-caution-border);--sl-color-text-badge:var(--sl-badge-caution-text)}.small:where(.astro-f4zorn72){font-size:var(--sl-text-xs);padding:.125rem .25rem}.medium:where(.astro-f4zorn72){font-size:var(--sl-text-sm);padding:.175rem .35rem}.large:where(.astro-f4zorn72){font-size:var(--sl-text-base);padding:.225rem .45rem}.sl-markdown-content :is(h1,h2,h3,h4,h5,h6) .sl-badge:where(.astro-f4zorn72){vertical-align:middle}.card-grid:where(.astro-7qmvx3iy){grid-template-columns:100%;gap:1rem;display:grid}.card-grid:where(.astro-7qmvx3iy)>*{margin-top:0!important}@media (width>=50rem){.card-grid:where(.astro-7qmvx3iy){grid-template-columns:1fr 1fr;gap:1.5rem}.stagger:where(.astro-7qmvx3iy){--stagger-height:5rem;padding-bottom:var(--stagger-height)}.stagger:where(.astro-7qmvx3iy)>:nth-child(2n){transform:translateY(var(--stagger-height))}}}
+</style><script type="module" src="/_astro/page.Dwipeu-R.js"></script></head><body class="astro-g5ptsecz"><a class="sl-skip-link astro-qb7clj6f" href="#_top">Skip to content</a><div class="page sl-flex astro-yntsjkba"><header class="header astro-yntsjkba"><div class="header astro-by6fddyj"><div class="title-wrapper sl-flex astro-by6fddyj"><a href="/en" class="site-title sl-flex astro-hen6hmfb" aria-label="Nabong's Dev Blog"><svg class="mark astro-hen6hmfb" width="34" height="34" viewBox="0 0 40 40" fill="none" aria-hidden="true"><rect width="40" height="40" rx="9" class="astro-hen6hmfb"></rect><path d="M14 14L20 20L14 26" class="astro-hen6hmfb"></path><line x1="22" y1="26" x2="28" y2="26" class="astro-hen6hmfb"></line></svg><span class="name astro-hen6hmfb" translate="no" aria-hidden="true">nabong<span class="parens astro-hen6hmfb">()</span></span></a></div><div class="sl-flex print:hidden astro-by6fddyj"><site-search class="astro-by6fddyj astro-b5kgnn7o" data-translations="{&quot;placeholder&quot;:&quot;Search&quot;}"><button data-open-modal disabled aria-label="Search" aria-keyshortcuts="Control+K" class="astro-b5kgnn7o"><svg aria-hidden="true" class="astro-b5kgnn7o astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.71 20.29 18 16.61A9 9 0 1 0 16.61 18l3.68 3.68a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.39ZM11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"/></svg><span class="sl-hidden md:sl-block astro-b5kgnn7o" aria-hidden="true">Search</span><kbd class="sl-hidden md:sl-flex astro-b5kgnn7o" style="display: none;"><kbd class="astro-b5kgnn7o">Ctrl</kbd><kbd class="astro-b5kgnn7o">K</kbd></kbd></button><dialog style="padding:0" aria-label="Search" class="astro-b5kgnn7o"><div class="dialog-frame sl-flex astro-b5kgnn7o"><button data-close-modal class="sl-flex md:sl-hidden astro-b5kgnn7o">Cancel</button><div class="search-container astro-b5kgnn7o"><div id="starlight__search" class="astro-b5kgnn7o"></div></div></div></dialog></site-search><script>
+	(() => {
+		const openBtn = document.querySelector('button[data-open-modal]');
+		const shortcut = openBtn?.querySelector('kbd');
+		if (!openBtn || !(shortcut instanceof HTMLElement)) return;
+		const platformKey = shortcut.querySelector('kbd');
+		if (platformKey && /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform)) {
+			platformKey.textContent = '⌘';
+			openBtn.setAttribute('aria-keyshortcuts', 'Meta+K');
+		}
+		shortcut.style.display = '';
+	})();
+</script><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.DZqJ8Bdf.js"></script></div><div class="sl-hidden md:sl-flex print:hidden right-group astro-by6fddyj"><div class="sl-flex social-icons astro-by6fddyj"><a href="https://github.com/NabongS2" rel="me" class="sl-flex astro-n2mnl6yq"><span class="sr-only astro-n2mnl6yq">GitHub</span><svg aria-hidden="true" class="astro-n2mnl6yq astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a><a href="https://nabongs2.github.io/blog/rss.xml" rel="me" class="sl-flex astro-n2mnl6yq"><span class="sr-only astro-n2mnl6yq">RSS</span><svg aria-hidden="true" class="astro-n2mnl6yq astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M2.88 16.88a3 3 0 0 0 0 4.24 3 3 0 0 0 4.24 0 3 3 0 0 0-4.24-4.24Zm2.83 2.83a1 1 0 0 1-1.42-1.42 1 1 0 0 1 1.42 0 1 1 0 0 1 0 1.42ZM5 12a1 1 0 0 0 0 2 5 5 0 0 1 5 5 1 1 0 0 0 2 0 7 7 0 0 0-7-7Zm0-4a1 1 0 0 0 0 2 9 9 0 0 1 9 9 1 1 0 0 0 2 0 11.08 11.08 0 0 0-3.22-7.78A11.08 11.08 0 0 0 5 8Zm10.61.39A15.11 15.11 0 0 0 5 4a1 1 0 0 0 0 2 13 13 0 0 1 13 13 1 1 0 0 0 2 0 15.11 15.11 0 0 0-4.39-10.61Z"/></svg></a></div><div class="sl-blog-header-links astro-2zgbb2in"><a class="sl-blog-header-link astro-2zgbb2in" href="/en/blog/">Blog</a></div><starlight-theme-select><label style="--sl-select-width: 6.25em" class="astro-2z5xp7gb"><span class="sr-only astro-2z5xp7gb">Select theme</span><svg aria-hidden="true" class="icon label-icon astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg><select autocomplete="off" class="astro-2z5xp7gb"><option value="dark" class="astro-2z5xp7gb">Dark</option><option value="light" class="astro-2z5xp7gb">Light</option><option value="auto" selected class="astro-2z5xp7gb">Auto</option></select><svg aria-hidden="true" class="icon caret astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg></label></starlight-theme-select><script>
+	StarlightThemeProvider.updatePickers();
+</script><script type="module">var e=`starlight-theme`,t=e=>e===`auto`||e===`dark`||e===`light`?e:`auto`,n=()=>t(typeof localStorage<`u`&&localStorage.getItem(e));function r(t){typeof localStorage<`u`&&localStorage.setItem(e,t===`light`||t===`dark`?t:``)}var i=()=>matchMedia(`(prefers-color-scheme: light)`).matches?`light`:`dark`;function a(e){StarlightThemeProvider.updatePickers(e),document.documentElement.dataset.theme=e===`auto`?i():e,r(e)}matchMedia(`(prefers-color-scheme: light)`).addEventListener(`change`,()=>{n()===`auto`&&a(`auto`)});var o=class extends HTMLElement{constructor(){super(),a(n()),this.querySelector(`select`)?.addEventListener(`change`,e=>{e.currentTarget instanceof HTMLSelectElement&&a(t(e.currentTarget.value))})}};customElements.define(`starlight-theme-select`,o);</script><starlight-lang-select><label style="--sl-select-width: 7em" class="astro-2z5xp7gb"><span class="sr-only astro-2z5xp7gb">Select language</span><svg aria-hidden="true" class="icon label-icon astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path fill-rule="evenodd" d="M8.516 3a.94.94 0 0 0-.941.94v1.15H2.94a.94.94 0 1 0 0 1.882h7.362a7.422 7.422 0 0 1-1.787 3.958 7.42 7.42 0 0 1-1.422-2.425.94.94 0 1 0-1.774.627 9.303 9.303 0 0 0 1.785 3.043 7.422 7.422 0 0 1-4.164 1.278.94.94 0 1 0 0 1.881 9.303 9.303 0 0 0 5.575-1.855 9.303 9.303 0 0 0 4.11 1.74l-.763 1.525a.968.968 0 0 0-.016.034l-1.385 2.77a.94.94 0 1 0 1.683.841l1.133-2.267h5.806l1.134 2.267a.94.94 0 0 0 1.683-.841l-1.385-2.769a.95.95 0 0 0-.018-.036l-3.476-6.951a.94.94 0 0 0-1.682 0l-1.82 3.639a7.423 7.423 0 0 1-3.593-1.256 9.303 9.303 0 0 0 2.27-5.203h1.894a.94.94 0 0 0 0-1.881H9.456V3.94A.94.94 0 0 0 8.516 3Zm6.426 11.794a1.068 1.068 0 0 1-.02.039l-.703 1.407h3.924l-1.962-3.924-1.24 2.478Z" clip-rule="evenodd"/></svg><select autocomplete="off" class="astro-2z5xp7gb"><option value="/blog/https-certificate/" class="astro-2z5xp7gb">한국어</option><option value="/en/blog/https-certificate/" selected class="astro-2z5xp7gb">English</option></select><svg aria-hidden="true" class="icon caret astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg></label></starlight-lang-select><script type="module">var e=class extends HTMLElement{constructor(){super();let e=this.querySelector(`select`);e&&(e.addEventListener(`change`,e=>{e.currentTarget instanceof HTMLSelectElement&&(window.location.pathname=e.currentTarget.value)}),window.addEventListener(`pageshow`,t=>{if(!t.persisted)return;let n=e.querySelector(`option[selected]`)?.index;n!==e.selectedIndex&&(e.selectedIndex=n??0)}))}};customElements.define(`starlight-lang-select`,e);</script></div></div></header><nav class="sidebar print:hidden astro-yntsjkba" aria-label="Main"><button popovertarget="starlight__sidebar" class="sl-menu-button sl-flex md:sl-hidden print:hidden astro-r2osgdlg"><svg aria-hidden="true" class="open-menu astro-r2osgdlg astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M3 8h18a1 1 0 1 0 0-2H3a1 1 0 0 0 0 2Zm18 8H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Zm0-5H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Z"/></svg><svg aria-hidden="true" class="close-menu astro-r2osgdlg astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="m13.41 12 6.3-6.29a1.004 1.004 0 1 0-1.42-1.42L12 10.59l-6.29-6.3a1.004 1.004 0 0 0-1.42 1.42l6.3 6.29-6.3 6.29a1 1 0 0 0 0 1.42.998.998 0 0 0 1.42 0l6.29-6.3 6.29 6.3a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.42L13.41 12Z"/></svg><span class="sr-only astro-r2osgdlg">Menu</span></button><script type="module">var e=class extends HTMLElement{constructor(){super();let e=matchMedia(`(min-width: 50em)`),t=()=>{this.popover=e.matches?null:`auto`};t(),e.addEventListener(`change`,()=>t()),this.addEventListener(`toggle`,({newState:e})=>this.trapFocus(e===`open`))}trapFocus(e){document.querySelectorAll(`.main-frame, .sl-skip-link`).forEach(t=>{t.toggleAttribute(`inert`,e)})}};customElements.define(`sl-sidebar-pane`,e);</script><sl-sidebar-pane popover id="starlight__sidebar" class="sidebar-pane astro-yntsjkba"><div class="sidebar-content sl-flex astro-yntsjkba"><sl-sidebar-state-persist data-hash="1e9ypre" class="astro-ipdry5cl"><script aria-hidden="true">
+		(() => {
+			try {
+				if (!matchMedia('(min-width: 50em)').matches) return;
+				/** @type {HTMLElement | null} */
+				const target = document.querySelector('sl-sidebar-state-persist');
+				const state = JSON.parse(sessionStorage.getItem('sl-sidebar-state') || '0');
+				if (!target || !state || target.dataset.hash !== state.hash) return;
+				window._starlightScrollRestore = state.scroll;
+				customElements.define(
+					'sl-sidebar-restore',
+					class SidebarRestore extends HTMLElement {
+						connectedCallback() {
+							try {
+								const idx = parseInt(this.dataset.index || '');
+								const details = this.closest('details');
+								if (details && typeof state.open[idx] === 'boolean') details.open = state.open[idx];
+							} catch {}
+						}
+					}
+				);
+			} catch {}
+		})();
+	</script><ul class="top-level astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/en/blog/" class="large astro-rmhv4bp6"><span class="astro-rmhv4bp6">All posts</span></a></li><li class="astro-rmhv4bp6"><details open class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">Recent posts</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="0"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/en/blog/https-certificate/" aria-current="page" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">HTTPS and certificates</span></a></li><li class="astro-rmhv4bp6"><a href="/en/blog/dns-and-domain/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">DNS and domains</span></a></li><li class="astro-rmhv4bp6"><a href="/en/blog/vpn/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">VPN</span></a></li><li class="astro-rmhv4bp6"><a href="/en/blog/nat-port-forwarding/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">NAT and port forwarding</span></a></li><li class="astro-rmhv4bp6"><a href="/en/blog/ip-and-port/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">IP addresses and ports</span></a></li><li class="astro-rmhv4bp6"><a href="/en/blog/network-layers/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Network layers</span></a></li><li class="astro-rmhv4bp6"><a href="/en/blog/access-refresh-token/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Access tokens and refresh tokens</span></a></li><li class="astro-rmhv4bp6"><a href="/en/blog/session-token/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Sessions and tokens</span></a></li><li class="astro-rmhv4bp6"><a href="/en/blog/browser-storage/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Cookies, localStorage, sessionStorage</span></a></li><li class="astro-rmhv4bp6"><a href="/en/blog/zustand-react-query/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Zustand and React Query</span></a></li></ul></details></li><li class="astro-rmhv4bp6"><details open class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">Categories</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="1"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><details class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">Frontend (2)</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="2"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/en/blog/tags/react/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">React (2)</span></a></li><li class="astro-rmhv4bp6"><a href="/en/blog/tags/state-management/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">State management (1)</span></a></li></ul></details></li><li class="astro-rmhv4bp6"><details class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">Data (3)</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="3"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/en/blog/tags/redis/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Redis (3)</span></a></li></ul></details></li><li class="astro-rmhv4bp6"><details class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">Infrastructure (6)</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="4"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/en/blog/tags/docker/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Docker (1)</span></a></li><li class="astro-rmhv4bp6"><a href="/en/blog/tags/nginx/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Nginx (3)</span></a></li><li class="astro-rmhv4bp6"><a href="/en/blog/tags/linux/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Linux (2)</span></a></li></ul></details></li><li class="astro-rmhv4bp6"><details class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">CS (13)</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="5"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/en/blog/tags/web/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Web (6)</span></a></li><li class="astro-rmhv4bp6"><a href="/en/blog/tags/network/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Network (6)</span></a></li><li class="astro-rmhv4bp6"><a href="/en/blog/tags/programming/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Programming (1)</span></a></li></ul></details></li><li class="astro-rmhv4bp6"><details class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">Thoughts (1)</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="6"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/en/blog/tags/retrospective/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Retrospective (1)</span></a></li></ul></details></li></ul></details></li><li class="astro-rmhv4bp6"><a href="/en/blog/rss.xml" class="large astro-rmhv4bp6"><span class="astro-rmhv4bp6">RSS</span></a></li></ul><script aria-hidden="true">
+		(() => {
+			const scroller = document.getElementById('starlight__sidebar');
+			if (!window._starlightScrollRestore || !scroller) return;
+			scroller.scrollTop = window._starlightScrollRestore;
+			delete window._starlightScrollRestore;
+		})();
+	</script></sl-sidebar-state-persist><div class="md:sl-hidden"><div class="mobile-preferences sl-flex astro-p4azlveh"><div class="social-icons astro-p4azlveh"><a href="https://github.com/NabongS2" rel="me" class="sl-flex astro-n2mnl6yq"><span class="sr-only astro-n2mnl6yq">GitHub</span><svg aria-hidden="true" class="astro-n2mnl6yq astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a><a href="https://nabongs2.github.io/blog/rss.xml" rel="me" class="sl-flex astro-n2mnl6yq"><span class="sr-only astro-n2mnl6yq">RSS</span><svg aria-hidden="true" class="astro-n2mnl6yq astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M2.88 16.88a3 3 0 0 0 0 4.24 3 3 0 0 0 4.24 0 3 3 0 0 0-4.24-4.24Zm2.83 2.83a1 1 0 0 1-1.42-1.42 1 1 0 0 1 1.42 0 1 1 0 0 1 0 1.42ZM5 12a1 1 0 0 0 0 2 5 5 0 0 1 5 5 1 1 0 0 0 2 0 7 7 0 0 0-7-7Zm0-4a1 1 0 0 0 0 2 9 9 0 0 1 9 9 1 1 0 0 0 2 0 11.08 11.08 0 0 0-3.22-7.78A11.08 11.08 0 0 0 5 8Zm10.61.39A15.11 15.11 0 0 0 5 4a1 1 0 0 0 0 2 13 13 0 0 1 13 13 1 1 0 0 0 2 0 15.11 15.11 0 0 0-4.39-10.61Z"/></svg></a></div><div class="sl-blog-header-links astro-2zgbb2in"><a class="sl-blog-header-link astro-2zgbb2in" href="/en/blog/">Blog</a></div><starlight-theme-select><label style="--sl-select-width: 6.25em" class="astro-2z5xp7gb"><span class="sr-only astro-2z5xp7gb">Select theme</span><svg aria-hidden="true" class="icon label-icon astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg><select autocomplete="off" class="astro-2z5xp7gb"><option value="dark" class="astro-2z5xp7gb">Dark</option><option value="light" class="astro-2z5xp7gb">Light</option><option value="auto" selected class="astro-2z5xp7gb">Auto</option></select><svg aria-hidden="true" class="icon caret astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg></label></starlight-theme-select><script>
+	StarlightThemeProvider.updatePickers();
+</script><starlight-lang-select><label style="--sl-select-width: 7em" class="astro-2z5xp7gb"><span class="sr-only astro-2z5xp7gb">Select language</span><svg aria-hidden="true" class="icon label-icon astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path fill-rule="evenodd" d="M8.516 3a.94.94 0 0 0-.941.94v1.15H2.94a.94.94 0 1 0 0 1.882h7.362a7.422 7.422 0 0 1-1.787 3.958 7.42 7.42 0 0 1-1.422-2.425.94.94 0 1 0-1.774.627 9.303 9.303 0 0 0 1.785 3.043 7.422 7.422 0 0 1-4.164 1.278.94.94 0 1 0 0 1.881 9.303 9.303 0 0 0 5.575-1.855 9.303 9.303 0 0 0 4.11 1.74l-.763 1.525a.968.968 0 0 0-.016.034l-1.385 2.77a.94.94 0 1 0 1.683.841l1.133-2.267h5.806l1.134 2.267a.94.94 0 0 0 1.683-.841l-1.385-2.769a.95.95 0 0 0-.018-.036l-3.476-6.951a.94.94 0 0 0-1.682 0l-1.82 3.639a7.423 7.423 0 0 1-3.593-1.256 9.303 9.303 0 0 0 2.27-5.203h1.894a.94.94 0 0 0 0-1.881H9.456V3.94A.94.94 0 0 0 8.516 3Zm6.426 11.794a1.068 1.068 0 0 1-.02.039l-.703 1.407h3.924l-1.962-3.924-1.24 2.478Z" clip-rule="evenodd"/></svg><select autocomplete="off" class="astro-2z5xp7gb"><option value="/blog/https-certificate/" class="astro-2z5xp7gb">한국어</option><option value="/en/blog/https-certificate/" selected class="astro-2z5xp7gb">English</option></select><svg aria-hidden="true" class="icon caret astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg></label></starlight-lang-select></div></div></div></sl-sidebar-pane></nav><div class="main-frame astro-yntsjkba"><script type="module">var e=document.getElementById(`starlight__sidebar`),t=e?.querySelector(`sl-sidebar-state-persist`),n=`sl-sidebar-state`,r=()=>{let r=[],i=t?.dataset.hash||``;try{let e=sessionStorage.getItem(n),t=JSON.parse(e||`{}`);Array.isArray(t.open)&&t.hash===i&&(r=t.open)}catch{}return{hash:i,open:r,scroll:e?.scrollTop||0}},i=e=>{try{sessionStorage.setItem(n,JSON.stringify(e))}catch{}},a=()=>i(r()),o=(e,t)=>{let n=r();n.open[t]=e,i(n)};t?.addEventListener(`click`,e=>{if(!(e.target instanceof Element))return;let t=e.target.closest(`summary`)?.closest(`details`);if(!t)return;let n=t.querySelector(`sl-sidebar-restore`),r=parseInt(n?.dataset.index||``);isNaN(r)||o(!t.open,r)}),addEventListener(`visibilitychange`,()=>{document.visibilityState===`hidden`&&a()});</script><div class="lg:sl-flex astro-lrzkfocr"><aside class="right-sidebar-container print:hidden astro-lrzkfocr"><div class="right-sidebar astro-lrzkfocr"><div class="lg:sl-hidden astro-qok35upx"><mobile-starlight-toc data-min-h="2" data-max-h="3" class="astro-66cqc7ze"><nav aria-labelledby="starlight__on-this-page--mobile" class="astro-66cqc7ze"><details id="starlight__mobile-toc" class="astro-66cqc7ze"><summary id="starlight__on-this-page--mobile" class="sl-flex astro-66cqc7ze"><span class="toggle sl-flex astro-66cqc7ze">On this page<svg aria-hidden="true" class="caret astro-66cqc7ze astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></span><span class="display-current astro-66cqc7ze"></span></summary><div class="dropdown astro-66cqc7ze"><ul class="isMobile astro-jugkfwgx" style="--depth: 0;"><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#_top" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Overview</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#http-and-https" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">HTTP and HTTPS</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#public-and-private-keys" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Public and private keys</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#certificates" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Certificates</span></a><ul class="isMobile astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#certificate-authorities-and-the-certificate-chain" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Certificate authorities and the certificate chain</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#certificate-verification" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Certificate verification</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#tls-handshake" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">TLS handshake</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#certificate-types" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Certificate types</span></a><ul class="isMobile astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#issuing-a-public-certificate" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Issuing a public certificate</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#issuing-certificates-with-a-private-ca" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Issuing certificates with a private CA</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#generating-a-self-signed-certificate" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Generating a self-signed certificate</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#self-signed-certificates-and-private-cas-compared" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Self-signed certificates and private CAs compared</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#risk-on-pcs-with-a-root-certificate-installed" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Risk on PCs with a root certificate installed</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#certificates-for-ip-addresses" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Certificates for IP addresses</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#certificate-warnings" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Certificate warnings</span></a><ul class="isMobile astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#connections-that-bypass-the-warning" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Connections that bypass the warning</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#hsts" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">HSTS</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#certificate-check-commands" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Certificate check commands</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#command-summary" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Command summary</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#comments" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Comments</span></a></li></ul></div></details></nav></mobile-starlight-toc><script type="module" src="/_astro/MobileTableOfContents.astro_astro_type_script_index_0_lang.BcSo_yiZ.js"></script></div><div class="right-sidebar-panel sl-hidden lg:sl-block astro-qok35upx"><div class="sl-container astro-qok35upx"><starlight-toc data-min-h="2" data-max-h="3"><nav aria-labelledby="starlight__on-this-page"><h2 id="starlight__on-this-page">On this page</h2><ul class="astro-jugkfwgx" style="--depth: 0;"><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#_top" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Overview</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#http-and-https" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">HTTP and HTTPS</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#public-and-private-keys" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Public and private keys</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#certificates" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Certificates</span></a><ul class="astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#certificate-authorities-and-the-certificate-chain" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Certificate authorities and the certificate chain</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#certificate-verification" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Certificate verification</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#tls-handshake" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">TLS handshake</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#certificate-types" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Certificate types</span></a><ul class="astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#issuing-a-public-certificate" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Issuing a public certificate</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#issuing-certificates-with-a-private-ca" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Issuing certificates with a private CA</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#generating-a-self-signed-certificate" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Generating a self-signed certificate</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#self-signed-certificates-and-private-cas-compared" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Self-signed certificates and private CAs compared</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#risk-on-pcs-with-a-root-certificate-installed" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Risk on PCs with a root certificate installed</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#certificates-for-ip-addresses" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Certificates for IP addresses</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#certificate-warnings" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Certificate warnings</span></a><ul class="astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#connections-that-bypass-the-warning" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">Connections that bypass the warning</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#hsts" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">HSTS</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#certificate-check-commands" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Certificate check commands</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#command-summary" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Command summary</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#comments" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Comments</span></a></li></ul></nav></starlight-toc><script type="module" src="/_astro/TableOfContents.astro_astro_type_script_index_0_lang.Csloo1VZ.js"></script></div></div></div></aside><div class="main-pane astro-lrzkfocr"><main data-pagefind-body class="astro-g5ptsecz" lang="en" dir="ltr"><div class="content-panel astro-a7po4psb"><div class="sl-container astro-a7po4psb"><a class="back-to-list not-content top astro-vw3nbasd" href="/en/blog/"><span aria-hidden="true" class="astro-vw3nbasd">←</span>All posts</a><h1 id="_top" class="astro-bebwqqxs">HTTPS and certificates</h1></div></div><div class="content-panel astro-a7po4psb"><div class="sl-container astro-a7po4psb"><starlight-image-zoom class="astro-uhbei7rv"><template class="astro-uhbei7rv"><dialog class="starlight-image-zoom-dialog astro-uhbei7rv"><button aria-label="Unzoom image" class="starlight-image-zoom-control astro-uhbei7rv"><svg aria-hidden="true" fill="currentColor" viewBox="0 0 24 24" class="astro-uhbei7rv"><use href="#starlight-image-zoom-icon-unzoom" class="astro-uhbei7rv"></use></svg></button><figure class="astro-uhbei7rv"></figure></dialog></template><svg xmlns="http://www.w3.org/2000/svg" style="display:none" class="astro-uhbei7rv"><symbol id="starlight-image-zoom-icon-zoom" viewBox="0 0 24 24" class="astro-uhbei7rv"><path d="M9.79 12.79 4 18.59V17a1 1 0 0 0-2 0v4a1 1 0 0 0 .08.38 1 1 0 0 0 .54.54A1 1 0 0 0 3 22h4a1 1 0 0 0 0-2H5.41l5.8-5.79a1 1 0 0 0-1.42-1.42ZM21.92 2.62a1 1 0 0 0-.54-.54A1 1 0 0 0 21 2h-4a1 1 0 0 0 0 2h1.59l-5.8 5.79a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0L20 5.41V7a1 1 0 0 0 2 0V3a1 1 0 0 0-.08-.38Z" class="astro-uhbei7rv"></path></symbol><symbol id="starlight-image-zoom-icon-unzoom" viewBox="0 0 24 24" class="astro-uhbei7rv"><path d="M21.71 2.29a1 1 0 0 0-1.42 0l-5.79 5.8V6.5a1 1 0 0 0-2 0v4a1 1 0 0 0 .08.38 1 1 0 0 0 .54.54 1 1 0 0 0 .38.08h4a1 1 0 0 0 0-2h-1.59l5.8-5.79a1 1 0 0 0 0-1.42ZM10.88 12.58a1 1 0 0 0-.38-.08h-4a1 1 0 0 0 0 2h1.59l-5.8 5.79a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l5.79-5.8v1.59a1 1 0 0 0 2 0v-4a1 1 0 0 0-.08-.38 1 1 0 0 0-.54-.54Z" class="astro-uhbei7rv"></path></symbol></svg></starlight-image-zoom><script type="module" src="/_astro/ImageZoom.astro_astro_type_script_index_0_lang.CNfBy0nv.js"></script><div class="sl-markdown-content"><figure class="sl-blog-cover astro-uvqvkfg3"><img src="/_astro/cover-https-dark.CEGv0aFm_2mCT3i.webp" alt="A cover showing a browser connecting to https://app.example.com over TLS and checking the server with the app.example.com certificate signed by a certificate authority" loading="eager" decoding="async" width="2400" height="1260" class="astro-uvqvkfg3 sl-blog-cover-image light:sl-hidden"><img src="/_astro/cover-https-light.BPN0DY1E_Zz4eHC.webp" alt="A cover showing a browser connecting to https://app.example.com over TLS and checking the server with the app.example.com certificate signed by a certificate authority" loading="eager" decoding="async" width="2400" height="1260" class="astro-uvqvkfg3 sl-blog-cover-image dark:sl-hidden"></figure><div class="sl-blog-metadata not-content astro-zrjirpgi"><div class="sl-blog-metadata-items astro-zrjirpgi"><time class="sl-blog-metadata-date astro-zrjirpgi" datetime="2026-10-29T11:00:00.000Z">Oct 29, 2026</time><span class="sl-blog-metadata-secondary sl-blog-metadata-reading-time astro-zrjirpgi"> - 17 min read</span></div><div class="sl-blog-metadata-authors astro-zrjirpgi"><a href="https://github.com/NabongS2" class="sl-blog-author astro-c6o6xw4v"><div class="sl-blog-author-details astro-c6o6xw4v"><div class="sl-blog-author-name astro-c6o6xw4v">nabong</div></div></a></div></div><nav class="series astro-x3pxgsip" aria-label="Series"><p class="series-heading astro-x3pxgsip"><span class="series-word astro-x3pxgsip">Series</span>Network basics</p><ol class="series-parts astro-x3pxgsip"><li class="series-part astro-x3pxgsip"><a href="/en/blog/network-layers/" class="astro-x3pxgsip">Network layers</a></li><li class="series-part astro-x3pxgsip"><a href="/en/blog/ip-and-port/" class="astro-x3pxgsip">IP addresses and ports</a></li><li class="series-part astro-x3pxgsip"><a href="/en/blog/nat-port-forwarding/" class="astro-x3pxgsip">NAT and port forwarding</a></li><li class="series-part astro-x3pxgsip"><a href="/en/blog/vpn/" class="astro-x3pxgsip">VPN</a></li><li class="series-part astro-x3pxgsip"><a href="/en/blog/dns-and-domain/" class="astro-x3pxgsip">DNS and domains</a></li><li class="series-part astro-x3pxgsip" aria-current="page"><span class="astro-x3pxgsip">HTTPS and certificates</span></li></ol></nav>
+<p>The <a href="/en/blog/dns-and-domain/">previous post</a> looked at how a domain is turned into an IP through DNS. But connecting to the IP that DNS returned doesn’t tell you whether that server really belongs to the domain, or whether someone in between is reading the traffic. This post looks at how HTTPS solves this problem, and what the certificate at its center is and how it is verified.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="http-and-https">HTTP and HTTPS</h2><a class="sl-anchor-link" href="#http-and-https"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “HTTP and HTTPS”</span></a></div>
+<p>HTTP sends requests and responses as plain text, without encryption. Between the browser and the server there are many devices, such as routers and the internet provider’s equipment, as well as other devices on the same Wi-Fi. Anyone on this path can see HTTP requests.</p>
+<table>
+<thead>
+<tr>
+<th>Risk</th>
+<th>What happens</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Eavesdropping</td>
+<td>Login passwords, cookies and request contents are read in transit</td>
+</tr>
+<tr>
+<td>Tampering</td>
+<td>Another script is inserted into the response, or its contents are changed</td>
+</tr>
+<tr>
+<td>Impersonation</td>
+<td>A fake server responds as if it were the real server</td>
+</tr>
+</tbody>
+</table>
+<p><strong>HTTPS</strong> sends HTTP wrapped in TLS. As covered in <a href="/en/blog/network-layers/#application-layer">network layers</a>, <strong>TLS</strong> (Transport Layer Security) is the protocol that encrypts data and uses a certificate to check that the server you connected to is the real one. It addresses each of the three risks above.</p>
+<table>
+<thead>
+<tr>
+<th>What TLS does</th>
+<th>Risk it prevents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Encryption</td>
+<td>Eavesdropping. Devices in between see only the IP and port, and can’t read the request path or contents</td>
+</tr>
+<tr>
+<td>Integrity check</td>
+<td>Tampering. Data changed in transit is treated as an error by the receiver</td>
+</tr>
+<tr>
+<td>Server authentication</td>
+<td>Impersonation. The certificate is used to check that the server you connected to owns the domain</td>
+</tr>
+</tbody>
+</table>
+<p>The default port for HTTPS is 443, and addresses start with <code dir="auto">https://</code>. TLS was previously called SSL, so <code dir="auto">ssl</code> still appears in many configuration entries and tool names.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="public-and-private-keys">Public and private keys</h2><a class="sl-anchor-link" href="#public-and-private-keys"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Public and private keys”</span></a></div>
+<p>Understanding certificates starts with the two kinds of keys TLS uses. The two keys are created as a pair, and what one key does is checked with the other.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Held by</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Private key</strong></td>
+<td>Only the server</td>
+<td><strong>Signs</strong> data. A signature is a mark meaning “the owner of this private key produced this data”</td>
+</tr>
+<tr>
+<td><strong>Public key</strong></td>
+<td>Anyone; it is published</td>
+<td>Checks whether a signature made with the private key is valid</td>
+</tr>
+</tbody>
+</table>
+<p>A signature can be checked only with the matching public key, and the private key can’t be derived from the public key. So when the server sends data signed with its private key, the receiver checks it with the public key and knows that the data came from the server holding the private key.</p>
+<p>If the private key leaks, someone else can pose as that server. The server’s private key file has restricted permissions and is not put into repositories or images.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="certificates">Certificates</h2><a class="sl-anchor-link" href="#certificates"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Certificates”</span></a></div>
+<p>A public key alone doesn’t tell you whose public key it is. A fake server can also send its own public key and claim it is the public key of <code dir="auto">app.example.com</code>. So a file in which a trusted organization has confirmed and signed “this public key belongs to this domain” is sent along with it. This file is a <strong>certificate</strong>, and the organization that signs it is a <strong>certificate authority</strong> (CA).</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Content</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Subject</td>
+<td>The owner of the certificate</td>
+<td><code dir="auto">CN=app.example.com</code></td>
+</tr>
+<tr>
+<td>Subject Alternative Name (SAN)</td>
+<td>The list of names this certificate can be used to connect with</td>
+<td><code dir="auto">app.example.com</code>, <code dir="auto">www.example.com</code></td>
+</tr>
+<tr>
+<td>Issuer</td>
+<td>The certificate authority that signed it</td>
+<td><code dir="auto">CN=R11, O=Let's Encrypt</code></td>
+</tr>
+<tr>
+<td>Validity period</td>
+<td>Start and expiry dates</td>
+<td>2026-10-01 ~ 2026-12-30</td>
+</tr>
+<tr>
+<td>Public key</td>
+<td>The pair of the server’s private key</td>
+<td></td>
+</tr>
+<tr>
+<td>Signature</td>
+<td>The issuer’s signature over all of the above</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>The browser checks whether the domain it connected to is in the <strong>SAN</strong> (Subject Alternative Name). The subject’s <code dir="auto">CN</code> was once used for name checks, but browsers now look only at the SAN. The SAN can also hold a wildcard such as <code dir="auto">*.example.com</code>, and this name matches subdomains one level down, such as <code dir="auto">api.example.com</code>. It does not match <code dir="auto">example.com</code> itself or <code dir="auto">a.b.example.com</code>.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="certificate-authorities-and-the-certificate-chain">Certificate authorities and the certificate chain</h3><a class="sl-anchor-link" href="#certificate-authorities-and-the-certificate-chain"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Certificate authorities and the certificate chain”</span></a></div>
+<p>Certificate authorities are usually split into two levels.</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>What it does</th>
+<th>Where it is kept</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Root CA</td>
+<td>Signs the certificates of intermediate CAs</td>
+<td>The root certificate is included in the OS and browser <strong>trust store</strong> from the start</td>
+</tr>
+<tr>
+<td>Intermediate CA</td>
+<td>Signs server certificates</td>
+<td>The server sends it along with its own certificate</td>
+</tr>
+</tbody>
+</table>
+<p>A <strong>trust store</strong> is a list that says “certificates that lead to these root certificates are trusted”. Windows, macOS, Linux, Firefox and Java each have their own list.</p>
+<p>The line of signatures from the server certificate through the intermediate certificate up to the root certificate is called the <strong>certificate chain</strong>. The chain is complete only when the server sends both its own certificate and the intermediate certificate. This is why Nginx uses a file with the two certificates joined together (fullchain), and the setup is covered in the <a href="/en/blog/nginx-production/#https">Nginx post</a>.</p>
+<!--
+	starlight-image-zoom 은 마크다운의 img 와 Image 만 감싼다. 이 컴포넌트는
+	그 목록에 없어서 그냥 지나치므로, 확대 기능이 필요한 래퍼를 직접 두른다.
+	버튼은 키보드로도 열 수 있게 두는 플러그인 규약이고, 평소에는 화면에
+	보이지 않는다.
+--><starlight-image-zoom-zoomable><img src="/_astro/cert-chain-light.C33TFczu_Z2nytqj.webp" alt="A certificate chain: following the server certificate's issuer to the intermediate certificate, then following its issuer to the root certificate in the trust store, checking the signature at each step. The server sends the server certificate and the intermediate certificate together" loading="lazy" decoding="async" width="1800" height="820" class="dark:sl-hidden"><button type="button" aria-label="A certificate chain: following the server certificate's issuer to the intermediate certificate, then following its issuer to the root certificate in the trust store, checking the signature at each step. The server sends the server certificate and the intermediate certificate together 확대"><svg aria-hidden="true" fill="currentColor" viewBox="0 0 24 24" width="24" height="24"><use href="#starlight-image-zoom-icon-zoom"></use></svg></button></starlight-image-zoom-zoomable><starlight-image-zoom-zoomable><img src="/_astro/cert-chain-dark.RxEbEJ1Q_ZAtEhk.webp" alt="A certificate chain: following the server certificate's issuer to the intermediate certificate, then following its issuer to the root certificate in the trust store, checking the signature at each step. The server sends the server certificate and the intermediate certificate together" loading="lazy" decoding="async" width="1800" height="820" class="light:sl-hidden"><button type="button" aria-label="A certificate chain: following the server certificate's issuer to the intermediate certificate, then following its issuer to the root certificate in the trust store, checking the signature at each step. The server sends the server certificate and the intermediate certificate together 확대"><svg aria-hidden="true" fill="currentColor" viewBox="0 0 24 24" width="24" height="24"><use href="#starlight-image-zoom-icon-zoom"></use></svg></button></starlight-image-zoom-zoomable>
+<div class="sl-heading-wrapper level-h3"><h3 id="certificate-verification">Certificate verification</h3><a class="sl-anchor-link" href="#certificate-verification"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Certificate verification”</span></a></div>
+<p>When the browser receives the server certificate, it checks the items below. If any one of them fails, it stops the connection and shows a warning.</p>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>What is checked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chain</td>
+<td>Whether following the signatures reaches a root certificate in the trust store</td>
+</tr>
+<tr>
+<td>Name</td>
+<td>Whether the domain or IP in the address bar is in the SAN</td>
+</tr>
+<tr>
+<td>Validity period</td>
+<td>Whether the current time is between the start and expiry dates</td>
+</tr>
+<tr>
+<td>Private key</td>
+<td>Whether the server holds the private key that pairs with the certificate’s public key. This is checked in the handshake below</td>
+</tr>
+</tbody>
+</table>
+<div class="sl-heading-wrapper level-h2"><h2 id="tls-handshake">TLS handshake</h2><a class="sl-anchor-link" href="#tls-handshake"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “TLS handshake”</span></a></div>
+<p>Before sending an HTTP request, the browser and the server first go through a process that checks the certificate and decides the keys used for encryption. This process is called the <strong>TLS handshake</strong>. In short, for TLS 1.3, the order is as follows.</p>
+<ol>
+<li>The browser sends the TLS versions and cipher suites it supports, values for key exchange, and the domain name it wants to connect to. This domain name is called <strong>SNI</strong> (Server Name Indication).</li>
+<li>The server sends the certificate and chain that match the SNI domain, and its values for key exchange. It also signs the handshake messages exchanged so far with its private key and sends the signature.</li>
+<li>The browser checks the items from “Certificate verification” above, and checks the signature with the certificate’s public key. If the signature is valid, the other side is the server holding that certificate’s private key.</li>
+<li>The browser and the server each calculate the same <strong>session key</strong> from the key exchange values exchanged in steps 1 and 2. The session key itself is not sent over the network.</li>
+<li>After that, HTTP requests and responses are encrypted with the session key and exchanged.</li>
+</ol>
+<!--
+	starlight-image-zoom 은 마크다운의 img 와 Image 만 감싼다. 이 컴포넌트는
+	그 목록에 없어서 그냥 지나치므로, 확대 기능이 필요한 래퍼를 직접 두른다.
+	버튼은 키보드로도 열 수 있게 두는 플러그인 규약이고, 평소에는 화면에
+	보이지 않는다.
+--><starlight-image-zoom-zoomable><img src="/_astro/tls-handshake-light.DRD9qQvp_28jBs.webp" alt="The TLS 1.3 handshake: the browser sends the TLS version, cipher suites, key exchange values and SNI, the server sends the certificate and chain, key exchange values and a private key signature, the browser checks the certificate and signature, both sides each calculate the session key, and then they exchange encrypted HTTP requests and responses" loading="lazy" decoding="async" width="1800" height="1080" class="dark:sl-hidden"><button type="button" aria-label="The TLS 1.3 handshake: the browser sends the TLS version, cipher suites, key exchange values and SNI, the server sends the certificate and chain, key exchange values and a private key signature, the browser checks the certificate and signature, both sides each calculate the session key, and then they exchange encrypted HTTP requests and responses 확대"><svg aria-hidden="true" fill="currentColor" viewBox="0 0 24 24" width="24" height="24"><use href="#starlight-image-zoom-icon-zoom"></use></svg></button></starlight-image-zoom-zoomable><starlight-image-zoom-zoomable><img src="/_astro/tls-handshake-dark.BnQX_b1O_1xOoeB.webp" alt="The TLS 1.3 handshake: the browser sends the TLS version, cipher suites, key exchange values and SNI, the server sends the certificate and chain, key exchange values and a private key signature, the browser checks the certificate and signature, both sides each calculate the session key, and then they exchange encrypted HTTP requests and responses" loading="lazy" decoding="async" width="1800" height="1080" class="light:sl-hidden"><button type="button" aria-label="The TLS 1.3 handshake: the browser sends the TLS version, cipher suites, key exchange values and SNI, the server sends the certificate and chain, key exchange values and a private key signature, the browser checks the certificate and signature, both sides each calculate the session key, and then they exchange encrypted HTTP requests and responses 확대"><svg aria-hidden="true" fill="currentColor" viewBox="0 0 24 24" width="24" height="24"><use href="#starlight-image-zoom-icon-zoom"></use></svg></button></starlight-image-zoom-zoomable>
+<p>The session key is used for symmetric encryption, which encrypts and decrypts with the same single key. Public key cryptography takes a lot of computation, so it is used only for checking the server and exchanging keys, and the actual data is handled with symmetric encryption.</p>
+<p>Because of SNI, the server can choose a different certificate for each domain even when several domains share one IP. Nginx compares the SNI domain with <code dir="auto">server_name</code> and sends the certificate of that <code dir="auto">server</code>.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="certificate-types">Certificate types</h2><a class="sl-anchor-link" href="#certificate-types"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Certificate types”</span></a></div>
+<p>Certificates fall into three types depending on who signed them. The difference is which trust store holds the root certificate used to check that signature.</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Signed by</th>
+<th>Trusted by</th>
+<th>Used for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Public certificate</td>
+<td>A public certificate authority (Let’s Encrypt, DigiCert, Sectigo and others)</td>
+<td>Every OS and browser. The root certificates are included from the start</td>
+<td>Services open to the internet</td>
+</tr>
+<tr>
+<td>Private CA certificate</td>
+<td>A certificate authority the company or team created itself</td>
+<td>Only PCs and servers where that private CA’s root certificate is installed</td>
+<td>Internal network servers, development servers</td>
+</tr>
+<tr>
+<td>Self-signed certificate</td>
+<td>The certificate itself</td>
+<td>Only PCs where that certificate is installed directly. Without it, the warning has to be bypassed on every connection</td>
+<td>Development environments with few servers, testing</td>
+</tr>
+</tbody>
+</table>
+<p>All three types use the same encryption. What differs is whether the browser can check the server, and if it can’t, a warning appears.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="issuing-a-public-certificate">Issuing a public certificate</h3><a class="sl-anchor-link" href="#issuing-a-public-certificate"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Issuing a public certificate”</span></a></div>
+<p>Before issuing a certificate, a public certificate authority checks that the applicant manages the domain. Let’s Encrypt, a free certificate authority, handles this check and the issuance with an automated issuance protocol called <strong>ACME</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>Challenge</th>
+<th>What it does</th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HTTP-01</td>
+<td>You place a value given by the certificate authority at the path <code dir="auto">http://domain/.well-known/acme-challenge/</code>, and the certificate authority connects to that address to check it</td>
+<td>The domain must be reachable on port 80 from the internet</td>
+</tr>
+<tr>
+<td>DNS-01</td>
+<td>You register a value given by the certificate authority as a <a href="/en/blog/dns-and-domain/#records">TXT record</a> for the domain, and the certificate authority checks it through DNS</td>
+<td>You must be able to edit the DNS records. The server doesn’t need to be open to the internet. Wildcard certificates can be obtained only this way</td>
+</tr>
+</tbody>
+</table>
+<p>Let’s Encrypt certificates are valid for 90 days, so automatic renewal is set up along with them. Tools that use ACME include Certbot and acme.sh, and web servers such as Caddy handle issuance and renewal themselves. Paid certificates with longer validity periods also exist, but the maximum validity period of public certificates is getting shorter, so either way a renewal procedure needs to be in place.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="issuing-certificates-with-a-private-ca">Issuing certificates with a private CA</h3><a class="sl-anchor-link" href="#issuing-certificates-with-a-private-ca"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Issuing certificates with a private CA”</span></a></div>
+<p>Internal network servers often can’t get a public certificate, because they can’t be reached from the internet or have no public domain. In this case, you create a private CA, issue certificates with it, and install its root certificate on the PCs that will use them. Below is the order for creating one with openssl.</p>
+<div class="expressive-code"><link rel="stylesheet" href="/_astro/ec.gzf8s.css"><script type="module" src="/_astro/ec.0vx5m.js"></script><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># 1. Private CA: private key and root certificate</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">openssl</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">req</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-x509</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-new</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-nodes</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-newkey</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">rsa:2048</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#F5C2E7;--1:#8D477A">\</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">-keyout</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">ca.key</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-out</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">ca.crt</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-days</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#FAB387;--1:#A54107">3650</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#F5C2E7;--1:#8D477A">\</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">-subj</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">"/CN=Example Dev CA"</span></div></div><div class="ec-line"><div class="code">
+</div></div><div class="ec-line"><div class="code"><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># 2. Server: private key and certificate signing request (CSR)</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">openssl</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">req</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-new</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-nodes</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-newkey</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">rsa:2048</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#F5C2E7;--1:#8D477A">\</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">-keyout</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">server.key</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-out</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">server.csr</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#F5C2E7;--1:#8D477A">\</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">-subj</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">"/CN=dev.example.test"</span></div></div><div class="ec-line"><div class="code">
+</div></div><div class="ec-line"><div class="code"><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># 3. Sign with the private CA. Put the domain and IP in the SAN</span></div></div><div class="ec-line"><div class="code"><span style="--0:#F38BA8;--0fs:italic;--1:#C00E34;--1fs:italic">printf</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">"subjectAltName=DNS:dev.example.test,IP:192.168.0.20\n"</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#94E2D5;--1:#116B70">&gt;</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">san.ext</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">openssl</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">x509</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-req</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-in</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">server.csr</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-CA</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">ca.crt</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-CAkey</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">ca.key</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-CAcreateserial</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#F5C2E7;--1:#8D477A">\</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">-out</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">server.crt</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-days</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#FAB387;--1:#A54107">365</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-extfile</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">san.ext</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="openssl req -x509 -new -nodes -newkey rsa:2048 \  -keyout ca.key -out ca.crt -days 3650 \  -subj &quot;/CN=Example Dev CA&quot;openssl req -new -nodes -newkey rsa:2048 \  -keyout server.key -out server.csr \  -subj &quot;/CN=dev.example.test&quot;printf &quot;subjectAltName=DNS:dev.example.test,IP:192.168.0.20\n&quot; > san.extopenssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial \  -out server.crt -days 365 -extfile san.ext"><div></div></button></div></figure></div>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Content</th>
+<th>Where it goes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">ca.key</code></td>
+<td>The private CA’s private key</td>
+<td>Kept separately in a secure place</td>
+</tr>
+<tr>
+<td><code dir="auto">ca.crt</code></td>
+<td>The private CA’s root certificate</td>
+<td>The trust store of the PCs and servers that connect</td>
+</tr>
+<tr>
+<td><code dir="auto">server.key</code>, <code dir="auto">server.crt</code></td>
+<td>The server’s private key and certificate</td>
+<td>Web server configuration (Nginx’s <code dir="auto">ssl_certificate_key</code>, <code dir="auto">ssl_certificate</code>)</td>
+</tr>
+<tr>
+<td><code dir="auto">server.csr</code></td>
+<td>Certificate signing request. Not used after signing</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>A <strong>CSR</strong> (Certificate Signing Request) is a file that holds the server’s public key and name and asks a certificate authority to sign it. The same format is used when obtaining a public certificate.</p>
+<p>How to install <code dir="auto">ca.crt</code> in the trust store differs by OS.</p>
+<table>
+<thead>
+<tr>
+<th>Environment</th>
+<th>How to install</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Windows</td>
+<td><code dir="auto">certutil -addstore -f Root ca.crt</code> with administrator rights, or open the certificate file and install it in “Trusted Root Certification Authorities”</td>
+</tr>
+<tr>
+<td>macOS</td>
+<td><code dir="auto">sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ca.crt</code></td>
+</tr>
+<tr>
+<td>Ubuntu, Debian</td>
+<td>Copy <code dir="auto">ca.crt</code> to <code dir="auto">/usr/local/share/ca-certificates/</code>, then <code dir="auto">sudo update-ca-certificates</code></td>
+</tr>
+<tr>
+<td>Firefox</td>
+<td>Uses its own trust store, so import it separately in the certificate manager in settings</td>
+</tr>
+<tr>
+<td>Java applications</td>
+<td>Add it to the JDK’s trust store with <code dir="auto">keytool -importcert</code></td>
+</tr>
+</tbody>
+</table>
+<p>Whoever has <code dir="auto">ca.key</code> can create a certificate for any domain, and PCs with <code dir="auto">ca.crt</code> installed trust all of those certificates. So <code dir="auto">ca.key</code> is managed more strictly than a server certificate’s private key. The details are in <a href="#risk-on-pcs-with-a-root-certificate-installed">Risk on PCs with a root certificate installed</a>.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="generating-a-self-signed-certificate">Generating a self-signed certificate</h3><a class="sl-anchor-link" href="#generating-a-self-signed-certificate"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Generating a self-signed certificate”</span></a></div>
+<p>A self-signed certificate is created together with its private key in a single command, without a CA. The certificate is signed with its own private key, so the receiver has no root certificate to check it against. As a result, a warning appears on PCs where that certificate hasn’t been installed directly.</p>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">openssl</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">req</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-x509</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-nodes</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-newkey</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">rsa:2048</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#F5C2E7;--1:#8D477A">\</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">-keyout</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">server.key</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-out</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">server.crt</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-days</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#FAB387;--1:#A54107">365</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#F5C2E7;--1:#8D477A">\</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">-subj</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">"/CN=dev.example.test"</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#F5C2E7;--1:#8D477A">\</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">-addext</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">"subjectAltName=DNS:dev.example.test,IP:192.168.0.20"</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#F5C2E7;--1:#8D477A">\</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#A6E3A1;--1:#2C6E1E">-addext</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">"basicConstraints=critical,CA:FALSE"</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="openssl req -x509 -nodes -newkey rsa:2048 \  -keyout server.key -out server.crt -days 365 \  -subj &quot;/CN=dev.example.test&quot; \  -addext &quot;subjectAltName=DNS:dev.example.test,IP:192.168.0.20&quot; \  -addext &quot;basicConstraints=critical,CA:FALSE&quot;"><div></div></button></div></figure></div>
+<p><code dir="auto">basicConstraints</code> on the last line is the field that sets whether this certificate is a CA that can sign other certificates. <code dir="auto">openssl req -x509</code> adds CA extensions in its default configuration, so without this field the certificate is created with <code dir="auto">CA:TRUE</code>. The step 1 command that created the private CA’s root certificate also gets <code dir="auto">CA:TRUE</code> for the same reason. The reason for specifying <code dir="auto">CA:FALSE</code> is in <a href="#risk-on-pcs-with-a-root-certificate-installed">Risk on PCs with a root certificate installed</a>.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="self-signed-certificates-and-private-cas-compared">Self-signed certificates and private CAs compared</h3><a class="sl-anchor-link" href="#self-signed-certificates-and-private-cas-compared"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Self-signed certificates and private CAs compared”</span></a></div>
+<p>With both approaches, the server holds the same two files: a private key and a certificate. A private CA adds the CA’s private key and root certificate. The root certificate is installed on the connecting side, and the CA’s private key is not placed on the server.</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Self-signed</th>
+<th>Private CA</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">server.key</code> (the server’s private key)</td>
+<td>Server</td>
+<td>Server</td>
+</tr>
+<tr>
+<td><code dir="auto">server.crt</code> (the server’s certificate, including the public key)</td>
+<td>Server</td>
+<td>Server</td>
+</tr>
+<tr>
+<td><code dir="auto">ca.crt</code> (root certificate)</td>
+<td>None</td>
+<td>The trust store of the connecting PCs and servers</td>
+</tr>
+<tr>
+<td><code dir="auto">ca.key</code> (the CA’s private key)</td>
+<td>None</td>
+<td>Kept separately somewhere other than the servers and PCs, and used only when issuing certificates</td>
+</tr>
+</tbody>
+</table>
+<p>To connect without a warning, a certificate has to be added to the trust store of each connecting PC. Which certificate is added, and when it has to be added again, differs between the two approaches.</p>
+<table>
+<thead>
+<tr>
+<th>Task</th>
+<th>Self-signed</th>
+<th>Private CA</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Connecting without a warning</td>
+<td>Install the server certificate as a trusted certificate on each PC</td>
+<td>Install the root certificate once on each PC</td>
+</tr>
+<tr>
+<td>Adding a server</td>
+<td>Install the new server’s certificate again on each PC</td>
+<td>Only sign with the same CA; nothing is installed again on the PCs</td>
+</tr>
+<tr>
+<td>Renewing a certificate</td>
+<td>Install the changed certificate again on each PC. Browsers that were bypassing the warning have to bypass it again</td>
+<td>Nothing is installed again on the PCs</td>
+</tr>
+<tr>
+<td>Creating a certificate</td>
+<td>One command</td>
+<td>Three steps: creating the CA, creating the CSR, signing</td>
+</tr>
+</tbody>
+</table>
+<p>For example, with 3 servers and 10 connecting PCs, self-signed certificates mean installing 3 server certificates on each PC, 30 installations in total. A private CA means installing 1 root certificate on each PC, 10 installations, and nothing is installed again on the PCs when servers are added or certificates are renewed.</p>
+<p>When nothing is installed on the PCs and the warning is bypassed, both approaches show the <code dir="auto">ERR_CERT_AUTHORITY_INVALID</code> warning, so users see no difference. The difference grows as servers and users increase and connections need to work without a warning.</p>
+<p>A certificate used on only one development PC can also be created with the mkcert tool. <code dir="auto">mkcert -install</code> creates a private CA on that PC and adds it to the trust store, and <code dir="auto">mkcert localhost 192.168.0.20</code> creates a certificate signed by that CA. Since it is the private CA approach, no warning appears on that PC, and a warning appears on other PCs where the root certificate isn’t installed.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="risk-on-pcs-with-a-root-certificate-installed">Risk on PCs with a root certificate installed</h3><a class="sl-anchor-link" href="#risk-on-pcs-with-a-root-certificate-installed"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Risk on PCs with a root certificate installed”</span></a></div>
+<p>A root certificate added to the trust store has, by default, no limit on the domains it can sign for. So if the CA’s private key leaks, the problems follow in this order.</p>
+<ol>
+<li>Whoever has the private key can create a certificate for any domain, such as <code dir="auto">bank.example.com</code>.</li>
+<li>PCs with the root certificate installed trust that certificate as a valid certificate.</li>
+<li>If the attacker is on the same network or can change DNS responses, they can read and change HTTPS traffic between that PC and the real server without a warning. This is called a <strong>man-in-the-middle attack</strong>.</li>
+</ol>
+<p>If a server is compromised, what leaks is the server’s private key and certificate. The server certificate is not a CA and can’t sign other certificates, so the attacker can only impersonate the names in that certificate’s SAN. This limit holds as long as <code dir="auto">ca.key</code> is not kept on the server as well.</p>
+<p>The same problem can occur with self-signed certificates. If a self-signed certificate with <code dir="auto">CA:TRUE</code> is installed in the trust store, that certificate is placed in the same position as a root certificate. Its private key is on the server, so if the server is compromised, steps 1 to 3 above can happen as they are. This is why the command above specifies <code dir="auto">CA:FALSE</code>, and a certificate with <code dir="auto">CA:FALSE</code>, even when installed, is trusted only for the names in its SAN.</p>
+<table>
+<thead>
+<tr>
+<th>Task</th>
+<th>Method</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Storing <code dir="auto">ca.key</code></td>
+<td>Don’t upload it to servers; keep it separately in a place used only for issuing certificates</td>
+</tr>
+<tr>
+<td>Limiting signing scope</td>
+<td>Add the Name Constraints extension to the root certificate to limit signing to internal domains such as <code dir="auto">.test</code>. Support for this extension differs by OS and browser</td>
+</tr>
+<tr>
+<td>Installation scope</td>
+<td>Install the root certificate only on the PCs that need it, and remove it from the trust store when it is no longer used</td>
+</tr>
+<tr>
+<td>Self-signed certificates</td>
+<td>Create them with <code dir="auto">basicConstraints=critical,CA:FALSE</code></td>
+</tr>
+</tbody>
+</table>
+<div class="sl-heading-wrapper level-h3"><h3 id="certificates-for-ip-addresses">Certificates for IP addresses</h3><a class="sl-anchor-link" href="#certificates-for-ip-addresses"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Certificates for IP addresses”</span></a></div>
+<p>When connecting by IP, as in <code dir="auto">https://192.168.0.20</code>, the browser checks whether that IP is in the SAN as <code dir="auto">IP:192.168.0.20</code>. Connecting by IP with a certificate that holds only a domain gives a name mismatch and a warning.</p>
+<p>Private IPs are used as the same addresses on many internal networks, so public certificate authorities don’t issue certificates for private IPs. If an internal network server has to be reached by IP, issue the certificate with the IP in the SAN, as in step 3 of <a href="#issuing-certificates-with-a-private-ca">Issuing certificates with a private CA</a>. If a name can be given through internal DNS or the <a href="/en/blog/dns-and-domain/#the-hosts-file">hosts file</a>, the certificate can also be issued for a domain.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="certificate-warnings">Certificate warnings</h2><a class="sl-anchor-link" href="#certificate-warnings"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Certificate warnings”</span></a></div>
+<p>When certificate verification fails, the browser shows a warning screen instead of the page. The error code on the warning screen tells you which check failed. Below are Chrome’s codes.</p>
+<table>
+<thead>
+<tr>
+<th>Error code</th>
+<th>Failed check</th>
+<th>Common causes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">NET::ERR_CERT_AUTHORITY_INVALID</code></td>
+<td>Chain</td>
+<td>A PC without the self-signed certificate or the private CA’s root certificate installed, the server not sending the intermediate certificate</td>
+</tr>
+<tr>
+<td><code dir="auto">NET::ERR_CERT_COMMON_NAME_INVALID</code></td>
+<td>Name</td>
+<td>The domain or IP connected to is not in the SAN</td>
+</tr>
+<tr>
+<td><code dir="auto">NET::ERR_CERT_DATE_INVALID</code></td>
+<td>Validity period</td>
+<td>Expired certificate, the PC’s clock is wrong</td>
+</tr>
+</tbody>
+</table>
+<p>Clicking the site information icon in the address bar shows the certificate’s issuer, SAN and validity period.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="connections-that-bypass-the-warning">Connections that bypass the warning</h3><a class="sl-anchor-link" href="#connections-that-bypass-the-warning"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Connections that bypass the warning”</span></a></div>
+<p>Continuing from “Advanced” on the warning screen opens the page. This choice stays in that browser as an exception for a period of time, but it doesn’t mean the certificate is now trusted. So problems remain in the following cases.</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Another person or another browser connects</td>
+<td>Each person has to bypass the warning again</td>
+</tr>
+<tr>
+<td>fetch requests and WebSocket (<code dir="auto">wss://</code>) connections the page sends to another address (an API server and so on)</td>
+<td>The warning screen appears only for pages opened from the address bar, so connections to that address, which has no exception registered, fail without a warning</td>
+</tr>
+<tr>
+<td>Another server or app makes the call</td>
+<td>A server’s HTTP client makes no exceptions, so it fails with a certificate error</td>
+</tr>
+</tbody>
+</table>
+<p>For a server used by many people, instead of bypassing the warning, use a public certificate or install the private CA’s root certificate on the PCs that use it, so the warning doesn’t appear at all.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="hsts">HSTS</h2><a class="sl-anchor-link" href="#hsts"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “HSTS”</span></a></div>
+<p><strong>HSTS</strong> (HTTP Strict Transport Security) is a response header with which the server tells the browser “connect to this domain only over HTTPS from now on”.</p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#cdd6f4;--1:#4c4f69">Strict-Transport-Security: max-age=31536000; includeSubDomains</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="Strict-Transport-Security: max-age=31536000; includeSubDomains"><div></div></button></div></figure></div>
+<table>
+<thead>
+<tr>
+<th>Part</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">max-age</code></td>
+<td>How long the browser remembers this instruction, in seconds. 31536000 is one year</td>
+</tr>
+<tr>
+<td><code dir="auto">includeSubDomains</code></td>
+<td>Applies the same to subdomains</td>
+</tr>
+</tbody>
+</table>
+<p>A browser that has received this header handles two things differently for the <code dir="auto">max-age</code> period.</p>
+<ul>
+<li>Even if <code dir="auto">http://</code> is typed in the address bar, it changes it to <code dir="auto">https://</code> before sending the request. This prevents attacks that intercept HTTP requests in transit.</li>
+<li>It removes the button for continuing on that domain’s certificate warning screen.</li>
+</ul>
+<p>Because of the second behavior, HSTS is not turned on for servers that use a self-signed certificate or private CA certificate not installed on the connecting PCs. Turning it on makes that domain unreachable. HSTS remembered by the browser stays until <code dir="auto">max-age</code> passes, even if the header is removed. Nginx’s HTTPS setup and HTTP→HTTPS redirection are in the <a href="/en/blog/nginx-production/#https">Nginx post</a>.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="certificate-check-commands">Certificate check commands</h2><a class="sl-anchor-link" href="#certificate-check-commands"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Certificate check commands”</span></a></div>
+<p>Outside the browser, use <code dir="auto">openssl</code> and <code dir="auto">curl</code> to check the certificate the server sends.</p>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">터미널 창</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># Subject, issuer, validity period and SAN of the certificate the server sends</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">openssl</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">s_client</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-connect</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">app.example.com:443</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-servername</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">app.example.com</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#94E2D5;--1:#116B70">&lt;</span><span style="--0:#A6E3A1;--1:#2C6E1E">/dev/null</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#F5C2E7;--1:#8D477A">\</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#94E2D5;--1:#116B70">|</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">openssl</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">x509</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-noout</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-subject</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-issuer</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-dates</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-ext</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">subjectAltName</span></div></div><div class="ec-line"><div class="code">
+</div></div><div class="ec-line"><div class="code"><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># Contents of a certificate file</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">openssl</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">x509</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-in</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">server.crt</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-noout</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-text</span></div></div><div class="ec-line"><div class="code">
+</div></div><div class="ec-line"><div class="code"><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># Including the verification process</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">curl</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">-v</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">https://app.example.com</span></div></div><div class="ec-line"><div class="code">
+</div></div><div class="ec-line"><div class="code"><span style="--0:#9399B2;--0fs:italic;--1:#5D5F6E;--1fs:italic"># Verify with the private CA's root certificate</span></div></div><div class="ec-line"><div class="code"><span style="--0:#89B4FA;--0fs:italic;--1:#1A57D1;--1fs:italic">curl</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">--cacert</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">ca.crt</span><span style="--0:#CDD6F4;--1:#4C4F69"> </span><span style="--0:#A6E3A1;--1:#2C6E1E">https://dev.example.test</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="openssl s_client -connect app.example.com:443 -servername app.example.com </dev/null \  | openssl x509 -noout -subject -issuer -dates -ext subjectAltNameopenssl x509 -in server.crt -noout -textcurl -v https://app.example.comcurl --cacert ca.crt https://dev.example.test"><div></div></button></div></figure></div>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#cdd6f4;--1:#4c4f69">subject=CN=app.example.com</span></div></div><div class="ec-line"><div class="code"><span style="--0:#cdd6f4;--1:#4c4f69">issuer=C=US, O=Let's Encrypt, CN=R11</span></div></div><div class="ec-line"><div class="code"><span style="--0:#cdd6f4;--1:#4c4f69">notBefore=Oct  1 00:00:00 2026 GMT</span></div></div><div class="ec-line"><div class="code"><span style="--0:#cdd6f4;--1:#4c4f69">notAfter=Dec 30 00:00:00 2026 GMT</span></div></div><div class="ec-line"><div class="code"><span style="--0:#cdd6f4;--1:#4c4f69">X509v3 Subject Alternative Name:</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#cdd6f4;--1:#4c4f69">    </span></span><span style="--0:#cdd6f4;--1:#4c4f69">DNS:app.example.com, DNS:www.example.com</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="클립보드로 복사" data-copied="복사 완료!" data-code="subject=CN=app.example.comissuer=C=US, O=Let&#x27;s Encrypt, CN=R11notBefore=Oct  1 00:00:00 2026 GMTnotAfter=Dec 30 00:00:00 2026 GMTX509v3 Subject Alternative Name:    DNS:app.example.com, DNS:www.example.com"><div></div></button></div></figure></div>
+<p><code dir="auto">-servername</code> is the domain sent as SNI. A server with several domains on one IP sends a different certificate depending on this value.</p>
+<p><code dir="auto">curl -k</code> skips certificate verification. It is used only to see whether the server responds, not as a way to fix a certificate problem.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="command-summary">Command summary</h2><a class="sl-anchor-link" href="#command-summary"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Command summary”</span></a></div>
+<table>
+<thead>
+<tr>
+<th>Task</th>
+<th>Command</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Check a server’s certificate</td>
+<td><code dir="auto">openssl s_client -connect domain:443 -servername domain</code></td>
+</tr>
+<tr>
+<td>View a certificate file’s contents</td>
+<td><code dir="auto">openssl x509 -in file -noout -text</code></td>
+</tr>
+<tr>
+<td>Create a private CA</td>
+<td><code dir="auto">openssl req -x509 -new -nodes -newkey rsa:2048 -keyout ca.key -out ca.crt -days 3650</code></td>
+</tr>
+<tr>
+<td>Create a self-signed certificate</td>
+<td><code dir="auto">openssl req -x509 -nodes -newkey rsa:2048 -keyout server.key -out server.crt -addext "basicConstraints=critical,CA:FALSE"</code></td>
+</tr>
+<tr>
+<td>Create a server private key and CSR</td>
+<td><code dir="auto">openssl req -new -nodes -newkey rsa:2048 -keyout server.key -out server.csr</code></td>
+</tr>
+<tr>
+<td>Sign with the private CA</td>
+<td><code dir="auto">openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt -extfile san.ext</code></td>
+</tr>
+<tr>
+<td>Install a root certificate (Ubuntu)</td>
+<td>Copy to <code dir="auto">/usr/local/share/ca-certificates/</code>, then <code dir="auto">sudo update-ca-certificates</code></td>
+</tr>
+<tr>
+<td>Request with verification by the private CA</td>
+<td><code dir="auto">curl --cacert ca.crt https://domain</code></td>
+</tr>
+</tbody>
+</table><nav class="series-pager not-content series-pager-last astro-3exwosfk" aria-label="Series Network basics"><p class="series-pager-heading astro-3exwosfk"><span class="series-word astro-3exwosfk">Series</span>Network basics · 6/6</p><div class="series-pager-links astro-3exwosfk"><a class="series-pager-link astro-3exwosfk" href="/en/blog/dns-and-domain/" rel="prev"><span class="series-pager-dir astro-3exwosfk">← Previous part</span><span class="series-pager-title astro-3exwosfk">DNS and domains</span></a></div></nav><div class="sl-blog-post-footer astro-gx5dlkfr"><div class="sl-blog-tags astro-xesoswnh"><b class="sl-blog-tags-label astro-xesoswnh">Tags:</b><ul class="sl-blog-tags-list astro-xesoswnh"><li class="astro-xesoswnh"><a class="sl-blog-tag astro-xesoswnh" href="/en/blog/tags/cs/">CS</a></li><li class="astro-xesoswnh"><a class="sl-blog-tag astro-xesoswnh" href="/en/blog/tags/network/">Network</a></li></ul></div><div class="sl-blog-pagination astro-nhmjxwsg" data-pagefind-ignore><div class="card-grid astro-7qmvx3iy"><div class="sl-link-card astro-zaaezwya"><span class="sl-flex stack astro-zaaezwya"><a href="/en/blog/dns-and-domain/" rel="prev" class="astro-nhmjxwsg astro-zaaezwya"><span class="title astro-zaaezwya">DNS and domains</span></a></span><svg aria-hidden="true" class="icon rtl:flip astro-zaaezwya astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.333em;"><path d="M17.92 11.62a1.001 1.001 0 0 0-.21-.33l-5-5a1.003 1.003 0 1 0-1.42 1.42l3.3 3.29H7a1 1 0 0 0 0 2h7.59l-3.3 3.29a1.002 1.002 0 0 0 .325 1.639 1 1 0 0 0 1.095-.219l5-5a1 1 0 0 0 .21-.33 1 1 0 0 0 0-.76Z"/></svg></div></div></div></div></div><a class="back-to-list not-content bottom astro-vw3nbasd" href="/en/blog/"><span aria-hidden="true" class="astro-vw3nbasd">←</span>All posts</a><nav class="related astro-vrecybdq" aria-labelledby="related-heading"><h2 id="related-heading" class="astro-vrecybdq">Related posts</h2><div class="related-cards astro-vrecybdq"><div class="sl-link-card astro-zaaezwya"><span class="sl-flex stack astro-zaaezwya"><a href="/en/blog/access-refresh-token/" class="astro-vrecybdq astro-zaaezwya"><span class="title astro-zaaezwya">Access tokens and refresh tokens</span></a><span class="description astro-zaaezwya">Why tokens are split in two, the lifetimes of access and refresh tokens, how to send tokens and where to store them compared against XSS and CSRF, the flow for refreshing a token after a 401, refresh token rotation, and logout, with Spring and axios examples.</span></span><svg aria-hidden="true" class="icon rtl:flip astro-zaaezwya astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.333em;"><path d="M17.92 11.62a1.001 1.001 0 0 0-.21-.33l-5-5a1.003 1.003 0 1 0-1.42 1.42l3.3 3.29H7a1 1 0 0 0 0 2h7.59l-3.3 3.29a1.002 1.002 0 0 0 .325 1.639 1 1 0 0 0 1.095-.219l5-5a1 1 0 0 0 .21-.33 1 1 0 0 0 0-.76Z"/></svg></div><div class="sl-link-card astro-zaaezwya"><span class="sl-flex stack astro-zaaezwya"><a href="/en/blog/session-token/" class="astro-vrecybdq astro-zaaezwya"><span class="title astro-zaaezwya">Sessions and tokens</span></a><span class="description astro-zaaezwya">The difference between authentication and authorization, what it means that HTTP is stateless, the login flow with sessions and with tokens, the header, payload and signature of a JWT, Spring code for sessions and JWTs, and how the two approaches compare.</span></span><svg aria-hidden="true" class="icon rtl:flip astro-zaaezwya astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.333em;"><path d="M17.92 11.62a1.001 1.001 0 0 0-.21-.33l-5-5a1.003 1.003 0 1 0-1.42 1.42l3.3 3.29H7a1 1 0 0 0 0 2h7.59l-3.3 3.29a1.002 1.002 0 0 0 .325 1.639 1 1 0 0 0 1.095-.219l5-5a1 1 0 0 0 .21-.33 1 1 0 0 0 0-.76Z"/></svg></div><div class="sl-link-card astro-zaaezwya"><span class="sl-flex stack astro-zaaezwya"><a href="/en/blog/browser-storage/" class="astro-vrecybdq astro-zaaezwya"><span class="title astro-zaaezwya">Cookies, localStorage, sessionStorage</span></a><span class="description astro-zaaezwya">How to use cookies, localStorage and sessionStorage to store values in the browser, how long each keeps them and who shares them, how cookies go to the server with every request, the HttpOnly, Secure and SameSite attributes, and the settings for sending cookies to an API on another address.</span></span><svg aria-hidden="true" class="icon rtl:flip astro-zaaezwya astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.333em;"><path d="M17.92 11.62a1.001 1.001 0 0 0-.21-.33l-5-5a1.003 1.003 0 1 0-1.42 1.42l3.3 3.29H7a1 1 0 0 0 0 2h7.59l-3.3 3.29a1.002 1.002 0 0 0 .325 1.639 1 1 0 0 0 1.095-.219l5-5a1 1 0 0 0 .21-.33 1 1 0 0 0 0-.76Z"/></svg></div></div></nav><footer class="sl-flex astro-ddtxxk7k"><div class="meta sl-flex astro-ddtxxk7k"><p>Last updated: <time datetime="2026-11-13T00:50:53.000Z">Nov 13, 2026</time></p></div><div class="pagination-links print:hidden astro-b5raizh3" dir="ltr"></div></footer><section class="comments astro-nuen6n26" id="comments"><script>(function(){const attrs = {"data-repo":"NabongS2/NabongS2.github.io","data-repo-id":"R_kgDOU0DWKg","data-category":"Announcements","data-category-id":"DIC_kwDOU0DWKs4DISNZ","data-mapping":"pathname","data-strict":"1","data-reactions-enabled":"1","data-emit-metadata":"0","data-input-position":"top","data-loading":"lazy","data-lang":"en"};
+
+				(() => {
+					/* Starlight always resolves its theme to one of these two on the
+					   root element, including when the reader has it on 자동. */
+					const theme = () =>
+						document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+
+					const script = document.createElement('script');
+					script.src = 'https://giscus.app/client.js';
+					script.crossOrigin = 'anonymous';
+					script.async = true;
+					for (const [name, value] of Object.entries(attrs)) script.setAttribute(name, value);
+					script.setAttribute('data-theme', theme());
+					document.currentScript.parentElement.append(script);
+
+					/* The iframe keeps its own copy of the theme, so a reader who
+					   flips the switch mid-page has to be told. */
+					let wanted = theme();
+					let loaded = false;
+
+					const send = () => {
+						if (!loaded) return;
+						const frame = document.querySelector('iframe.giscus-frame');
+						frame?.contentWindow?.postMessage(
+							{ giscus: { setConfig: { theme: wanted } } },
+							'https://giscus.app',
+						);
+					};
+
+					/* Until giscus.app has actually loaded, the frame is still on our
+					   own origin and the browser drops a message addressed to theirs.
+					   Their first message back is the signal that it's there — and it
+					   also catches a reader who flipped the theme while it loaded. */
+					addEventListener('message', (event) => {
+						if (loaded || event.origin !== 'https://giscus.app') return;
+						loaded = true;
+						send();
+					});
+
+					new MutationObserver(() => {
+						wanted = theme();
+						send();
+					}).observe(document.documentElement, {
+						attributes: true,
+						attributeFilter: ['data-theme'],
+					});
+				})();
+			})();</script></section><div class="scroll-buttons astro-nfluvhd2" data-scroll-buttons><button type="button" data-to="top" aria-label="Back to top" title="Back to top" hidden class="astro-nfluvhd2"><svg viewBox="0 0 24 24" aria-hidden="true" class="astro-nfluvhd2"><path d="M12 5l-7 7m7-7l7 7M12 5v14" class="astro-nfluvhd2"></path></svg></button><button type="button" data-to="bottom" aria-label="Go to bottom" title="Go to bottom" hidden class="astro-nfluvhd2"><svg viewBox="0 0 24 24" aria-hidden="true" class="astro-nfluvhd2"><path d="M12 19l-7-7m7 7l7-7M12 19V5" class="astro-nfluvhd2"></path></svg></button></div><script type="module">var e=document.querySelector(`[data-scroll-buttons]`),t=e?.querySelector(`[data-to="top"]`),n=e?.querySelector(`[data-to="bottom"]`);if(e&&t&&n){document.body.append(e);let r=matchMedia(`(prefers-reduced-motion: reduce)`).matches?`auto`:`smooth`,i=()=>window.innerHeight,a=()=>{let e=window.scrollY,r=document.documentElement.scrollHeight-window.innerHeight,a=r>i()*1.5;t.hidden=!a||e<i(),n.hidden=!a||e>r-i()};t.addEventListener(`click`,()=>window.scrollTo({top:0,behavior:r})),n.addEventListener(`click`,()=>window.scrollTo({top:document.documentElement.scrollHeight,behavior:r})),addEventListener(`scroll`,a,{passive:!0}),addEventListener(`resize`,a),a()}</script><div class="reading-progress astro-kw4rgypl" data-reading-progress aria-hidden="true"></div><script type="module">var e=document.querySelector(`[data-reading-progress]`),t=document.querySelector(`main .sl-markdown-content`);if(e&&t){document.body.append(e);let n=()=>{let n=t.getBoundingClientRect().top+window.scrollY,r=n+t.offsetHeight-window.innerHeight,i=r<=n?1:(window.scrollY-n)/(r-n);e.style.transform=`scaleX(${Math.min(1,Math.max(0,i))})`};addEventListener(`scroll`,n,{passive:!0}),addEventListener(`resize`,n),n()}</script><script type="module">var e=location.origin;for(let t of document.querySelectorAll(`.sl-markdown-content a[href^="http"]`))t.origin!==e&&(t.target=`_blank`,t.rel=`noopener noreferrer`);</script><button type="button" class="sidebar-toggle astro-6h44x6yh" data-sidebar-toggle data-label-hide="Hide sidebar" data-label-show="Show sidebar" aria-label="Hide sidebar" title="Hide sidebar"><svg viewBox="0 0 24 24" aria-hidden="true" class="astro-6h44x6yh"><path d="M15 6l-6 6 6 6" class="astro-6h44x6yh"></path></svg></button><script type="module">var e=document.querySelector(`[data-sidebar-toggle]`),t=document.documentElement;if(e){document.body.append(e);let n=()=>{let n=t.hasAttribute(`data-sidebar-collapsed`),r=n?e.dataset.labelShow:e.dataset.labelHide;e.setAttribute(`aria-label`,r??``),e.title=r??``,e.setAttribute(`aria-expanded`,String(!n))};e.addEventListener(`click`,()=>{let e=t.toggleAttribute(`data-sidebar-collapsed`);try{localStorage.setItem(`sidebar-collapsed`,e?`1`:`0`)}catch{}n()}),n()}</script></div></div></main></div></div></div></div></body></html>
